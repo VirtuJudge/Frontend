@@ -1,0 +1,30 @@
+name: Task or change
+description: Propose a scoped frontend change.
+title: "change: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Why is this needed?
+    validations:
+      required: true
+  - type: textarea
+    id: work
+    attributes:
+      label: Work
+      description: What screens and states should change?
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Include browser, responsive, and accessibility expectations.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References and dependencies
+      description: Link Docs, APIs, and blocking issues.
