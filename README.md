@@ -2,12 +2,29 @@
 
 Next.js client for uploads, Practice Sessions, speaker mapping, recorded Q&A, reports, PDF downloads, and deletion status.
 
-The application scaffold is the next step. Follow the [frontend architecture](https://github.com/VirtuJudge/Docs/blob/main/Architecture/Frontend-Architecture.md) and the [frontend/backend contract](https://github.com/VirtuJudge/Docs/blob/main/Contracts/Frontend-Backend-API.md).
+Follow the [frontend architecture](https://github.com/VirtuJudge/Docs/blob/main/Architecture/Frontend-Architecture.md) and the [frontend/backend contract](https://github.com/VirtuJudge/Docs/blob/main/Contracts/Frontend-Backend-API.md).
 
-## Check the repository
+## Development commands
 
 ```bash
-bash scripts/validate-repository.sh
-```
+# Start local development server
+npm run dev
 
-Application commands will be added with the Next.js scaffold.
+# Run production build
+npm run build
+
+# Run unit & layout tests (Vitest + Testing Library)
+npm run test
+
+# Run browser tests (Playwright)
+npm run test:e2e
+
+# Run TypeScript type check
+npm run typecheck
+
+# Run ESLint
+npm run lint
+
+# Validate repository structure & policy
+npm run check
+```
