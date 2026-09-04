@@ -1,0 +1,2 @@
+// Shared visual primitives
+export {};
