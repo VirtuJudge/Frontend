@@ -1,10 +1,11 @@
+
 import { Text } from "@/components";
 
-export default function DashboardPage() {
+export default function AboutPage() {
   return (
     <div>
       <Text as="h1" size="lg">
-        Hello, Dashboard
+        Hello, About
       </Text>
     </div>
   );
