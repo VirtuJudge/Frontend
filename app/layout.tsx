@@ -1,10 +1,18 @@
-import type { Metadata } from 'next';
-import './globals.css';
-import { QueryClientBoundary } from '@/lib/query-client';
+import type { Metadata } from "next";
+import { Inconsolata } from "next/font/google";
+import "./globals.css";
+import { QueryClientBoundary } from "@/lib/query-client";
+import NavBar from "@/components/Nav-Bar/nav-bar";
+
+const inconsolata = Inconsolata({
+  subsets: ["latin"],
+  variable: "--font-inconsolata",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: 'VirtuJudge',
-  description: 'AI-assisted pitch analysis, rehearsal, and evaluation.',
+  title: "VirtuJudge",
+  description: "AI-assisted pitch analysis, rehearsal, and evaluation.",
 };
 
 export default function RootLayout({
@@ -13,8 +21,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+    <html lang="en" className={`h-full antialiased ${inconsolata.variable}`}>
+      <body className="flex flex-col max-w-360 mx-auto px-8 py-30">
+        <NavBar />
         <QueryClientBoundary>{children}</QueryClientBoundary>
       </body>
     </html>

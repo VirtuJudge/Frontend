@@ -1,26 +1,204 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/****************************************************
+  defaults
+****************************************************/
+
+@theme {
+  --color-primary: hsla(175, 95%, 50%, 1);
+  --color-glass: #CDFEFA1A;
+
+  --color-fg: hsla(175, 95%, 95%, 1);
+  --color-fg-light: hsla(175, 95%, 90%, 1);
+
+  --color-bg: hsla(175, 95%, 3%, 1);
+  --color-bg-light: hsla(175, 95%, 6%, 1);
+
+  --color-danger: hsla(345, 89%, 45%, 1);
+  --color-danger-darker: hsla(345, 88%, 27%, 1);
+  --color-danger-lighter: hsla(345, 89%, 75%, 1);
+
+  --color-success: hsla(155, 89%, 45%, 1);
+  --color-success-darker: hsla(155, 88%, 27%, 1);
+  --color-success-lighter: hsla(155, 89%, 75%, 1);
+
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+
+  --background-image-gradient-bg-0: linear-gradient(0deg, #000F0E 0%, #011E1B 100%);
+  --background-image-gradient-bg-180: linear-gradient(180deg, #000F0E 0%, #011E1B 100%);
+
+  --background-image-gradient-primary-light-0: linear-gradient(0deg, #06F9E4 0%, #CDFEFA 100%);
+  --background-image-gradient-primary-light-180: linear-gradient(180deg, #06F9E4 0%, #CDFEFA 100%);
+
+  --background-image-gradient-primary-dark-0: linear-gradient(0deg, #011E1B 0%, #06F9E4 100%);
+  --background-image-gradient-primary-dark-180: linear-gradient(180deg, #011E1B 0%, #06F9E4 100%);
+
+  --background-image-gradient-fg-0: linear-gradient(0deg, #CDFEFA 0%, #E6FEFC 100%);
+  --background-image-gradient-fg-180: linear-gradient(180deg, #CDFEFA 0%, #E6FEFC 100%);
+
+  --background-image-gradient-nav-border: linear-gradient(180deg, #CDFEFA -95.74%, #011E1B 100%);
+  --background-image-gradient-border: linear-gradient(180deg, var(--color-primary) -167.86%, var(--color-bg-light) 100%);
+  --background-image-gradient-input-border: var(--background-image-gradient-border);
+
+  --text-h1: 3rem;
+  --text-h2: 2.5rem;
+  --text-h3: 2.25rem;
+  --text-h4: 1.5rem;
+  --text-body: 0.75rem;
+  --text-body-larger: 0.875rem;
+  --text-body-largest: 1rem;
+  --text-smaller: 0.625rem;
+  --text-smallest: 0.5rem;
+
+  --font-inconsolata: 'Inconsolata', monospace;
+  --animate-pop-in: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html,
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsla(175, 95%, 50%, 0.3) var(--color-bg);
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    overflow-x: hidden;
+  }
+
+  /* Custom themed scrollbar for WebKit browsers */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-bg);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsla(175, 95%, 50%, 0.25);
+    border-radius: 9999px;
+    border: 2px solid var(--color-bg);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary);
+    box-shadow: 0 0 10px var(--color-primary);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  body img {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+  }
+
+  * {
+    font-family: "Inconsolata", monospace;
+    font-style: normal;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  button {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {}
+
+/****************************************************
+  custom global styles
+****************************************************/
+
+@custom-variant hocus {
+  &:active {
+    @slot;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    &:hover,
+    &:active {
+      @slot;
+    }
+  }
+}
+
+.pop-in-element {
+  /* natural spring/bounce effect */
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@utility text-unselectable {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+@utility hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility border-gradient {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: var(--border-gradient-width, 1px);
+    background: var(--border-gradient-source, var(--background-image-gradient-border));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+@utility border-gradient-nav {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: var(--border-gradient-width, 1px);
+    background: var(--border-gradient-source, var(--background-image-gradient-nav-border));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+  }
 }
