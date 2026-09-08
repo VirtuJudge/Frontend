@@ -12,10 +12,10 @@ export default function HomePage() {
       </Text>
       <div className="flex gap-4">
         <Button href="/dashboard" variant="primary">
-          Enter Workspace
+          Try Now
         </Button>
         <Button href="/about" variant="glass">
-          Learn More
+          About Us
         </Button>
       </div>
     </div>

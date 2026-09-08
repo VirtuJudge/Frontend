@@ -22,7 +22,7 @@ export const CTA_NAV_ITEM: NavItem = {
 };
 
 export const NAV_CONTAINER_CLASS =
-  "flex items-center justify-between fixed top-5 left-[50%] -translate-x-1/2 px-8 z-50 w-full max-w-360";
+  "flex items-center justify-between fixed top-4 left-[50%] -translate-x-1/2 px-4 z-50 w-full max-w-360";
 
 export function isRouteActive(currentPath: string, targetPath: string): boolean {
   return currentPath === targetPath;

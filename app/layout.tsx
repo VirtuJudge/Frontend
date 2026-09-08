@@ -23,7 +23,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`h-full antialiased ${inconsolata.variable}`}>
-      <body className="flex flex-col max-w-360 mx-auto px-8 pt-30">
+      <body className="flex flex-col max-w-360 mx-auto px-4 pt-30">
         <QueryClientBoundary>
           <AuthProvider>
             <NavBar />
