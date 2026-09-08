@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-export type TextSize = "sm" | "md" | "lg";
+export type TextSize = "xs" | "sm" | "md" | "lg";
 
 export interface TextProps<E extends React.ElementType = "p"> {
   as?: E;
@@ -11,8 +11,9 @@ export interface TextProps<E extends React.ElementType = "p"> {
 }
 
 const TEXT_SIZES: Record<TextSize, string> = {
-  sm: "text-[16px]",
-  md: "text-[20px]",
+  xs: "text-[16px]",
+  sm: "text-[20px]",
+  md: "text-[24px]",
   lg: "text-[40px] font-bold",
 };
 
