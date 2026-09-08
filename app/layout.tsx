@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inconsolata } from "next/font/google";
 import "./globals.css";
 import { QueryClientBoundary } from "@/lib/query-client";
+import { AuthProvider } from "@/features/auth";
 import NavBar from "@/components/Nav-Bar/nav-bar";
 
 const inconsolata = Inconsolata({
@@ -22,9 +23,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`h-full antialiased ${inconsolata.variable}`}>
-      <body className="flex flex-col max-w-360 mx-auto px-8 py-30">
-        <NavBar />
-        <QueryClientBoundary>{children}</QueryClientBoundary>
+      <body className="flex flex-col max-w-360 mx-auto px-8 pt-30">
+        <QueryClientBoundary>
+          <AuthProvider>
+            <NavBar />
+            {children}
+          </AuthProvider>
+        </QueryClientBoundary>
       </body>
     </html>
   );
