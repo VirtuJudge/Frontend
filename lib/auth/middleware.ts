@@ -15,14 +15,9 @@ export const PROTECTED_ROUTES = [
   "/settings",
 ];
 
-export const AUTH_ROUTES = [
-  "/auth/login",
-  "/auth/register",
-];
+export const AUTH_ROUTES = ["/auth/login", "/auth/register"];
 
-export const EXEMPT_ROUTES = [
-  "/auth/callback",
-];
+export const EXEMPT_ROUTES = ["/auth/callback"];
 
 export const PUBLIC_ROUTES = [
   "/",
@@ -72,8 +67,17 @@ export function handleRouteProtection(request: NextRequest): NextResponse {
   }
 
   if (isAuthPage && isAuthenticated) {
-    const dashboardUrl = new URL("/dashboard", request.url);
-    return NextResponse.redirect(dashboardUrl);
+    const redirectParam = request.nextUrl.searchParams.get("redirect");
+
+    const safeRedirect =
+      redirectParam &&
+      redirectParam.startsWith("/") &&
+      !redirectParam.startsWith("//")
+        ? redirectParam
+        : "/dashboard";
+
+    const targetUrl = new URL(safeRedirect, request.url);
+    return NextResponse.redirect(targetUrl);
   }
 
   return NextResponse.next();
