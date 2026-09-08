@@ -4,12 +4,6 @@ import SmallNav from "./small-nav";
 import FullNav from "./full-nav";
 
 export default function NavBar() {
-  const user = true;
-
-  if (!user) {
-    return null;
-  }
-
   return (
     <header className="w-full">
       <div className="block min-[1080px]:hidden">

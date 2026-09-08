@@ -146,6 +146,17 @@ describe("Input Component", () => {
     expect(input.className).toContain("text-primary");
   });
 
+  it("applies full width to both container and wrapper when className contains w-full", () => {
+    const { container } = render(
+      <Input label="Email Address" className="w-full" placeholder="email" />,
+    );
+    const labelWrapper = container.firstChild as HTMLElement;
+    const inputWrapper = screen.getByPlaceholderText("email").closest('[data-slot="input-wrapper"]')!;
+
+    expect(labelWrapper.className).toContain("w-full");
+    expect(inputWrapper.className).toContain("w-full");
+  });
+
   it("supports top prop directly", () => {
     render(<Input top={30} placeholder="Top prop" />);
     const input = screen.getByPlaceholderText("Top prop");

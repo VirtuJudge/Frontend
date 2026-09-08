@@ -5,15 +5,18 @@ import {
   Wrapper,
   type WrapperVariant,
   type BorderGradientVariant,
-} from "./wrapper";
+} from "@/components/wrapper";
+import { Text } from "@/components/text";
 
 import { cn } from "@/lib/utils";
 
 export type InputVariant = WrapperVariant;
 export type InputSize = "sm" | "default" | "lg";
 
-export interface InputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> {
+export interface InputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "size"
+> {
   label?: React.ReactNode;
   labelClassName?: string;
   variant?: InputVariant;
@@ -46,6 +49,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       disabled = false,
       className = "",
       style,
+      wrapperClassName,
       wrapperStyle,
       type = "text",
       ...rest
@@ -68,6 +72,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       sizeConfig.padding,
       disabled && "opacity-50 pointer-events-none cursor-not-allowed",
       className,
+      wrapperClassName,
     );
 
     const mergedWrapperStyle: React.CSSProperties = {
@@ -104,19 +109,24 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     if (label) {
       const mergedLabelWrapperClassName = cn(
-        "flex flex-col gap-[8px]",
+        "flex flex-col gap-[8px] w-[480px]",
+        className,
       );
 
       const mergedLabelClassName = cn(
-        "text-fg text-[18px] font-medium pl-[12px] select-none",
+        "pl-6 select-none text-left",
         labelClassName,
       );
 
       return (
         <div className={mergedLabelWrapperClassName} style={layoutStyle}>
-          <label htmlFor={inputId} className={mergedLabelClassName}>
+          <Text
+            as="label"
+            htmlFor={inputId}
+            className={mergedLabelClassName}
+          >
             {label}
-          </label>
+          </Text>
           {inputWrapper}
         </div>
       );
