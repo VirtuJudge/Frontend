@@ -390,15 +390,9 @@ export class ApiClient {
 
   // ================= Identity & Teams =================
 
-  public async getMe(token?: string): Promise<User> {
+  public async getMe(): Promise<User> {
     if (this.useMock) return MOCK_DATA.user;
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-    const res = await this.request<Record<string, unknown>>(API_ENDPOINTS.me, {
-      headers,
-    });
+    const res = await this.request<Record<string, unknown>>(API_ENDPOINTS.me);
     return {
       id: String(res.id ?? ""),
       display_name: res.display_name as string,

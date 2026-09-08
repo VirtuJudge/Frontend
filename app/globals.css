@@ -103,12 +103,15 @@
     pointer-events: none;
   }
 
+  html[data-scroll-behavior="smooth"] {
+    scroll-behavior: smooth;
+  }
+
   * {
     font-family: "Inconsolata", monospace;
     font-style: normal;
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
-    scroll-behavior: smooth;
   }
 
   button {

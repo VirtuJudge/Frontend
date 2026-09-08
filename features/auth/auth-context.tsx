@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!token) return null;
 
       try {
-        return await apiClient.getMe(token);
+        return await apiClient.getMe();
       } catch {
         if (isJwtExpired(token)) {
           syncSessionToCookies(null);
