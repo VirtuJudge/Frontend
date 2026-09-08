@@ -22,8 +22,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`h-full antialiased ${inconsolata.variable}`}>
-      <body className="flex flex-col max-w-360 mx-auto px-8 pt-30">
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      className={`h-full antialiased ${inconsolata.variable}`}
+    >
+      <body className="flex flex-col max-w-360 mx-auto px-4 pt-30">
         <QueryClientBoundary>
           <AuthProvider>
             <NavBar />

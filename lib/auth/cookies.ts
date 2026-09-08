@@ -1,6 +1,15 @@
 import { AUTH_COOKIE_NAME, FALLBACK_SESSION_COOKIE_NAME } from "./middleware";
 
 export function getClientAuthToken(): string | null {
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      const stored = window.localStorage.getItem(AUTH_COOKIE_NAME);
+      if (stored) return stored;
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
+
   if (typeof document === "undefined") return null;
 
   const cookies = document.cookie.split(";").map((c) => c.trim());
@@ -18,6 +27,14 @@ export function getClientAuthToken(): string | null {
 }
 
 export function setClientAuthToken(token: string, days: number = 7): void {
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      window.localStorage.setItem(AUTH_COOKIE_NAME, token);
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
+
   if (typeof document === "undefined") return;
 
   const expires = new Date();
@@ -31,6 +48,16 @@ export function setClientAuthToken(token: string, days: number = 7): void {
 }
 
 export function removeClientAuthToken(): void {
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      window.localStorage.removeItem(AUTH_COOKIE_NAME);
+      window.localStorage.removeItem("token");
+      window.localStorage.removeItem(FALLBACK_SESSION_COOKIE_NAME);
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
+
   if (typeof document === "undefined") return;
 
   document.cookie = `${AUTH_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;

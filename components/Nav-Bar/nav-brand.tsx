@@ -6,10 +6,12 @@ export function NavBrand() {
     <Button borderGradient="nav" href="/">
       <Image
         src="/logos/logo-primary.webp"
-        alt="Logo"
-        height={50}
+        alt="VirtuJudge Logo"
         width={60}
+        height={27}
         priority
+        className="w-auto h-auto"
+        style={{ width: "auto", height: "auto" }}
       />
     </Button>
   );

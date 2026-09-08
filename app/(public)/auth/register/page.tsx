@@ -4,13 +4,12 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import RightSection from "@/components/auth/right-section";
 import { Button, Input, Text } from "@/components";
-import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useAuth } from "@/features/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { signUpWithPassword, signInWithOAuth, isAuthenticated } = useAuth();
+  const { signUpWithPassword, isAuthenticated } = useAuth();
 
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -77,21 +76,6 @@ export default function RegisterPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      await signInWithOAuth("google");
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to initiate Google sign in",
-      );
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="flex flex-col min-[1080px]:flex-row items-center justify-between w-full">
       <div className="flex flex-col items-center justify-center gap-8 w-full min-[1080px]:w-1/2">
@@ -101,18 +85,6 @@ export default function RegisterPage() {
           Enrich your presentation skills with our most advanced tools, and
           become the next one on stage!
         </Text>
-
-        <Button
-          className="w-full"
-          borderGradient="nav"
-          onClick={handleGoogleSignIn}
-          disabled={loading}
-        >
-          <Icon icon="akar-icons:google-fill" className="text-primary" />{" "}
-          Continue with Google
-        </Button>
-
-        <Text className="font-bold">OR</Text>
 
         {error && (
           <Text

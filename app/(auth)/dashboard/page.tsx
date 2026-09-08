@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Button, Text, Wrapper } from "@/components";
 import { useAuth } from "@/features/auth";
 
@@ -12,14 +11,17 @@ export default function DashboardPage() {
       <Wrapper
         variant="glass"
         borderGradient="primary"
-        className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+        className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-2xl"
       >
         <div>
           <Text as="h1" size="lg" className="font-bold">
             Hello, Dashboard
           </Text>
           <Text size="sm" className="text-foreground/70 mt-1">
-            Welcome back{user?.display_name ? `, ${user.display_name}` : ""}.
+            Welcome back, {user?.display_name}.
+          </Text>
+          <Text size="sm" className="text-foreground/70 mt-1">
+            Welcome back, {user?.email}.
           </Text>
         </div>
 

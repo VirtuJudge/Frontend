@@ -5,15 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/features/auth";
 import RightSection from "@/components/auth/right-section";
 import { Button, Input, Text } from "@/components";
-import { Icon } from "@iconify/react";
 import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signInWithPassword, signInWithOAuth, isAuthenticated } = useAuth();
+  const { signInWithPassword, isAuthenticated } = useAuth();
 
-  const redirectUrl = searchParams.get("redirect") || "/dashboard";
+  const redirectUrl = searchParams.get("redirect") || "/";
   const initialError = searchParams.get("error");
   const isVerified = searchParams.get("verified") === "true";
   const initialMessage =
@@ -33,7 +32,6 @@ export default function LoginPage() {
   );
   const [loading, setLoading] = useState(false);
 
-  // If already authenticated, redirect
   useEffect(() => {
     if (isAuthenticated) {
       router.replace(redirectUrl);
@@ -56,21 +54,10 @@ export default function LoginPage() {
       setError(null);
       setSuccessMessage(null);
       await signInWithPassword({ email: email.trim(), password });
-      router.replace(redirectUrl);
+      router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to sign in");
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      await signInWithOAuth("google");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to initiate Google sign in");
       setLoading(false);
     }
   };
@@ -84,28 +71,6 @@ export default function LoginPage() {
           Enrich your presentation skills with our most advanced tools, and
           become the next one on stage!
         </Text>
-
-        <div className="flex flex-col min-[1080px]:flex-row gap-4 w-full">
-          <Button
-            className="w-full"
-            borderGradient="nav"
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-          >
-            <Icon icon="akar-icons:google-fill" className="text-primary" />
-            Continue with Google
-          </Button>
-          <Button
-            className="w-full"
-            borderGradient="nav"
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-          >
-            <Icon icon="tabler:qrcode" className="text-primary" />
-            Scan qr
-          </Button>
-        </div>
-        <Text className="font-bold">OR</Text>
 
         {error && (
           <Text
@@ -125,7 +90,10 @@ export default function LoginPage() {
           </Text>
         )}
 
-        <form onSubmit={handleSignIn} className="flex flex-col items-center gap-6 w-full">
+        <form
+          onSubmit={handleSignIn}
+          className="flex flex-col items-center gap-6 w-full"
+        >
           <Input
             label="Email"
             type="email"

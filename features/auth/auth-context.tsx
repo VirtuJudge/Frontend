@@ -61,7 +61,6 @@ export interface AuthContextValue {
   verifyRegistration: (args: VerifyRegistrationArgs) => Promise<void>;
   resendVerificationOtp: (email: string) => Promise<void>;
   checkEmailVerificationStatus: (email: string) => Promise<VerificationStatus>;
-  signInWithOAuth: (provider?: "google") => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signInWithJwt: (jwtToken: string) => Promise<void>;
   signInWithMock: (customUser?: Partial<User>) => Promise<void>;
@@ -163,26 +162,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return null;
         }
 
-        // Graceful fallback from decoded JWT claims if backend is pending or initializing
-        const activeDecoded = parseJwt(token);
-        if (activeDecoded?.sub) {
-          const metadata = activeDecoded.user_metadata as
+        if (decodedToken?.sub) {
+          const metadata = decodedToken.user_metadata as
             | Record<string, unknown>
             | undefined;
           return {
-            id: activeDecoded.sub,
-            display_name:
-              (metadata?.display_name as string) ||
-              (metadata?.name as string) ||
-              (activeDecoded.display_name as string) ||
-              (activeDecoded.name as string) ||
-              (activeDecoded.email ? activeDecoded.email.split("@")[0] : "User"),
-            email: activeDecoded.email || "",
-            created_at: new Date().toISOString(),
+            id: decodedToken.sub,
+            display_name: metadata?.display_name as string,
+            email: decodedToken.email,
+            created_at: decodedToken.created_at,
           } as User;
         }
-
-        return null;
       }
     },
     enabled: Boolean(token),
@@ -330,8 +320,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isConfirmed: false,
         };
       } else {
-        const isConfirmed =
-          MOCK_DATA.user.email.toLowerCase() === trimmedEmail;
+        const isConfirmed = MOCK_DATA.user.email.toLowerCase() === trimmedEmail;
         const isWaiting = mockUnconfirmedEmails.has(trimmedEmail);
         return {
           exists: isConfirmed || isWaiting,
@@ -433,35 +422,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [checkEmailVerificationStatus],
   );
 
-  const signInWithOAuth = useCallback(
-    async (provider: "google" = "google") => {
-      const client = getSupabaseClient();
-      if (client) {
-        const redirectTo = `${window.location.origin}/auth/callback`;
-        const { error } = await client.auth.signInWithOAuth({
-          provider,
-          options: {
-            redirectTo,
-          },
-        });
-        if (error) {
-          throw new Error(error.message);
-        }
-      } else {
-        // Fallback for mock mode
-        const mockJwt = createSyntheticJwt({
-          sub: MOCK_DATA.user.id,
-          email: MOCK_DATA.user.email,
-          display_name: MOCK_DATA.user.display_name,
-          iss: "https://auth.virtujudge.local",
-        });
-        setClientAuthToken(mockJwt);
-        setToken(mockJwt);
-        await queryClient.invalidateQueries({ queryKey: ["me"] });
-      }
-    },
-    [queryClient],
-  );
 
   const resetPassword = useCallback(async (email: string) => {
     const client = getSupabaseClient();
@@ -553,7 +513,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         verifyRegistration,
         resendVerificationOtp,
         checkEmailVerificationStatus,
-        signInWithOAuth,
         resetPassword,
         signInWithJwt,
         signInWithMock,

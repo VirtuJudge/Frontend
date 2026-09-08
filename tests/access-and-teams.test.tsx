@@ -30,11 +30,6 @@ describe("Access and Teams - Screens and Components", () => {
 
       expect(screen.getByText(/welcome back/i)).toBeDefined();
       expect(
-        screen.getByRole("button", {
-          name: /continue with google/i,
-        }),
-      ).toBeDefined();
-      expect(
         screen.getByRole("button", { name: /login/i }),
       ).toBeDefined();
     });
