@@ -13,6 +13,7 @@ import {
   NAV_CONTAINER_CLASS,
   isRouteActive,
 } from "./nav-config";
+import { useOptionalAuth } from "@/features/auth";
 
 export default function SmallNav() {
   const pathname = usePathname();
@@ -20,6 +21,8 @@ export default function SmallNav() {
     "small_nav_menu_open",
     false,
   );
+  const auth = useOptionalAuth();
+  const isAuthenticated = auth?.isAuthenticated ?? false;
 
   return (
     <div className={NAV_CONTAINER_CLASS}>
@@ -71,15 +74,27 @@ export default function SmallNav() {
           </DropdownMenuItem>
         ))}
 
-        <Button
-          variant="primary"
-          href={CTA_NAV_ITEM.href}
-          className="w-full text-black"
-          size="sm"
-          onClick={() => setIsMenuOpen(false)}
-        >
-          {CTA_NAV_ITEM.label}
-        </Button>
+        {isAuthenticated ? (
+          <Button
+            variant="primary"
+            href="/dashboard"
+            className="w-full"
+            size="sm"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Dashboard
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            href={CTA_NAV_ITEM.href}
+            className="w-full"
+            size="sm"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            {CTA_NAV_ITEM.label}
+          </Button>
+        )}
       </DropdownMenu>
     </div>
   );

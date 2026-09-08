@@ -15,11 +15,14 @@ import {
   isRouteActive,
   isCompanyRouteActive,
 } from "./nav-config";
+import { useOptionalAuth } from "@/features/auth";
 
 export default function FullNav() {
   const pathname = usePathname();
   const [isCompanyOpen, setIsCompanyOpen] = useState(false);
   const isCompanyActive = isCompanyRouteActive(pathname);
+  const auth = useOptionalAuth();
+  const isAuthenticated = auth?.isAuthenticated ?? false;
 
   return (
     <div className={NAV_CONTAINER_CLASS}>
@@ -75,9 +78,15 @@ export default function FullNav() {
         </DropdownMenu>
       </div>
 
-      <Button variant="primary" href={CTA_NAV_ITEM.href}>
-        {CTA_NAV_ITEM.label}
-      </Button>
+      {isAuthenticated ? (
+        <Button variant="primary" href="/dashboard">
+          Dashboard
+        </Button>
+      ) : (
+        <Button variant="primary" href={CTA_NAV_ITEM.href}>
+          {CTA_NAV_ITEM.label}
+        </Button>
+      )}
     </div>
   );
 }
