@@ -19,6 +19,7 @@ import {
   ProblemDetails,
 } from "./types";
 import { getClientAuthToken } from "@/lib/auth/cookies";
+import { AUTH_COOKIE_NAME } from "@/lib/auth/middleware";
 
 export class ApiClientError extends Error {
   constructor(
@@ -117,7 +118,7 @@ export const MOCK_DATA = {
       team_id: "01J6GZ2B000000000000000002",
       user_id: "01J6GZ1C000000000000000003",
       role: "member",
-      display_name: "Taylor Design",
+      disinviter_display_name: "Taylor Design",
       joined_at: "2026-09-01T11:30:00Z",
       version: 1,
     },
@@ -296,6 +297,35 @@ export class ApiClient {
     return this.useMock;
   }
 
+  private async getAuthToken(): Promise<string | null> {
+    if (typeof window !== "undefined" && window.localStorage) {
+      try {
+        const stored = window.localStorage.getItem(AUTH_COOKIE_NAME);
+        if (stored) return stored;
+
+        // Fallback: check Supabase session if stored in localStorage
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (key && key.startsWith("sb-") && key.endsWith("-auth-token")) {
+            const raw = window.localStorage.getItem(key);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed?.access_token) return parsed.access_token;
+            }
+          }
+        }
+      } catch {
+        // Ignore localStorage errors
+      }
+    }
+
+    if (this.getToken) {
+      return await this.getToken();
+    }
+
+    return null;
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit & { idempotencyKey?: string; ifMatch?: string } = {},
@@ -306,8 +336,8 @@ export class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
-    if (this.getToken) {
-      const token = await this.getToken();
+    if (!headers["Authorization"]) {
+      const token = await this.getAuthToken();
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
@@ -360,16 +390,19 @@ export class ApiClient {
 
   // ================= Identity & Teams =================
 
-  public async getMe(): Promise<User> {
+  public async getMe(token?: string): Promise<User> {
     if (this.useMock) return MOCK_DATA.user;
-    const res = await this.request<Record<string, unknown>>(API_ENDPOINTS.me);
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    const res = await this.request<Record<string, unknown>>(API_ENDPOINTS.me, {
+      headers,
+    });
     return {
       id: String(res.id ?? ""),
-      display_name:
-        (res.display_name as string) ||
-        (res.username as string) ||
-        (typeof res.email === "string" ? res.email.split("@")[0] : "User"),
-      email: (res.email as string) || "",
+      display_name: res.display_name as string,
+      email: res.email as string,
       created_at: (res.created_at as string) || new Date().toISOString(),
     };
   }
@@ -406,7 +439,12 @@ export class ApiClient {
   }
 
   public async getTeam(teamId: string): Promise<Team> {
-    if (this.useMock || teamId.includes("team_") || teamId.includes("mock") || teamId.startsWith("01J6")) {
+    if (
+      this.useMock ||
+      teamId.includes("team_") ||
+      teamId.includes("mock") ||
+      teamId.startsWith("01J6")
+    ) {
       const team =
         MOCK_DATA.teams.find((t) => t.id === teamId) ?? MOCK_DATA.teams[0];
       return team;
@@ -422,8 +460,15 @@ export class ApiClient {
     teamId: string,
     cursor?: string,
   ): Promise<Page<TeamMembership>> {
-    if (this.useMock || teamId.includes("team_") || teamId.includes("mock") || teamId.startsWith("01J6")) {
-      const filtered = MOCK_DATA.teamMembers.filter((m) => m.team_id === teamId);
+    if (
+      this.useMock ||
+      teamId.includes("team_") ||
+      teamId.includes("mock") ||
+      teamId.startsWith("01J6")
+    ) {
+      const filtered = MOCK_DATA.teamMembers.filter(
+        (m) => m.team_id === teamId,
+      );
       const items = filtered.length > 0 ? filtered : MOCK_DATA.teamMembers;
       return { items, has_more: false };
     }
@@ -437,10 +482,7 @@ export class ApiClient {
     }
   }
 
-  public async removeTeamMember(
-    teamId: string,
-    userId: string,
-  ): Promise<void> {
+  public async removeTeamMember(teamId: string, userId: string): Promise<void> {
     if (this.useMock) {
       MOCK_DATA.teamMembers = MOCK_DATA.teamMembers.filter(
         (m) => !(m.team_id === teamId && m.user_id === userId),
@@ -456,7 +498,12 @@ export class ApiClient {
     teamId: string,
     cursor?: string,
   ): Promise<Page<TeamInvitation>> {
-    if (this.useMock || teamId.includes("team_") || teamId.includes("mock") || teamId.startsWith("01J6")) {
+    if (
+      this.useMock ||
+      teamId.includes("team_") ||
+      teamId.includes("mock") ||
+      teamId.startsWith("01J6")
+    ) {
       const filtered = MOCK_DATA.teamInvitations.filter(
         (inv) => inv.team_id === teamId,
       );
@@ -496,14 +543,11 @@ export class ApiClient {
       MOCK_DATA.teamInvitations.push(newInv);
       return newInv;
     }
-    return this.request<TeamInvitation>(
-      API_ENDPOINTS.teamInvitations(teamId),
-      {
-        method: "POST",
-        body: JSON.stringify({ email, role }),
-        idempotencyKey,
-      },
-    );
+    return this.request<TeamInvitation>(API_ENDPOINTS.teamInvitations(teamId), {
+      method: "POST",
+      body: JSON.stringify({ email, role }),
+      idempotencyKey,
+    });
   }
 
   public async resendInvitation(

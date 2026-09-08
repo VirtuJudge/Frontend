@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { ApiClient, API_ENDPOINTS, MOCK_DATA } from '@/lib/api/client';
 
 describe('API Client Boundary', () => {
@@ -83,5 +83,28 @@ describe('API Client Boundary', () => {
 
     const user = await client.getMe();
     expect(user.email).toBe('alex@example.com');
+  });
+
+  it('retrieves token from localStorage and attaches Bearer authorization header to request', async () => {
+    localStorage.setItem('auth_token', 'test_local_token_xyz');
+    const client = new ApiClient({ useMock: false });
+
+    let capturedHeaders: Record<string, string> = {};
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      capturedHeaders = (init?.headers as Record<string, string>) || {};
+      return new Response(JSON.stringify({ id: 'u1', email: 'test@example.com' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+
+    try {
+      const user = await client.getMe();
+      expect(user.id).toBe('u1');
+      expect(capturedHeaders['Authorization']).toBe('Bearer test_local_token_xyz');
+    } finally {
+      fetchSpy.mockRestore();
+      localStorage.removeItem('auth_token');
+    }
   });
 });
