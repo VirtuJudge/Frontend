@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Input, Text, Wrapper } from "@/components";
+import { Input, Modal } from "@/components";
 import { apiClient } from "@/lib/api/client";
 import { TeamInvitation } from "@/lib/api/types";
 
@@ -21,8 +21,6 @@ export function InviteMemberModal({
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,83 +44,37 @@ export function InviteMemberModal({
       onInvitationSent(invitation);
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to send invitation");
+      setError(
+        err instanceof Error ? err.message : "Failed to send invitation",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="invite-member-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Invite Team Member"
+      titleId="invite-member-title"
+      description="Invitations are sent via email and expire in 7 days."
+      error={error}
+      loading={loading}
+      onSubmit={handleSubmit}
+      submitText="Send Invitation"
+      loadingText="Sending..."
     >
-      <Wrapper
-        variant="glass"
-        borderGradient="primary"
-        className="w-full max-w-md p-6 flex flex-col gap-5 relative animate-in fade-in zoom-in-95 duration-150"
-      >
-        <div className="flex justify-between items-center">
-          <Text as="h2" size="md" id="invite-member-title" className="font-bold">
-            Invite Team Member
-          </Text>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close dialog"
-            className="text-foreground/50 hover:text-foreground text-xl font-bold cursor-pointer"
-          >
-            ×
-          </button>
-        </div>
-
-        <Text size="sm" className="text-foreground/70">
-          Invitations are sent via transactional email and expire in 7 days.
-        </Text>
-
-        {error && (
-          <div
-            role="alert"
-            className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm"
-          >
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Input
-            label="Email Address"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="colleague@example.com"
-            disabled={loading}
-            autoFocus
-          />
-
-          <div className="flex justify-end gap-3 mt-2">
-            <Button
-              type="button"
-              variant="glass"
-              size="sm"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              size="sm"
-              disabled={loading}
-            >
-              {loading ? "Sending..." : "Send Invitation"}
-            </Button>
-          </div>
-        </form>
-      </Wrapper>
-    </div>
+      <Input
+        label="Email Address"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="colleague@example.com"
+        disabled={loading}
+        autoFocus
+        className="w-full"
+      />
+    </Modal>
   );
 }
