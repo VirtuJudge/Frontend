@@ -148,7 +148,7 @@ export const Wrapper = React.forwardRef(function Wrapper(
   const mergedClassName = cn(
     config.className,
     borderGradientClass,
-    "rounded-[100px] py-[15px] px-[20px] outline-none focus:outline-none focus-visible:outline-none",
+    "rounded-2xl py-[15px] px-[20px] outline-none focus:outline-none focus-visible:outline-none",
     className,
   );
 
@@ -159,11 +159,18 @@ export const Wrapper = React.forwardRef(function Wrapper(
 
   const handleClick = (e: React.MouseEvent<HTMLElement>) => {
     if (Component === "div" || Component === "span") {
-      const input = (e.currentTarget as HTMLElement).querySelector<
-        HTMLInputElement | HTMLTextAreaElement
-      >("input, textarea");
-      if (input && e.target !== input) {
-        input.focus();
+      const target = e.target as HTMLElement;
+      if (
+        !target.closest(
+          "input, textarea, select, button, a, [role='button'], label",
+        )
+      ) {
+        const inputs = (e.currentTarget as HTMLElement).querySelectorAll<
+          HTMLInputElement | HTMLTextAreaElement
+        >("input, textarea");
+        if (inputs.length === 1) {
+          inputs[0].focus();
+        }
       }
     }
     onClick?.(e);

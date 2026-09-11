@@ -34,7 +34,7 @@ const SIZES: Record<ButtonSize, string> = {
 };
 
 const BASE_CLASSES =
-  "relative inline-flex items-center justify-center font-bold leading-none gap-[10px] rounded-[50px] select-none transition-all duration-200 cursor-pointer hover:brightness-110 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed aria-disabled:pointer-events-none aria-disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
+  "relative inline-flex items-center justify-center font-bold leading-none gap-[10px] rounded-[50px] select-none transition-all duration-200 cursor-pointer hover:brightness-110 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed aria-disabled:pointer-events-none aria-disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg whitespace-nowrap shrink-0";
 
 export const Button = React.forwardRef<HTMLElement, ButtonProps>(function Button(
   {
