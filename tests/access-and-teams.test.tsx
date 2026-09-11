@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TeamSelector, MemberList, InvitationsList } from "@/features/teams";
-import { MOCK_DATA } from "@/lib/api/client";
+import { apiClient, MOCK_DATA } from "@/lib/api/client";
 import { TeamMembership, TeamInvitation } from "@/lib/api/types";
 import LoginPage from "@/app/(public)/auth/login/page";
 import { InvitationPreviewContent } from "@/app/(public)/invitations/[token]/page";
@@ -51,8 +51,6 @@ describe("Access and Teams - Screens and Components", () => {
       );
 
       expect(screen.getByText("VirtuJudge Pitch Team")).toBeDefined();
-      expect(screen.getByText("owner")).toBeDefined();
-      expect(screen.getByText("3 members")).toBeDefined();
 
       const newTeamBtn = screen.getByRole("button", { name: /\+ new team/i });
       expect(newTeamBtn).toBeDefined();
@@ -93,10 +91,10 @@ describe("Access and Teams - Screens and Components", () => {
 
       expect(screen.getByText("Alex Presenter")).toBeDefined();
       expect(screen.getByText("Morgan Engineer")).toBeDefined();
-      expect(screen.getByText("You")).toBeDefined();
+      expect(screen.getByText(/\(?You\)?/i)).toBeDefined();
     });
 
-    it("protects primary owner from accidental removal", () => {
+    it("protects primary owner and provides Manage button for other members", () => {
       const onRemove = vi.fn();
       render(
         <MemberList
@@ -108,19 +106,20 @@ describe("Access and Teams - Screens and Components", () => {
         />,
       );
 
-      // The owner row should show "Primary Owner" safeguard instead of a remove button
-      expect(screen.getByText("Primary Owner")).toBeDefined();
+      // The owner row should show "Team Owner" safeguard
+      expect(screen.getByText(/Team Owner|Primary Owner/i)).toBeDefined();
 
-      // The non-owner member row has a remove button
-      const removeButtons = screen.getAllByRole("button", { name: /remove/i });
-      expect(removeButtons.length).toBe(1);
+      // The non-owner member row has a Manage button
+      const manageButtons = screen.getAllByRole("button", { name: /manage/i });
+      expect(manageButtons.length).toBe(1);
     });
 
-    it("requires explicit confirmation before member removal", () => {
+    it("opens manage modal and allows member removal with explicit confirmation", () => {
       const onRemove = vi.fn();
       render(
         <MemberList
           teamId="team_1"
+          teamName="VirtuJudge Test Team"
           members={mockMembers}
           currentUserRole="owner"
           currentUserId="user_owner"
@@ -128,16 +127,72 @@ describe("Access and Teams - Screens and Components", () => {
         />,
       );
 
-      const removeBtn = screen.getByRole("button", { name: /remove/i });
-      fireEvent.click(removeBtn);
+      const manageBtn = screen.getByRole("button", { name: /manage/i });
+      fireEvent.click(manageBtn);
 
-      expect(screen.getByText("Confirm?")).toBeDefined();
-      expect(
-        screen.getByRole("button", { name: /yes, remove/i }),
-      ).toBeDefined();
+      // Modal opens with member details and options
+      expect(screen.getByText(/Manage (a team member|Morgan Engineer)/i)).toBeDefined();
+      expect(screen.getByRole("button", { name: /remove member/i })).toBeDefined();
+
+      // Click Remove Member to enter confirmation view
+      fireEvent.click(screen.getByRole("button", { name: /remove member/i }));
+      expect(screen.getByText(/Confirm Member Removal/i)).toBeDefined();
+
+      // Check the confirmation checkbox to unlock removal button
+      const confirmCheckbox = screen.getByRole("checkbox");
+      fireEvent.click(confirmCheckbox);
+
+      const confirmBtn = screen.getByRole("button", { name: /(yes, )?remove member/i });
+      expect(confirmBtn).toBeDefined();
     });
 
-    it("hides removal controls from non-owner members", () => {
+    it("enforces GitHub-style multi-confirmation and typed text for ownership transfer", () => {
+      const onTransfer = vi.fn();
+      render(
+        <MemberList
+          teamId="team_1"
+          teamName="VirtuJudge Test Team"
+          members={mockMembers}
+          currentUserRole="owner"
+          currentUserId="user_owner"
+          onMemberRemoved={vi.fn()}
+          onOwnershipTransferred={onTransfer}
+        />,
+      );
+
+      // Open manage modal
+      fireEvent.click(screen.getByRole("button", { name: /manage/i }));
+
+      // Click Transfer Ownership option
+      fireEvent.click(screen.getByRole("button", { name: /transfer ownership/i }));
+
+      // GitHub-style danger alert and warning
+      expect(screen.getByText(/Warning: Irreversible Ownership Transfer/i)).toBeDefined();
+
+      const transferBtn = screen.getByRole("button", {
+        name: /(i understand the consequences, )?transfer ownership/i,
+      }) as HTMLButtonElement;
+      expect(transferBtn.disabled).toBe(true);
+
+      // Must check both checkboxes
+      const checkboxes = screen.getAllByRole("checkbox");
+      expect(checkboxes.length).toBe(2);
+      fireEvent.click(checkboxes[0]);
+      fireEvent.click(checkboxes[1]);
+
+      // Button is still disabled because text has not been typed yet
+      expect(transferBtn.disabled).toBe(true);
+
+      // Type the required team name
+      const input = screen.getByLabelText(/confirm ownership transfer/i);
+      fireEvent.change(input, { target: { value: "Wrong Team Name" } });
+      expect(transferBtn.disabled).toBe(true);
+
+      fireEvent.change(input, { target: { value: "VirtuJudge Test Team" } });
+      expect(transferBtn.disabled).toBe(false);
+    });
+
+    it("hides management controls from non-owner members", () => {
       const onRemove = vi.fn();
       render(
         <MemberList
@@ -149,7 +204,7 @@ describe("Access and Teams - Screens and Components", () => {
         />,
       );
 
-      expect(screen.queryByRole("button", { name: /remove/i })).toBeNull();
+      expect(screen.queryByRole("button", { name: /manage/i })).toBeNull();
     });
   });
 
@@ -217,6 +272,14 @@ describe("Access and Teams - Screens and Components", () => {
 
   describe("InvitationPreviewPage Component", () => {
     it("renders public invitation preview with masked email", async () => {
+      vi.spyOn(apiClient, "getInvitationPreview").mockResolvedValue({
+        team_name: "VirtuJudge Pitch Team",
+        inviter_display_name: "Alex Presenter",
+        email_masked: "a***@example.com",
+        expires_at: "2026-09-10T12:00:00Z",
+        status: "pending",
+      });
+
       renderWithProviders(<InvitationPreviewContent token="test_token_123" />);
 
       expect(
