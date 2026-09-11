@@ -189,7 +189,6 @@ export function InvitationsList({
         onClose={() => setSelectedManageInvitation(null)}
         onInvitationUpdated={() => {
           onInvitationUpdated();
-          setSelectedManageInvitation(null);
         }}
       />
     </div>

@@ -1,9 +1,21 @@
+import React from 'react';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
 afterEach(() => {
   cleanup();
 });
+
+// Mock @iconify/react to prevent async network fetches and timer leaks during tests
+vi.mock('@iconify/react', () => ({
+  Icon: ({ icon, className, ...props }: Record<string, unknown>) => {
+    return React.createElement('span', {
+      'data-icon': typeof icon === 'string' ? icon : 'custom-icon',
+      className,
+      ...props,
+    });
+  },
+}));
 
 // Mock Next.js navigation hooks
 vi.mock('next/navigation', () => ({

@@ -337,6 +337,9 @@ describe("Access and Teams - Screens and Components", () => {
       // Click resend
       fireEvent.click(screen.getByRole("button", { name: /resend email/i }));
       expect(resendSpy).toHaveBeenCalledWith("team_1", "inv_1", expect.any(String));
+      await waitFor(() => {
+        expect(screen.getByText(/Invitation email resent successfully!/i)).toBeDefined();
+      });
 
       // Click revoke to open confirmation view
       fireEvent.click(screen.getByRole("button", { name: /revoke/i }));
@@ -353,6 +356,9 @@ describe("Access and Teams - Screens and Components", () => {
       // Confirm revoke
       fireEvent.click(confirmRevokeBtn);
       expect(revokeSpy).toHaveBeenCalledWith("team_1", "inv_1");
+      await waitFor(() => {
+        expect(onUpdate).toHaveBeenCalled();
+      });
     });
 
     it("renders invite member button and opens invite modal", () => {
