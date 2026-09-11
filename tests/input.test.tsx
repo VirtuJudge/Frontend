@@ -11,7 +11,7 @@ describe("Input Component", () => {
 
     expect(input).toBeDefined();
     expect(wrapper).toBeDefined();
-    expect(wrapper.className).toContain("rounded-[100px]");
+    expect(wrapper.className).toContain("rounded-2xl");
     expect(wrapper.className).toContain("w-[480px]");
     expect(wrapper.className).toContain("h-[55px]");
     expect(wrapper.className).toContain("bg-glass");
@@ -40,7 +40,7 @@ describe("Input Component", () => {
 
     expect(wrapper.className).toContain("border-gradient");
     expect(wrapper.className).toContain("bg-glass");
-    expect(wrapper.className).toContain("rounded-[100px]");
+    expect(wrapper.className).toContain("rounded-2xl");
   });
 
   it("renders label above the input and links htmlFor with input id", () => {
