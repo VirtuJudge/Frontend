@@ -10,7 +10,7 @@ import { syncSessionToCookies } from "@/lib/auth/cookies";
 function CallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signInWithJwt, signInWithMock } = useAuth();
+  const { signInWithJwt } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,9 +48,6 @@ function CallbackHandler() {
         } else if (token) {
           syncSessionToCookies(token);
           await signInWithJwt(token);
-        } else if (code) {
-          // Dev / Mock fallback
-          await signInWithMock();
         } else if (client) {
           // Check if supabase already picked up the session
           const {
@@ -83,7 +80,7 @@ function CallbackHandler() {
     }
 
     processCallback();
-  }, [searchParams, signInWithJwt, signInWithMock, router]);
+  }, [searchParams, signInWithJwt, router]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
