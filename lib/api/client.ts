@@ -64,6 +64,7 @@ export const API_ENDPOINTS = {
   teamMembers: (teamId: string) => `/teams/${teamId}/members`,
   teamMember: (teamId: string, userId: string) =>
     `/teams/${teamId}/members/${userId}`,
+  teamOwner: (teamId: string) => `/teams/${teamId}/owner`,
   teamInvitations: (teamId: string) => `/teams/${teamId}/invitations`,
   resendInvitation: (teamId: string, id: string) =>
     `/teams/${teamId}/invitations/${id}/resend`,
@@ -79,7 +80,6 @@ export interface ClientConfig {
   useMock?: boolean;
 }
 
-// Default Seeded Mocks for local development and testing
 export const MOCK_DATA = {
   user: {
     id: "01J6GZ1A000000000000000001",
@@ -284,9 +284,7 @@ export class ApiClient {
     this.useMock =
       config?.useMock ??
       (typeof process !== "undefined" &&
-        (process.env.NEXT_PUBLIC_MOCK_API === "true" ||
-          process.env.NEXT_PUBLIC_MOCK_API === "'true'" ||
-          process.env.NODE_ENV === "test"));
+        process.env.NEXT_PUBLIC_MOCK_API === "true");
   }
 
   public setUseMock(enabled: boolean): void {
@@ -433,47 +431,29 @@ export class ApiClient {
   }
 
   public async getTeam(teamId: string): Promise<Team> {
-    if (
-      this.useMock ||
-      teamId.includes("team_") ||
-      teamId.includes("mock") ||
-      teamId.startsWith("01J6")
-    ) {
+    if (this.useMock) {
       const team =
         MOCK_DATA.teams.find((t) => t.id === teamId) ?? MOCK_DATA.teams[0];
       return team;
     }
-    try {
-      return await this.request<Team>(API_ENDPOINTS.team(teamId));
-    } catch {
-      return MOCK_DATA.teams.find((t) => t.id === teamId) ?? MOCK_DATA.teams[0];
-    }
+    return await this.request<Team>(API_ENDPOINTS.team(teamId));
   }
 
   public async getTeamMembers(
     teamId: string,
     cursor?: string,
   ): Promise<Page<TeamMembership>> {
-    if (
-      this.useMock ||
-      teamId.includes("team_") ||
-      teamId.includes("mock") ||
-      teamId.startsWith("01J6")
-    ) {
+    if (this.useMock) {
       const filtered = MOCK_DATA.teamMembers.filter(
         (m) => m.team_id === teamId,
       );
       const items = filtered.length > 0 ? filtered : MOCK_DATA.teamMembers;
       return { items, has_more: false };
     }
-    try {
-      const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
-      return await this.request<Page<TeamMembership>>(
-        `${API_ENDPOINTS.teamMembers(teamId)}${query}`,
-      );
-    } catch {
-      return { items: MOCK_DATA.teamMembers, has_more: false };
-    }
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+    return await this.request<Page<TeamMembership>>(
+      `${API_ENDPOINTS.teamMembers(teamId)}${query}`,
+    );
   }
 
   public async removeTeamMember(teamId: string, userId: string): Promise<void> {
@@ -488,30 +468,47 @@ export class ApiClient {
     });
   }
 
+  public async transferOwnership(
+    teamId: string,
+    newOwnerUserId: string,
+  ): Promise<TeamMembership> {
+    if (this.useMock) {
+      MOCK_DATA.teamMembers = MOCK_DATA.teamMembers.map((m) => {
+        if (m.team_id === teamId) {
+          if (m.user_id === newOwnerUserId) return { ...m, role: "owner" as const };
+          if (m.role === "owner") return { ...m, role: "member" as const };
+        }
+        return m;
+      });
+      const updated = MOCK_DATA.teamMembers.find(
+        (m) => m.team_id === teamId && m.user_id === newOwnerUserId,
+      );
+      return updated!;
+    }
+    return this.request<TeamMembership>(API_ENDPOINTS.teamOwner(teamId), {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ user_id: newOwnerUserId }),
+    });
+  }
+
   public async getTeamInvitations(
     teamId: string,
     cursor?: string,
   ): Promise<Page<TeamInvitation>> {
-    if (
-      this.useMock ||
-      teamId.includes("team_") ||
-      teamId.includes("mock") ||
-      teamId.startsWith("01J6")
-    ) {
+    if (this.useMock) {
       const filtered = MOCK_DATA.teamInvitations.filter(
         (inv) => inv.team_id === teamId,
       );
       const items = filtered.length > 0 ? filtered : MOCK_DATA.teamInvitations;
       return { items, has_more: false };
     }
-    try {
-      const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
-      return await this.request<Page<TeamInvitation>>(
-        `${API_ENDPOINTS.teamInvitations(teamId)}${query}`,
-      );
-    } catch {
-      return { items: MOCK_DATA.teamInvitations, has_more: false };
-    }
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+    return await this.request<Page<TeamInvitation>>(
+      `${API_ENDPOINTS.teamInvitations(teamId)}${query}`,
+    );
   }
 
   public async createInvitation(
@@ -592,7 +589,7 @@ export class ApiClient {
   }
 
   public async getInvitationPreview(token: string): Promise<InvitationPreview> {
-    if (this.useMock || token.includes("mock")) {
+    if (this.useMock) {
       return {
         team_name: "VirtuJudge Pitch Team",
         inviter_display_name: "Alex Presenter",
@@ -601,19 +598,9 @@ export class ApiClient {
         status: "pending",
       };
     }
-    try {
-      return await this.request<InvitationPreview>(
-        API_ENDPOINTS.invitationPreview(token),
-      );
-    } catch {
-      return {
-        team_name: "VirtuJudge Pitch Team",
-        inviter_display_name: "Alex Presenter",
-        email_masked: "a***@example.com",
-        expires_at: "2026-09-10T12:00:00Z",
-        status: "pending",
-      };
-    }
+    return await this.request<InvitationPreview>(
+      API_ENDPOINTS.invitationPreview(token),
+    );
   }
 
   public async acceptInvitation(token: string): Promise<TeamMembership> {
