@@ -2,9 +2,7 @@
 
 import React, { useState } from "react";
 import { Button, Text, Wrapper } from "@/components";
-import { TeamMembership, TeamInvitation, TeamRole } from "@/lib/api/types";
-import { InvitationsList } from "./invitations-list";
-import { InviteMemberModal } from "./invite-member-modal";
+import { TeamMembership, TeamRole } from "@/lib/api/types";
 import { ManageMemberModal } from "./manage-member-modal";
 
 interface MemberListProps {
@@ -13,9 +11,7 @@ interface MemberListProps {
   members: TeamMembership[];
   currentUserRole: TeamRole;
   currentUserId?: string;
-  invitations?: TeamInvitation[];
   onMemberRemoved: (userId: string) => void;
-  onInvitationUpdated?: () => void;
   onOwnershipTransferred?: (newOwnerUserId: string) => void;
 }
 
@@ -25,12 +21,9 @@ export function MemberList({
   members,
   currentUserRole,
   currentUserId,
-  invitations,
   onMemberRemoved,
-  onInvitationUpdated,
   onOwnershipTransferred,
 }: MemberListProps) {
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [selectedManageMember, setSelectedManageMember] =
     useState<TeamMembership | null>(null);
   const [error] = useState<string | null>(null);
@@ -48,16 +41,7 @@ export function MemberList({
             Members have access to this team and its projects.
           </Text>
         </div>
-        {isOwner && (
-          <Button
-            variant="glass"
-            size="sm"
-            onClick={() => setIsInviteModalOpen(true)}
-            className="text-sm"
-          >
-            + Invite Member
-          </Button>
-        )}
+      
       </div>
 
       <Wrapper
@@ -120,7 +104,11 @@ export function MemberList({
                       </span>
                     </td>
                     <td className={`py-4 px-2 ${!isOwner && "text-right"}`}>
-                      {new Date(member.joined_at).toLocaleDateString()}
+                      {new Date(member.joined_at).toLocaleDateString()}{" "}
+                      {new Date(member.joined_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </td>
                     {isOwner && (
                       <td className="py-4 px-2 text-right">
@@ -147,24 +135,7 @@ export function MemberList({
             </tbody>
           </table>
         </div>
-
-        {isOwner && invitations && (
-          <InvitationsList
-            teamId={teamId}
-            invitations={invitations}
-            onInvitationUpdated={onInvitationUpdated || (() => {})}
-          />
-        )}
       </Wrapper>
-
-      <InviteMemberModal
-        teamId={teamId}
-        isOpen={isInviteModalOpen}
-        onClose={() => setIsInviteModalOpen(false)}
-        onInvitationSent={() => {
-          onInvitationUpdated?.();
-        }}
-      />
 
       <ManageMemberModal
         teamId={teamId}

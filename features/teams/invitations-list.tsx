@@ -1,81 +1,51 @@
 "use client";
 
 import React, { useState } from "react";
-import { Text } from "@/components";
+import { Button, Text, Wrapper } from "@/components";
 import { TeamInvitation, DeliveryStatus } from "@/lib/api/types";
-import { apiClient } from "@/lib/api/client";
+import { ManageInvitationModal } from "./manage-invitation-modal";
+import { InviteMemberModal } from "./invite-member-modal";
 
 interface InvitationsListProps {
   teamId: string;
   invitations: TeamInvitation[];
   onInvitationUpdated: () => void;
+  isOwner?: boolean;
 }
 
 export function InvitationsList({
   teamId,
   invitations,
   onInvitationUpdated,
+  isOwner = true,
 }: InvitationsListProps) {
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [selectedManageInvitation, setSelectedManageInvitation] =
+    useState<TeamInvitation | null>(null);
+  const [error] = useState<string | null>(null);
 
   const pendingInvitations = invitations.filter((i) => i.status === "pending");
-
-  const handleResend = async (invitationId: string) => {
-    try {
-      setActionLoadingId(invitationId);
-      setError(null);
-      const idempotencyKey = `resend-${Date.now()}`;
-      await apiClient.resendInvitation(teamId, invitationId, idempotencyKey);
-      onInvitationUpdated();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to resend invitation");
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
-
-  const handleRevoke = async (invitationId: string) => {
-    try {
-      setActionLoadingId(invitationId);
-      setError(null);
-      await apiClient.revokeInvitation(teamId, invitationId);
-      onInvitationUpdated();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to revoke invitation");
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
-
-  const handleCopyLink = (invitationId: string) => {
-    const inviteUrl = `${window.location.origin}/invitations/${invitationId}`;
-    navigator.clipboard.writeText(inviteUrl);
-    setCopiedId(invitationId);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
 
   const renderDeliveryBadge = (status: DeliveryStatus, attempts: number) => {
     switch (status) {
       case "accepted_by_gmail":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             Sent successfully
           </span>
         );
       case "queued":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
             Dispatching via mail server...
           </span>
         );
       case "failed":
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-danger/20 text-danger-lighter border border-danger/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-danger" />
             Delivery failed ({attempts} attempt{attempts === 1 ? "" : "s"})
           </span>
         );
@@ -84,95 +54,144 @@ export function InvitationsList({
     }
   };
 
-  if (pendingInvitations.length === 0) {
-    return null;
-  }
-
   return (
-    <div className="flex flex-col gap-4 mt-6 pt-6 border-t border-foreground/10">
-      <div>
-        <Text as="h3" size="md" className="font-bold">
-          Pending Invitations ({pendingInvitations.length})
-        </Text>
-        <Text size="sm" className="text-foreground/70">
-          Outstanding invitations sent to prospective team members
-        </Text>
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-between items-center gap-4">
+        <div className="pl-2">
+          <Text as="h2" size="md" className="font-bold text-left">
+            Pending Invitations
+          </Text>
+          <Text size="sm" className="text-left">
+            Outstanding invitations sent to prospective team members.
+          </Text>
+        </div>
+        {isOwner && pendingInvitations.length > 0 && (
+          <Button
+            variant="glass"
+            size="sm"
+            onClick={() => setIsInviteModalOpen(true)}
+            className="text-sm"
+          >
+            + Invite Member
+          </Button>
+        )}
       </div>
 
-      {error && (
-        <div
-          role="alert"
-          className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm"
+      {pendingInvitations.length === 0 ? (
+        <Wrapper
+          variant="glass"
+          borderGradient="neutral"
+          className="p-8 text-center flex flex-col items-center gap-3"
         >
-          {error}
-        </div>
+          <Text size="md" className="font-semibold">
+            No pending invitations
+          </Text>
+          <Text size="sm">
+            Invite colleagues to join your team and collaborate on pitch
+            projects.
+          </Text>
+          {isOwner && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsInviteModalOpen(true)}
+            >
+              + Invite Member
+            </Button>
+          )}
+        </Wrapper>
+      ) : (
+        <Wrapper
+          variant="glass"
+          borderGradient="neutral"
+          className="p-6 pb-2 md:p-8 md:pb-4 rounded-2xl flex flex-col gap-6"
+        >
+          {error && (
+            <div
+              role="alert"
+              className="p-3 rounded-lg bg-danger/10 border border-danger/30 text-danger-lighter text-sm"
+            >
+              {error}
+            </div>
+          )}
+
+          <div className="overflow-x-auto gap-9">
+            <table
+              className="w-full text-center"
+              aria-label="Pending invitations list"
+            >
+              <thead>
+                <tr className="border-b border-primary/20 font-bold text-lg">
+                  <th className="pb-4 text-left px-2">Recipient Email</th>
+                  <th className="pb-4">Role</th>
+                  <th className="pb-4">Delivery Status</th>
+                  <th className="pb-4">Expires on</th>
+                  <th className="pb-4 text-right px-2">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-primary/20">
+                {pendingInvitations.map((inv) => (
+                  <tr key={inv.id}>
+                    <td className="py-4 px-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-left">
+                          {inv.email}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-2">
+                      <span className="px-2.5 py-1 rounded-full uppercase tracking-wider font-semibold bg-primary/20 text-primary border border-primary/30">
+                        {inv.role}
+                      </span>
+                    </td>
+                    <td className="py-4 px-2">
+                      {renderDeliveryBadge(
+                        inv.delivery_status,
+                        inv.delivery_attempts,
+                      )}
+                    </td>
+                    <td className="py-4 px-2">
+                      {new Date(inv.expires_at).toLocaleDateString()}{" "}
+                      {new Date(inv.expires_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                    <td className="py-4 px-2 text-right">
+                      <Button
+                        size="sm"
+                        onClick={() => setSelectedManageInvitation(inv)}
+                      >
+                        Manage
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Wrapper>
       )}
 
-      <div className="overflow-x-auto">
-        <table
-          className="w-full text-left text-sm"
-          aria-label="Pending invitations list"
-        >
-          <thead>
-            <tr className="border-b border-foreground/10 text-foreground/50">
-              <th className="pb-3 font-semibold">Recipient</th>
-              <th className="pb-3 font-semibold">Delivery Status</th>
-              <th className="pb-3 font-semibold">Expires</th>
-              <th className="pb-3 font-semibold text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-foreground/5">
-            {pendingInvitations.map((inv) => {
-              const isLoading = actionLoadingId === inv.id;
+      <InviteMemberModal
+        teamId={teamId}
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        onInvitationSent={() => {
+          onInvitationUpdated?.();
+        }}
+      />
 
-              return (
-                <tr key={inv.id} className="hover:bg-foreground/5">
-                  <td className="py-4">
-                    <span className="font-semibold text-foreground">
-                      {inv.email}
-                    </span>
-                  </td>
-                  <td className="py-4">
-                    {renderDeliveryBadge(inv.delivery_status, inv.delivery_attempts)}
-                  </td>
-                  <td className="py-4 text-foreground/60 text-xs">
-                    {new Date(inv.expires_at).toLocaleDateString()}
-                  </td>
-                  <td className="py-4 text-right">
-                    <div className="inline-flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleCopyLink(inv.id)}
-                        className="text-xs text-primary hover:underline font-medium cursor-pointer"
-                      >
-                        {copiedId === inv.id ? "Copied!" : "Copy Link"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleResend(inv.id)}
-                        disabled={isLoading}
-                        className="text-xs text-foreground/70 hover:text-foreground font-medium cursor-pointer disabled:opacity-50"
-                      >
-                        {isLoading ? "Processing..." : "Resend"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleRevoke(inv.id)}
-                        disabled={isLoading}
-                        className="text-xs text-red-400 hover:text-red-300 font-medium cursor-pointer disabled:opacity-50"
-                      >
-                        Revoke
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <ManageInvitationModal
+        teamId={teamId}
+        invitation={selectedManageInvitation}
+        isOpen={selectedManageInvitation !== null}
+        onClose={() => setSelectedManageInvitation(null)}
+        onInvitationUpdated={() => {
+          onInvitationUpdated();
+          setSelectedManageInvitation(null);
+        }}
+      />
     </div>
   );
 }

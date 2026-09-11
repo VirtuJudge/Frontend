@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Input, Modal } from "@/components";
-import { apiClient } from "@/lib/api/client";
+import { apiClient, ApiClientError } from "@/lib/api/client";
 import { TeamInvitation } from "@/lib/api/types";
 
 interface InviteMemberModalProps {
@@ -44,6 +44,30 @@ export function InviteMemberModal({
       onInvitationSent(invitation);
       onClose();
     } catch (err: unknown) {
+      if (err instanceof ApiClientError) {
+        if (err.status === 409) {
+          if (err.message.includes("already_team_member")) {
+            setError("This user is already a member of this team.");
+            return;
+          }
+          if (err.message.includes("invitation_already_exists")) {
+            setError("A pending invitation has already been sent to this email.");
+            return;
+          }
+        }
+        if (err.status === 403) {
+          setError("Only team owners have permission to invite new members.");
+          return;
+        }
+        if (err.status === 429) {
+          setError("Invitation rate limit exceeded. Please wait a moment before trying again.");
+          return;
+        }
+        if (err.status === 500) {
+          setError("Server error. Please ensure background services (Redis/Database) are running.");
+          return;
+        }
+      }
       setError(
         err instanceof Error ? err.message : "Failed to send invitation",
       );
@@ -72,7 +96,6 @@ export function InviteMemberModal({
         onChange={(e) => setEmail(e.target.value)}
         placeholder="colleague@example.com"
         disabled={loading}
-        autoFocus
         className="w-full"
       />
     </Modal>
