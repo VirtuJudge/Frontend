@@ -6,10 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Button, Text, Wrapper } from "@/components";
 import { apiClient, ApiClientError } from "@/lib/api/client";
 import { useAuth } from "@/features/auth";
+import NotFoundPage from "@/app/not-found";
+import LoadingPage from "@/app/loading";
 
 export function InvitationPreviewContent({ token }: { token: string }) {
   const router = useRouter();
-  const { user, isAuthenticated, signOut } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const [isAccepting, setIsAccepting] = useState(false);
   const [acceptError, setAcceptError] = useState<string | null>(null);
@@ -36,7 +38,9 @@ export function InvitationPreviewContent({ token }: { token: string }) {
           "Email mismatch: The account you are signed in with does not match the invited email address.",
         );
       } else if (err instanceof ApiClientError && err.status === 410) {
-        setAcceptError("This invitation has expired or has already been consumed.");
+        setAcceptError(
+          "This invitation has expired or has already been consumed.",
+        );
       } else {
         setAcceptError(
           err instanceof Error ? err.message : "Failed to accept invitation",
@@ -47,43 +51,14 @@ export function InvitationPreviewContent({ token }: { token: string }) {
     }
   };
 
-  const handleSwitchAccount = async () => {
-    await signOut();
-    router.push(`/auth/login?redirect=${encodeURIComponent(`/invitations/${token}`)}`);
-  };
-
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <Text size="md">Loading invitation preview...</Text>
-      </div>
-    );
+    return <LoadingPage />;
   }
 
-  // Handle preview errors (404 or 410)
   if (previewError || !preview) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
-        <Wrapper
-          variant="glass"
-          borderGradient="neutral"
-          className="w-full max-w-md p-8 flex flex-col items-center gap-4 text-center"
-        >
-          <Text as="h1" size="lg" className="font-bold text-red-400">
-            Invitation Unavailable
-          </Text>
-          <Text size="sm" className="text-foreground/70">
-            This invitation link is invalid, has expired, or has already been revoked.
-          </Text>
-          <Button href="/" variant="glass" size="sm" className="mt-2">
-            Return to Home
-          </Button>
-        </Wrapper>
-      </div>
-    );
+    return <NotFoundPage />;
   }
 
-  // Handle non-pending status (e.g. revoked or expired)
   if (preview.status !== "pending") {
     const statusMessages = {
       expired: "This invitation link has expired.",
@@ -118,43 +93,56 @@ export function InvitationPreviewContent({ token }: { token: string }) {
       <Wrapper
         variant="glass"
         borderGradient="primary"
-        className="w-full max-w-lg p-8 flex flex-col gap-6"
+        className="w-full max-w-lg p-6 flex flex-col gap-6"
       >
         <div className="flex flex-col gap-2 text-center">
           <Text as="h1" size="lg" className="font-bold">
             Join {preview.team_name}
           </Text>
-          <Text size="sm" className="text-foreground/70">
-            <span className="font-semibold text-foreground">
-              {preview.inviter_display_name}
+          <Text size="sm">
+            <span className="font-semibold">
+              {preview.invited_by_name || preview.inviter_display_name}
             </span>{" "}
             has invited you to collaborate on VirtuJudge.
           </Text>
         </div>
 
-        <div className="p-4 rounded-xl bg-foreground/5 border border-foreground/10 flex flex-col gap-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-foreground/60">Invited recipient:</span>
-            <span className="font-semibold text-foreground">
-              {preview.email_masked}
-            </span>
+        <div className="rounded-xl flex flex-col gap-2">
+          <div className="flex justify-between flex-wrap">
+            <Text size="sm">Invited recipient:</Text>
+            <Text size="sm">
+              {preview.invited_email || preview.email_masked}
+            </Text>
           </div>
-          <div className="flex justify-between">
-            <span className="text-foreground/60">Expires:</span>
-            <span>{new Date(preview.expires_at).toLocaleDateString()}</span>
+          {preview.role && (
+            <div className="flex justify-between items-center">
+              <Text size="sm">Assigned role:</Text>
+              <Text size="sm" className="text-right">
+                {preview.role.charAt(0).toUpperCase() + preview.role.slice(1)}
+              </Text>
+            </div>
+          )}
+          <div className="flex justify-between gap-2">
+            <Text size="sm">Expires:</Text>
+            <Text size="sm" className="text-right">
+              {new Date(preview.expires_at).toLocaleDateString()}{" "}
+              {new Date(preview.expires_at).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
           </div>
         </div>
 
         {acceptError && (
           <div
             role="alert"
-            className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex flex-col gap-2"
+            className="p-4 text-center rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex flex-col gap-2"
           >
             <span>{acceptError}</span>
             {acceptError.includes("Email mismatch") && (
               <button
                 type="button"
-                onClick={handleSwitchAccount}
                 className="text-primary hover:underline font-semibold text-left cursor-pointer"
               >
                 Sign in with a different account →
@@ -163,7 +151,6 @@ export function InvitationPreviewContent({ token }: { token: string }) {
           </div>
         )}
 
-        {/* Action Buttons depending on auth state */}
         {!isAuthenticated ? (
           <div className="flex flex-col gap-3">
             <Button
@@ -171,38 +158,30 @@ export function InvitationPreviewContent({ token }: { token: string }) {
               variant="primary"
               className="w-full justify-center"
             >
-              Sign In to Accept Invitation
+              Sign In
             </Button>
-            <Text size="sm" className="text-center text-foreground/50 text-xs">
+            <Text size="sm" className="text-center">
               You must be signed in with the invited email address to join.
             </Text>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            <div className="text-xs text-foreground/60 text-center">
-              Signed in as{" "}
-              <span className="font-semibold text-foreground">
-                {user?.email}
-              </span>
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex justify-center items-center w-full">
+              <Text size="sm" className="truncate text-wrap">
+                Signed in as {user?.email}
+              </Text>
             </div>
 
             <Button
               type="button"
               variant="primary"
+              size="sm"
               onClick={handleAccept}
               disabled={isAccepting}
               className="w-full justify-center"
             >
-              {isAccepting ? "Joining Team..." : "Accept Invitation & Join Team"}
+              {isAccepting ? "Joining Team..." : "Accept Invitation"}
             </Button>
-
-            <button
-              type="button"
-              onClick={handleSwitchAccount}
-              className="text-xs text-foreground/50 hover:text-foreground text-center cursor-pointer hover:underline"
-            >
-              Not your account? Switch user
-            </button>
           </div>
         )}
       </Wrapper>

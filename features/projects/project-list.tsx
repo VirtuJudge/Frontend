@@ -14,7 +14,6 @@ interface ProjectListProps {
 
 export function ProjectList({
   teamId,
-  teamName,
   projects,
   onProjectCreated,
 }: ProjectListProps) {
@@ -32,14 +31,16 @@ export function ProjectList({
             members.
           </Text>
         </div>
-        <Button
-          variant="glass"
-          size="sm"
-          onClick={() => setIsModalOpen(true)}
-          className="text-sm"
-        >
-          + New Project
-        </Button>
+        {projects.length > 0 && (
+          <Button
+            variant="glass"
+            size="sm"
+            onClick={() => setIsModalOpen(true)}
+            className="text-sm"
+          >
+            + New Project
+          </Button>
+        )}
       </div>
 
       {projects.length === 0 ? (

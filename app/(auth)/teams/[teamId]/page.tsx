@@ -8,7 +8,7 @@ import { apiClient } from "@/lib/api/client";
 import { useAuth } from "@/features/auth";
 import LoadingPage from "@/app/loading";
 import NotFoundPage from "@/app/not-found";
-import { MemberList } from "@/features/teams";
+import { InvitationsList, MemberList } from "@/features/teams";
 import { ProjectList } from "@/features/projects";
 
 export function TeamDetailsContent({ teamId }: { teamId: string }) {
@@ -127,11 +127,18 @@ export function TeamDetailsContent({ teamId }: { teamId: string }) {
         members={members}
         currentUserRole={userRole}
         currentUserId={user?.id}
-        invitations={invitations}
         onMemberRemoved={handleMemberRemoved}
-        onInvitationUpdated={handleInvitationUpdated}
         onOwnershipTransferred={handleOwnershipTransferred}
       />
+
+      {isOwner && (
+        <InvitationsList
+          teamId={teamId}
+          invitations={invitations}
+          onInvitationUpdated={handleInvitationUpdated}
+          isOwner={isOwner}
+        />
+      )}
     </div>
   );
 }

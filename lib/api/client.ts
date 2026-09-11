@@ -13,6 +13,7 @@ import {
   Report,
   Page,
   InvitationPreview,
+  InvitationStatus,
   TeamMembership,
   TeamInvitation,
   TeamRole,
@@ -579,11 +580,16 @@ export class ApiClient {
       );
       return;
     }
+    const cleanIfMatch = ifMatch
+      ? ifMatch === "*"
+        ? "*"
+        : `"${ifMatch.replace(/^"|"$/g, "")}"`
+      : "*";
     return this.request<void>(
       API_ENDPOINTS.revokeInvitation(teamId, invitationId),
       {
         method: "DELETE",
-        ifMatch,
+        ifMatch: cleanIfMatch,
       },
     );
   }
@@ -592,15 +598,34 @@ export class ApiClient {
     if (this.useMock) {
       return {
         team_name: "VirtuJudge Pitch Team",
+        invited_by_name: "Alex Presenter",
         inviter_display_name: "Alex Presenter",
+        invited_email: "a***@example.com",
         email_masked: "a***@example.com",
+        role: "member",
         expires_at: "2026-09-10T12:00:00Z",
         status: "pending",
       };
     }
-    return await this.request<InvitationPreview>(
+    const raw = await this.request<Record<string, unknown>>(
       API_ENDPOINTS.invitationPreview(token),
     );
+    const invitedByName =
+      (raw.invited_by_name as string) ||
+      (raw.inviter_display_name as string) ||
+      "Team Owner";
+    const invitedEmail =
+      (raw.invited_email as string) || (raw.email_masked as string) || "";
+    return {
+      team_name: (raw.team_name as string) || "Team",
+      invited_by_name: invitedByName,
+      inviter_display_name: invitedByName,
+      invited_email: invitedEmail,
+      email_masked: invitedEmail,
+      role: (raw.role as string) || "member",
+      expires_at: (raw.expires_at as string) || "",
+      status: (raw.status as InvitationStatus) || "pending",
+    };
   }
 
   public async acceptInvitation(token: string): Promise<TeamMembership> {

@@ -70,12 +70,17 @@ export interface TeamInvitation {
   delivery_attempts: number;
   expires_at: UtcTimestamp;
   created_at: UtcTimestamp;
+  version?: number;
+  etag?: string;
 }
 
 export interface InvitationPreview {
   team_name: string;
-  inviter_display_name: string;
-  email_masked: string;
+  invited_by_name?: string;
+  inviter_display_name?: string;
+  invited_email?: string;
+  email_masked?: string;
+  role?: string;
   expires_at: UtcTimestamp;
   status: InvitationStatus;
 }
