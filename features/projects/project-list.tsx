@@ -1,19 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import { Button, Text, Wrapper } from "@/components";
 import { Project } from "@/lib/api/types";
 import { CreateProjectModal } from "./create-project-modal";
 
 interface ProjectListProps {
   teamId: string;
+  teamName?: string;
   projects: Project[];
   onProjectCreated: (newProject: Project) => void;
 }
 
 export function ProjectList({
   teamId,
+  teamName,
   projects,
   onProjectCreated,
 }: ProjectListProps) {
@@ -21,13 +22,14 @@ export function ProjectList({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <Text as="h2" size="md" className="font-bold">
+      <div className="flex justify-between items-center gap-4">
+        <div className="pl-2">
+          <Text as="h2" size="md" className="font-bold text-left">
             Projects
           </Text>
-          <Text size="sm" className="text-foreground/70">
-            Pitch projects and assets for this team
+          <Text size="sm" className="text-left">
+            Add projects to your team and practice your pitch with your team
+            members.
           </Text>
         </div>
         <Button
@@ -49,8 +51,9 @@ export function ProjectList({
           <Text size="md" className="font-semibold">
             No projects yet
           </Text>
-          <Text size="sm" className="text-foreground/60 max-w-sm">
-            Get started by creating your first pitch project to upload presentations and start practice sessions.
+          <Text size="sm">
+            Get started by creating your first pitch project to upload assets
+            and start practice sessions.
           </Text>
           <Button
             variant="primary"
@@ -62,35 +65,38 @@ export function ProjectList({
           </Button>
         </Wrapper>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {projects.map((proj) => (
             <Wrapper
               key={proj.id}
-              variant="glass"
-              borderGradient="neutral"
-              className="p-5 flex flex-col justify-between gap-4 hover:border-primary/40 transition-colors"
+              className="p-5 flex flex-col justify-between gap-4"
             >
-              <div className="flex flex-col gap-1">
-                <Text as="h3" size="md" className="font-bold truncate">
+              <div className="flex flex-col gap-1 h-full">
+                <Text
+                  as="h3"
+                  size="md"
+                  className="font-bold truncate text-wrap text-left"
+                >
                   {proj.name}
                 </Text>
                 {proj.description && (
-                  <Text size="sm" className="text-foreground/70 line-clamp-2">
+                  <Text size="sm" className="text-left line-clamp-3">
                     {proj.description}
                   </Text>
                 )}
               </div>
 
-              <div className="flex justify-between items-center text-xs text-foreground/60 pt-3 border-t border-foreground/10">
-                <span>
-                  Created {new Date(proj.created_at).toLocaleDateString()}
-                </span>
-                <Link
-                  href={`/projects/${proj.id}`}
-                  className="text-primary hover:underline font-semibold"
+              <div className="flex justify-between items-center text-xs text-foreground/60">
+                <Text size="xs">
+                  Created: {new Date(proj.created_at).toLocaleDateString()}
+                </Text>
+                <Button
+                  href={`/teams/${teamId}/projects/${proj.id}`}
+                  size="sm"
+                  variant="primary"
                 >
-                  Open Project →
-                </Link>
+                  View Project
+                </Button>
               </div>
             </Wrapper>
           ))}
