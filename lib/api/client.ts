@@ -3,8 +3,13 @@ import {
   Team,
   Project,
   Asset,
+  AssetKind,
+  AssetVersion,
   UploadIntent,
+  DownloadIntent,
+  AssetFilterParams,
   CreateUploadIntentRequest,
+  CreateVersionUploadIntentRequest,
   CompleteUploadRequest,
   PracticeSession,
   SpeakerMapping,
@@ -21,6 +26,7 @@ import {
 } from "./types";
 import { getClientAuthToken } from "@/lib/auth/cookies";
 import { AUTH_COOKIE_NAME } from "@/lib/auth/middleware";
+import { generateIdempotencyKey } from "@/lib/upload/idempotency";
 
 export class ApiClientError extends Error {
   constructor(
@@ -47,10 +53,17 @@ export const API_ENDPOINTS = {
   teamProjects: (teamId: string) => `/teams/${teamId}/projects`,
   project: (id: string) => `/projects/${id}`,
   projectAssets: (projectId: string) => `/projects/${projectId}/assets`,
+  asset: (assetId: string) => `/assets/${assetId}`,
+  assetVersions: (assetId: string) => `/assets/${assetId}/versions`,
   uploadIntents: (projectId: string) =>
     `/projects/${projectId}/assets/upload-intents`,
+  versionUploadIntents: (assetId: string) =>
+    `/assets/${assetId}/versions/upload-intents`,
   completeUpload: (assetId: string, versionId: string) =>
     `/assets/${assetId}/versions/${versionId}/complete`,
+  downloadIntents: (assetId: string) => `/assets/${assetId}/download-intents`,
+  versionDownloadIntents: (assetId: string, versionId: string) =>
+    `/assets/${assetId}/versions/${versionId}/download-intents`,
   projectSessions: (projectId: string) =>
     `/projects/${projectId}/practice-sessions`,
   practiceSession: (sessionId: string) => `/practice-sessions/${sessionId}`,
@@ -95,6 +108,14 @@ export const MOCK_DATA = {
       role: "owner",
       member_count: 3,
       created_at: "2026-09-01T10:15:00Z",
+      version: 1,
+    },
+    {
+      id: "01J6GZ2B000000000000000009",
+      name: "AI Pitch Accelerator",
+      role: "member",
+      member_count: 5,
+      created_at: "2026-09-05T14:30:00Z",
       version: 1,
     },
   ] as Team[],
@@ -169,7 +190,79 @@ export const MOCK_DATA = {
       created_at: "2026-09-01T11:00:00Z",
       version: 1,
     },
+    {
+      id: "01J6GZ3C000000000000000004",
+      team_id: "01J6GZ2B000000000000000002",
+      name: "Demo Day Showcase",
+      description: "Final rehearsal before angel investor presentation",
+      created_by: "01J6GZ1A000000000000000001",
+      created_at: "2026-09-03T16:00:00Z",
+      version: 1,
+    },
+    {
+      id: "01J6GZ3C000000000000000005",
+      team_id: "01J6GZ2B000000000000000009",
+      name: "Seed Round Pitch",
+      description: "Early stage startup competition preparation",
+      created_by: "01J6GZ1A000000000000000001",
+      created_at: "2026-09-06T09:00:00Z",
+      version: 1,
+    },
   ] as Project[],
+  assets: [
+    {
+      id: "01J6GZ5E000000000000000005",
+      project_id: "01J6GZ3C000000000000000003",
+      kind: "presentation_video",
+      file_name: "pitch_demo.mp4",
+      media_type: "video/mp4",
+      size_bytes: 45000000,
+      state: "verified",
+      checksum:
+        "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      duration_ms: 360000,
+      created_at: "2026-09-01T11:30:00Z",
+      version_id: "01J6GZVER00000000000000001",
+      versions: [
+        {
+          id: "01J6GZVER00000000000000001",
+          asset_id: "01J6GZ5E000000000000000005",
+          version_number: 1,
+          checksum:
+            "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          size_bytes: 45000000,
+          media_type: "video/mp4",
+          duration_ms: 360000,
+          created_at: "2026-09-01T11:30:00Z",
+        },
+      ],
+    },
+    {
+      id: "01J6GZ6F000000000000000006",
+      project_id: "01J6GZ3C000000000000000003",
+      kind: "supporting_document",
+      file_name: "investor_deck.pdf",
+      media_type: "application/pdf",
+      size_bytes: 12500000,
+      state: "verified",
+      checksum:
+        "sha256:f4c8996fb92427ae41e4649b934ca495991b7852b855e3b0c44298fc1c149afb",
+      created_at: "2026-09-01T11:45:00Z",
+      version_id: "01J6GZVER00000000000000002",
+      versions: [
+        {
+          id: "01J6GZVER00000000000000002",
+          asset_id: "01J6GZ6F000000000000000006",
+          version_number: 1,
+          checksum:
+            "sha256:f4c8996fb92427ae41e4649b934ca495991b7852b855e3b0c44298fc1c149afb",
+          size_bytes: 12500000,
+          media_type: "application/pdf",
+          created_at: "2026-09-01T11:45:00Z",
+        },
+      ],
+    },
+  ] as Asset[],
   session: {
     id: "01J6GZ4D000000000000000004",
     project_id: "01J6GZ3C000000000000000003",
@@ -271,6 +364,10 @@ export const MOCK_DATA = {
     pdf_download_url:
       "/api/v1/practice-sessions/01J6GZ4D000000000000000004/report.pdf",
   } as Report,
+  pendingUploads: {} as Record<
+    string,
+    { projectId: string; fileName: string; mediaType: string; kind: AssetKind }
+  >,
 };
 
 export class ApiClient {
@@ -650,7 +747,13 @@ export class ApiClient {
     teamId: string,
     cursor?: string,
   ): Promise<Page<Project>> {
-    if (this.useMock) return { items: MOCK_DATA.projects, has_more: false };
+    if (this.useMock) {
+      const filtered = MOCK_DATA.projects.filter((p) => p.team_id === teamId);
+      return {
+        items: filtered.length > 0 ? filtered : MOCK_DATA.projects,
+        has_more: false,
+      };
+    }
     const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
     return this.request<Page<Project>>(
       `${API_ENDPOINTS.teamProjects(teamId)}${query}`,
@@ -694,27 +797,84 @@ export class ApiClient {
     return this.request<Project>(API_ENDPOINTS.project(projectId));
   }
 
-  public async getAssets(projectId: string): Promise<Page<Asset>> {
+  public async getAssets(
+    projectId: string,
+    filters?: AssetFilterParams,
+  ): Promise<Page<Asset>> {
     if (this.useMock) {
+      let filtered = MOCK_DATA.assets.filter(
+        (a) => a.project_id === projectId || projectId === "proj-123",
+      );
+      if (filtered.length === 0) {
+        filtered = MOCK_DATA.assets.map((a) => ({
+          ...a,
+          project_id: projectId,
+        }));
+      }
+      if (filters?.kind) {
+        filtered = filtered.filter((a) => a.kind === filters.kind);
+      }
+      if (filters?.state) {
+        filtered = filtered.filter((a) => a.state === filters.state);
+      }
       return {
-        items: [
-          {
-            id: "01J6GZ5E000000000000000005",
-            project_id: projectId,
-            kind: "presentation_video",
-            file_name: "pitch_demo.mp4",
-            media_type: "video/mp4",
-            size_bytes: 45000000,
-            state: "verified",
-            checksum:
-              "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-            created_at: "2026-09-01T11:30:00Z",
-          },
-        ],
+        items: filtered,
         has_more: false,
       };
     }
-    return this.request<Page<Asset>>(API_ENDPOINTS.projectAssets(projectId));
+    const params = new URLSearchParams();
+    if (filters?.kind) params.set("kind", filters.kind);
+    if (filters?.state) params.set("state", filters.state);
+    if (filters?.cursor) params.set("cursor", filters.cursor);
+    if (filters?.limit) params.set("limit", String(filters.limit));
+    const query = params.toString() ? `?${params.toString()}` : "";
+    const page = await this.request<Page<Asset>>(
+      `${API_ENDPOINTS.projectAssets(projectId)}${query}`,
+    );
+    const itemsWithVersions = await Promise.all(
+      page.items.map(async (asset) => {
+        if (asset.versions && asset.versions.length > 0) {
+          return asset;
+        }
+        try {
+          const vPage = await this.getAssetVersions(asset.id);
+          return {
+            ...asset,
+            versions: vPage.items,
+          };
+        } catch {
+          return asset;
+        }
+      }),
+    );
+    return {
+      ...page,
+      items: itemsWithVersions,
+    };
+  }
+
+  public async getAssetVersions(
+    assetId: string,
+  ): Promise<Page<AssetVersion>> {
+    if (this.useMock) {
+      const asset = MOCK_DATA.assets.find((a) => a.id === assetId);
+      return {
+        items: asset?.versions || [],
+        has_more: false,
+      };
+    }
+    return this.request<Page<AssetVersion>>(
+      API_ENDPOINTS.assetVersions(assetId),
+    );
+  }
+
+  public async getAsset(assetId: string): Promise<Asset> {
+    if (this.useMock) {
+      const asset = MOCK_DATA.assets.find((a) => a.id === assetId);
+      if (asset) return asset;
+      return MOCK_DATA.assets[0];
+    }
+    return this.request<Asset>(API_ENDPOINTS.asset(assetId));
   }
 
   public async createUploadIntent(
@@ -723,50 +883,194 @@ export class ApiClient {
     idempotencyKey: string,
   ): Promise<UploadIntent> {
     if (this.useMock) {
+      const assetId =
+        "01J6GZ5E" +
+        Math.random().toString(36).substring(2, 10).toUpperCase();
+      const versionId =
+        "01J6GZVER" +
+        Math.random().toString(36).substring(2, 10).toUpperCase();
+
+      const existingAsset = MOCK_DATA.assets.find(
+        (a) => a.project_id === projectId && a.file_name === req.file_name,
+      );
+
+      MOCK_DATA.pendingUploads = MOCK_DATA.pendingUploads || {};
+      MOCK_DATA.pendingUploads[existingAsset?.id || assetId] = {
+        projectId,
+        fileName: req.file_name,
+        mediaType: req.declared_media_type,
+        kind: req.kind || "supporting_document",
+      };
+
       return {
-        asset_id:
-          "01J6GZ5E" +
-          Math.random().toString(36).substring(2, 10).toUpperCase(),
-        version_id: "01J6GZVER00000000000000001",
+        asset_id: existingAsset?.id || assetId,
+        version_id: versionId,
         upload_url:
           "https://storage.virtujudge.local/mock-bucket/signed-upload",
+        method: "PUT",
         expires_at: new Date(Date.now() + 3600000).toISOString(),
+        required_headers: { "content-type": req.declared_media_type },
+        maximum_size_bytes: req.declared_size_bytes,
       };
     }
-    return this.request<UploadIntent>(API_ENDPOINTS.uploadIntents(projectId), {
+    const raw = await this.request<
+      UploadIntent & { asset_version_id?: string }
+    >(API_ENDPOINTS.uploadIntents(projectId), {
       method: "POST",
       body: JSON.stringify(req),
       idempotencyKey,
     });
+    return {
+      ...raw,
+      version_id: raw.version_id || raw.asset_version_id || "",
+    };
+  }
+
+  public async createVersionUploadIntent(
+    assetId: string,
+    req: CreateVersionUploadIntentRequest,
+    idempotencyKey: string,
+  ): Promise<UploadIntent> {
+    if (this.useMock) {
+      const versionId =
+        "01J6GZVER" +
+        Math.random().toString(36).substring(2, 10).toUpperCase();
+
+      const targetAsset = MOCK_DATA.assets.find((a) => a.id === assetId);
+      MOCK_DATA.pendingUploads = MOCK_DATA.pendingUploads || {};
+      MOCK_DATA.pendingUploads[versionId] = {
+        projectId: targetAsset?.project_id || "",
+        fileName: req.file_name,
+        mediaType: req.declared_media_type,
+        kind: targetAsset?.kind || "supporting_document",
+      };
+
+      return {
+        asset_id: assetId,
+        version_id: versionId,
+        upload_url:
+          "https://storage.virtujudge.local/mock-bucket/signed-upload",
+        method: "PUT",
+        expires_at: new Date(Date.now() + 3600000).toISOString(),
+        required_headers: { "content-type": req.declared_media_type },
+        maximum_size_bytes: req.declared_size_bytes,
+      };
+    }
+    const raw = await this.request<
+      UploadIntent & { asset_version_id?: string }
+    >(API_ENDPOINTS.versionUploadIntents(assetId), {
+      method: "POST",
+      body: JSON.stringify(req),
+      idempotencyKey,
+    });
+    return {
+      ...raw,
+      version_id: raw.version_id || raw.asset_version_id || "",
+    };
   }
 
   public async completeUpload(
     assetId: string,
     versionId: string,
     req: CompleteUploadRequest,
-    idempotencyKey: string,
+    idempotencyKey?: string,
   ): Promise<Asset> {
+    const key = idempotencyKey || generateIdempotencyKey("complete");
     if (this.useMock) {
-      return {
+      const existing = MOCK_DATA.assets.find((a) => a.id === assetId);
+      if (existing) {
+        existing.state = "verified";
+        existing.checksum = req.checksum;
+        existing.size_bytes = req.size_bytes;
+        existing.version_id = versionId;
+        const pending = MOCK_DATA.pendingUploads?.[versionId];
+        const newVersion: AssetVersion = {
+          id: versionId,
+          asset_id: assetId,
+          version_number: (existing.versions?.length || 1) + 1,
+          checksum: req.checksum,
+          size_bytes: req.size_bytes,
+          media_type: pending?.mediaType || existing.media_type,
+          created_at: new Date().toISOString(),
+        };
+        existing.versions = [...(existing.versions || []), newVersion];
+        return existing;
+      }
+
+      const pending = MOCK_DATA.pendingUploads?.[assetId];
+      const kind = pending?.kind || "supporting_document";
+      const fileName = pending?.fileName || "document.pdf";
+      const mediaType =
+        pending?.mediaType ||
+        (fileName.endsWith(".pptx")
+          ? "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+          : "application/pdf");
+      const projId = pending?.projectId || MOCK_DATA.projects[0].id;
+
+      const newAsset: Asset = {
         id: assetId,
-        project_id: MOCK_DATA.projects[0].id,
-        kind: "presentation_video",
-        file_name: "uploaded_video.mp4",
-        media_type: "video/mp4",
+        project_id: projId,
+        kind,
+        file_name: fileName,
+        media_type: mediaType,
         size_bytes: req.size_bytes,
         state: "verified",
         checksum: req.checksum,
+        version_id: versionId,
+        versions: [
+          {
+            id: versionId,
+            asset_id: assetId,
+            version_number: 1,
+            checksum: req.checksum,
+            size_bytes: req.size_bytes,
+            media_type: mediaType,
+            created_at: new Date().toISOString(),
+          },
+        ],
         created_at: new Date().toISOString(),
       };
+      MOCK_DATA.assets.push(newAsset);
+      return newAsset;
     }
     return this.request<Asset>(
       API_ENDPOINTS.completeUpload(assetId, versionId),
       {
         method: "POST",
         body: JSON.stringify(req),
-        idempotencyKey,
+        idempotencyKey: key,
       },
     );
+  }
+
+  public async createDownloadIntent(
+    assetId: string,
+    versionId?: string,
+  ): Promise<DownloadIntent> {
+    if (this.useMock) {
+      const asset = MOCK_DATA.assets.find((a) => a.id === assetId);
+      const targetVersion = versionId
+        ? asset?.versions?.find((v) => v.id === versionId)
+        : undefined;
+      return {
+        download_url:
+          "https://storage.virtujudge.local/mock-bucket/signed-download",
+        expires_at: new Date(Date.now() + 3600000).toISOString(),
+        media_type:
+          targetVersion?.media_type ||
+          asset?.media_type ||
+          "application/octet-stream",
+        size_bytes:
+          targetVersion?.size_bytes || asset?.size_bytes || 1048576,
+        file_name: asset?.file_name || "downloaded_file",
+      };
+    }
+    const endpoint = versionId
+      ? API_ENDPOINTS.versionDownloadIntents(assetId, versionId)
+      : API_ENDPOINTS.downloadIntents(assetId);
+    return this.request<DownloadIntent>(endpoint, {
+      method: "POST",
+    });
   }
 
   // ================= Practice Sessions =================

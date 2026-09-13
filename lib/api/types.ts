@@ -97,8 +97,31 @@ export interface Project {
   version: number;
 }
 
-export type AssetKind = 'presentation_video' | 'supporting_document' | 'answer_audio';
-export type AssetState = 'pending' | 'uploading' | 'uploaded' | 'verified' | 'failed' | 'erased';
+export type AssetKind = 'presentation_video' | 'supporting_document' | 'answer_audio' | 'report_pdf';
+export type AssetState =
+  | 'pending_upload'
+  | 'uploaded'
+  | 'verifying'
+  | 'verified'
+  | 'rejected'
+  | 'deleting'
+  | 'deleted'
+  | 'pending'
+  | 'uploading'
+  | 'failed'
+  | 'erased';
+
+export interface AssetVersion {
+  id: ResourceId;
+  asset_id: ResourceId;
+  version_number: number;
+  checksum: Checksum;
+  size_bytes: number;
+  media_type: string;
+  duration_ms?: number;
+  created_at: UtcTimestamp;
+  created_by?: ResourceId;
+}
 
 export interface Asset {
   id: ResourceId;
@@ -109,20 +132,59 @@ export interface Asset {
   size_bytes: number;
   state: AssetState;
   checksum?: Checksum;
+  duration_ms?: number;
   created_at: UtcTimestamp;
   version_id?: ResourceId;
+  versions?: AssetVersion[];
+  rejection_reason?: string;
+  rejection_code?: string;
 }
 
 export interface UploadIntent {
   asset_id: ResourceId;
   version_id: ResourceId;
+  asset_version_id?: ResourceId;
   upload_url: string;
+  method?: string;
   expires_at: UtcTimestamp;
   required_headers?: Record<string, string>;
+  maximum_size_bytes?: number;
+}
+
+export interface DownloadIntent {
+  asset_id?: ResourceId;
+  asset_version_id?: ResourceId;
+  download_url: string;
+  expires_at: UtcTimestamp;
+  media_type: string;
+  size_bytes: number;
+  file_name: string;
+}
+
+export interface AssetFilterParams {
+  kind?: AssetKind;
+  state?: AssetState;
+  cursor?: string;
+  limit?: number;
+}
+
+export interface ErasureRequest {
+  id: ResourceId;
+  target_resource_id: ResourceId;
+  target_resource_type: string;
+  status: 'pending' | 'completed' | 'failed';
+  requested_by: ResourceId;
+  created_at: UtcTimestamp;
 }
 
 export interface CreateUploadIntentRequest {
   kind: AssetKind;
+  file_name: string;
+  declared_media_type: string;
+  declared_size_bytes: number;
+}
+
+export interface CreateVersionUploadIntentRequest {
   file_name: string;
   declared_media_type: string;
   declared_size_bytes: number;

@@ -63,3 +63,76 @@ if (typeof window !== 'undefined') {
     });
   }
 }
+
+// Provide stable URL.createObjectURL and URL.revokeObjectURL in jsdom
+if (typeof URL !== 'undefined') {
+  if (!URL.createObjectURL) {
+    URL.createObjectURL = vi.fn(
+      () => `blob:http://localhost/${Math.random().toString(36).substring(2, 9)}`,
+    );
+  }
+  if (!URL.revokeObjectURL) {
+    URL.revokeObjectURL = vi.fn();
+  }
+}
+
+// Provide MockMediaRecorder in jsdom environment
+class MockMediaRecorder {
+  public state: 'inactive' | 'recording' | 'paused' = 'inactive';
+  public stream: MediaStream;
+  public mimeType: string = 'video/webm';
+  public ondataavailable: ((e: { data: Blob }) => void) | null = null;
+  public onstop: (() => void) | null = null;
+  public onpause: (() => void) | null = null;
+  public onresume: (() => void) | null = null;
+
+  constructor(stream: MediaStream, options?: { mimeType?: string }) {
+    this.stream = stream;
+    if (options?.mimeType) {
+      this.mimeType = options.mimeType;
+    }
+  }
+
+  start() {
+    this.state = 'recording';
+    if (this.ondataavailable) {
+      this.ondataavailable({
+        data: new Blob(['mock-video-stream-chunk-data'], { type: this.mimeType }),
+      });
+    }
+  }
+
+  stop() {
+    this.state = 'inactive';
+    if (this.ondataavailable) {
+      this.ondataavailable({
+        data: new Blob(['mock-video-stream-final-chunk-data'], { type: this.mimeType }),
+      });
+    }
+    if (this.onstop) {
+      this.onstop();
+    }
+  }
+
+  pause() {
+    this.state = 'paused';
+    if (this.onpause) this.onpause();
+  }
+
+  resume() {
+    this.state = 'recording';
+    if (this.onresume) this.onresume();
+  }
+
+  static isTypeSupported(type: string) {
+    return type.includes('webm') || type.includes('mp4');
+  }
+}
+
+if (typeof window !== 'undefined' && typeof window.MediaRecorder === 'undefined') {
+  // @ts-expect-error MockMediaRecorder for testing
+  window.MediaRecorder = MockMediaRecorder;
+  // @ts-expect-error MockMediaRecorder for testing
+  global.MediaRecorder = MockMediaRecorder;
+}
+
