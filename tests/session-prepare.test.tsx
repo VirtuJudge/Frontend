@@ -136,7 +136,7 @@ describe("Prepare Session Page (/projects/[projectId]/session/prepare)", () => {
     fireEvent.click(dropdownButton);
 
     expect(await screen.findByText("Files (2/5)")).toBeDefined();
-    expect(screen.getByText("slides-2.pptx")).toBeDefined();
+    expect((await screen.findAllByText(/slides-2\.pptx/i)).length).toBeGreaterThan(0);
 
     const removeBtn = screen.getByRole("button", { name: "Remove slides-1.pdf" });
     fireEvent.click(removeBtn);

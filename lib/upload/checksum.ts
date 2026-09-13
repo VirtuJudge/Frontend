@@ -32,11 +32,32 @@ async function computeChecksumFallback(
   onProgress?: (percent: number) => void,
 ): Promise<string> {
   onProgress?.(25);
-  const buffer = await file.arrayBuffer();
+  const rawBuffer = await file.arrayBuffer();
   onProgress?.(75);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+
+  let hashHex: string;
+  try {
+    const buffer =
+      typeof Buffer !== "undefined"
+        ? Buffer.from(rawBuffer)
+        : new Uint8Array(rawBuffer);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+    hashHex = bufferToSha256Hex(hashBuffer);
+  } catch {
+    // Fallback if crypto.subtle.digest rejects cross-realm ArrayBuffer in Node/test environments
+    try {
+      const { createHash } = await import("crypto");
+      const hash = createHash("sha256")
+        .update(Buffer.from(rawBuffer))
+        .digest("hex");
+      hashHex = `sha256:${hash}`;
+    } catch {
+      throw new Error("Unable to compute SHA-256 checksum in this environment");
+    }
+  }
+
   onProgress?.(100);
-  return bufferToSha256Hex(hashBuffer);
+  return hashHex;
 }
 
 export function computeFileChecksum(
