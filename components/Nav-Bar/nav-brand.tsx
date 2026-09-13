@@ -3,7 +3,7 @@ import { Button } from "../button";
 
 export function NavBrand() {
   return (
-    <Button borderGradient="nav" href="/">
+    <Button borderGradient="nav" href="/home">
       <Image
         src="/logos/logo-primary.webp"
         alt="VirtuJudge Logo"

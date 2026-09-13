@@ -28,7 +28,7 @@ export default function FullNav() {
     <div className={NAV_CONTAINER_CLASS}>
       <NavBrand />
 
-      <div className="flex gap-4">
+      <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 flex items-center gap-4">
         {MAIN_NAV_ITEMS.map((item) => (
           <Button
             key={item.href}
@@ -79,8 +79,8 @@ export default function FullNav() {
       </div>
 
       {isAuthenticated ? (
-        <Button variant="primary" href="/dashboard">
-          Dashboard
+        <Button href="/dashboard">
+          My Account
         </Button>
       ) : (
         <Button variant="primary" href={CTA_NAV_ITEM.href}>
