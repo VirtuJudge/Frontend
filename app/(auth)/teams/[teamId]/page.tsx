@@ -74,7 +74,7 @@ export function TeamDetailsContent({ teamId }: { teamId: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-10 w-full max-w-5xl mx-auto pb-12">
+    <div className="flex flex-col gap-10 pb-12">
       <Text className="flex gap-2 text-left pl-2">
         <Link href="/dashboard" className="text-primary">
           ← Back to Dashboard

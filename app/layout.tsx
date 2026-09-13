@@ -3,7 +3,6 @@ import { Inconsolata } from "next/font/google";
 import "./globals.css";
 import { QueryClientBoundary } from "@/lib/query-client";
 import { AuthProvider } from "@/features/auth";
-import NavBar from "@/components/Nav-Bar/nav-bar";
 
 const inconsolata = Inconsolata({
   subsets: ["latin"],
@@ -27,10 +26,9 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`h-full antialiased ${inconsolata.variable}`}
     >
-      <body className="flex flex-col max-w-360 mx-auto px-4 pt-30">
+      <body className="flex flex-col max-w-5xl mx-auto px-4 pt-30">
         <QueryClientBoundary>
           <AuthProvider>
-            <NavBar />
             {children}
           </AuthProvider>
         </QueryClientBoundary>

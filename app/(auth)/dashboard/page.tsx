@@ -22,7 +22,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-6xl mx-auto pb-12">
+    <div className="flex flex-col gap-8 pb-12">
       <Wrapper
         variant="glass"
         borderGradient="default"
