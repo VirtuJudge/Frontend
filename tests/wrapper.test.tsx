@@ -19,7 +19,7 @@ describe("General Wrapper Component", () => {
     expect(container.innerHTML).toContain("Glass Content");
   });
 
-  it("renders all 4 background variants correctly", () => {
+  it("renders all background variants correctly", () => {
     const { rerender } = render(
       <Wrapper variant="glass" data-testid="bg-box">
         Glass
@@ -27,6 +27,15 @@ describe("General Wrapper Component", () => {
     );
     let box = screen.getByTestId("bg-box");
     expect(box.className).toContain("bg-glass");
+    expect(box.className).toContain("backdrop-blur-[20px]");
+
+    rerender(
+      <Wrapper variant="glass-dark" data-testid="bg-box">
+        Glass Dark
+      </Wrapper>,
+    );
+    box = screen.getByTestId("bg-box");
+    expect(box.className).toContain("bg-glass-dark");
     expect(box.className).toContain("backdrop-blur-[20px]");
 
     rerender(
@@ -208,6 +217,16 @@ describe("General Wrapper Component", () => {
     expect(styleDefault.backdropFilter).toBe("blur(20px)");
     expect(
       (styleDefault as Record<string, unknown>)["--border-gradient-source"],
+    ).toContain("var(--background-image-gradient-border)");
+
+    const styleGlassDark = getWrapperBorderStyle({
+      variant: "glass-dark",
+      borderGradient: "default",
+    });
+    expect(styleGlassDark.backgroundColor).toBe("var(--color-glass-dark)");
+    expect(styleGlassDark.backdropFilter).toBe("blur(20px)");
+    expect(
+      (styleGlassDark as Record<string, unknown>)["--border-gradient-source"],
     ).toContain("var(--background-image-gradient-border)");
 
     const styleNav = getWrapperBorderStyle({

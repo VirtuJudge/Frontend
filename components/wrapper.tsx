@@ -3,7 +3,12 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-export type WrapperVariant = "glass" | "primary" | "dark" | "danger";
+export type WrapperVariant =
+  | "glass"
+  | "glass-dark"
+  | "primary"
+  | "dark"
+  | "danger";
 export type BorderGradientVariant = "default" | "nav" | "none" | (string & {});
 
 export const BORDER_GRADIENTS: Record<string, string> = {
@@ -22,6 +27,11 @@ export const BG_VARIANTS: Record<
   glass: {
     className: "bg-glass backdrop-blur-[20px] text-fg",
     bgColorVar: "--color-glass",
+    borderGradient: "default",
+  },
+  "glass-dark": {
+    className: "bg-glass-dark backdrop-blur-[20px] text-fg",
+    bgColorVar: "--color-glass-dark",
     borderGradient: "default",
   },
   primary: {
@@ -75,7 +85,11 @@ export const getWrapperBorderStyle = ({
     backgroundColor: `var(${bg})`,
   };
 
-  if (variant === "glass" || variant === "primary") {
+  if (
+    variant === "glass" ||
+    variant === "glass-dark" ||
+    variant === "primary"
+  ) {
     style.backdropFilter = "blur(20px)";
     style.WebkitBackdropFilter = "blur(20px)";
   }
