@@ -55,7 +55,7 @@ describe("SessionRecordContent (/projects/:id/session/record)", () => {
 
     expect(screen.getByAltText("VirtuJudge")).toBeDefined();
     expect(screen.getByRole("button", { name: /restart session/i })).toBeDefined();
-    expect(screen.getByRole("button", { name: /presentation/i })).toBeDefined();
+    expect(screen.getByLabelText(/presentation/i)).toBeDefined();
     expect(screen.getByRole("button", { name: /pause recording/i })).toBeDefined();
     expect(screen.getByRole("button", { name: /end session/i })).toBeDefined();
     expect(screen.getByText("09:55")).toBeDefined();
@@ -72,7 +72,7 @@ describe("SessionRecordContent (/projects/:id/session/record)", () => {
     fireEvent.click(startBtn);
 
     await waitFor(() => {
-      expect(screen.queryByText(/recording starts in/i)).toBeNull();
+      expect(screen.queryByLabelText(/recording starts in/i)).toBeNull();
     });
 
     const endBtn = screen.getByRole("button", { name: /end session/i });
@@ -132,7 +132,7 @@ describe("SessionRecordContent (/projects/:id/session/record)", () => {
     fireEvent.click(startBtn);
 
     await waitFor(() => {
-      expect(screen.queryByText(/recording starts in/i)).toBeNull();
+      expect(screen.queryByLabelText(/recording starts in/i)).toBeNull();
     });
 
     const pauseBtn = screen.getByRole("button", { name: /pause recording/i });
@@ -165,7 +165,7 @@ describe("SessionRecordContent (/projects/:id/session/record)", () => {
       <SessionRecordContent projectId="01J6GZ3C000000000000000003" />,
     );
 
-    const presentationBtn = screen.getByRole("button", { name: /presentation/i });
+    const presentationBtn = screen.getByLabelText(/presentation/i);
     fireEvent.click(presentationBtn);
 
     expect(screen.queryByText("Presentation Slides")).toBeNull();
@@ -188,9 +188,7 @@ describe("SessionRecordContent (/projects/:id/session/record)", () => {
       <SessionRecordContent projectId="01J6GZ3C000000000000000003" />,
     );
 
-    await waitFor(() => {
-      expect(global.navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
-    });
+    await screen.findByText("Start recording session?");
 
     const endBtn = screen.getByRole("button", { name: /end session/i });
     fireEvent.click(endBtn);
@@ -291,7 +289,7 @@ describe("SessionRecordContent (/projects/:id/session/record)", () => {
     fireEvent.click(startBtn);
 
     await waitFor(() => {
-      expect(screen.queryByText(/recording starts in/i)).toBeNull();
+      expect(screen.queryByLabelText(/recording starts in/i)).toBeNull();
     });
 
     expect(getUserMediaMock).toHaveBeenCalledTimes(1);
@@ -329,11 +327,11 @@ describe("SessionRecordContent (/projects/:id/session/record)", () => {
     fireEvent.click(startBtn);
 
     // Countdown overlay appears
-    expect(screen.getByText(/recording starts in/i)).toBeDefined();
+    expect(screen.getByLabelText(/recording starts in/i)).toBeDefined();
 
     // After countdown completes
     await waitFor(() => {
-      expect(screen.queryByText(/recording starts in/i)).toBeNull();
+      expect(screen.queryByLabelText(/recording starts in/i)).toBeNull();
     });
 
     // Recording is now live

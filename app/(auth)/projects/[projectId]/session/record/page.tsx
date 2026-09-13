@@ -213,25 +213,24 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
 
     const stepMs = process.env.NODE_ENV === "test" ? 10 : 1000;
 
-    if (countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown((prev) => (prev !== null && prev > 1 ? prev - 1 : 0));
-      }, stepMs);
-      return () => clearTimeout(timer);
-    }
-
-    if (countdown === 0) {
-      setCountdown(null);
-      if (
-        mediaRecorderRef.current &&
-        mediaRecorderRef.current.state === "inactive"
-      ) {
-        try {
-          mediaRecorderRef.current.start();
-          setIsRecording(true);
-        } catch {}
+    const timer = setTimeout(() => {
+      if (countdown > 1) {
+        setCountdown(countdown - 1);
+      } else {
+        setCountdown(null);
+        if (
+          mediaRecorderRef.current &&
+          mediaRecorderRef.current.state === "inactive"
+        ) {
+          try {
+            mediaRecorderRef.current.start();
+            setIsRecording(true);
+          } catch {}
+        }
       }
-    }
+    }, stepMs);
+
+    return () => clearTimeout(timer);
   }, [countdown]);
 
   // Initial camera setup
@@ -249,15 +248,6 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach((track) => track.stop());
         mediaStreamRef.current = null;
-      }
-      if (
-        mediaRecorderRef.current &&
-        mediaRecorderRef.current.state !== "inactive"
-      ) {
-        try {
-          mediaRecorderRef.current.stop();
-        } catch {}
-        mediaRecorderRef.current = null;
       }
     };
   }, [initCamera]);
@@ -286,9 +276,11 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
         }
       }
       if (mediaStreamRef.current) {
-        mediaStreamRef.current
-          .getVideoTracks()
-          .forEach((t) => (t.enabled = !next));
+        const tracks =
+          mediaStreamRef.current.getVideoTracks?.() ??
+          mediaStreamRef.current.getTracks?.() ??
+          [];
+        tracks.forEach((t) => (t.enabled = !next));
       }
       return next;
     });
