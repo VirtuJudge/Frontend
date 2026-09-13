@@ -6,12 +6,12 @@ export const AUTH_COOKIE_NAME = "auth_token";
 export const FALLBACK_SESSION_COOKIE_NAME = "session";
 
 export const PROTECTED_ROUTES = [
+  '/',
+  'profile',
   "/dashboard",
   "/projects",
-  "/practice-sessions",
   "/sessions",
   "/teams",
-  "/erasure-requests",
   "/settings",
 ];
 
@@ -20,7 +20,7 @@ export const AUTH_ROUTES = ["/auth/login", "/auth/register"];
 export const EXEMPT_ROUTES = ["/auth/callback"];
 
 export const PUBLIC_ROUTES = [
-  "/",
+  "/home",
   "/about",
   "/pricing",
   "/team",
@@ -74,7 +74,7 @@ export function handleRouteProtection(request: NextRequest): NextResponse {
       redirectParam.startsWith("/") &&
       !redirectParam.startsWith("//")
         ? redirectParam
-        : "/dashboard";
+        : "/";
 
     const targetUrl = new URL(safeRedirect, request.url);
     return NextResponse.redirect(targetUrl);

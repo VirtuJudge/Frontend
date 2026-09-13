@@ -1,7 +1,7 @@
 import React from "react";
 import NavBar from "@/components/Nav-Bar/nav-bar";
 
-export default function PublicLayout({
+export default function TeamsLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -9,7 +9,7 @@ export default function PublicLayout({
   return (
     <div className="flex flex-col">
       <NavBar />
-      <main className="flex-1">{children}</main>
+      {children}
     </div>
   );
 }

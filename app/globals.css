@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 /****************************************************
   defaults
@@ -6,7 +6,8 @@
 
 @theme {
   --color-primary: hsla(175, 95%, 50%, 1);
-  --color-glass: #CDFEFA1A;
+  --color-glass: #cdfefa1a;
+  --color-glass-dark: hsla(177, 100%, 3.5%, 0.5);
 
   --color-fg: hsla(175, 95%, 95%, 1);
   --color-fg-light: hsla(175, 95%, 90%, 1);
@@ -22,24 +23,66 @@
   --color-success-darker: hsla(155, 88%, 27%, 1);
   --color-success-lighter: hsla(155, 89%, 75%, 1);
 
-  --color-white: #FFFFFF;
+  --color-white: #ffffff;
   --color-black: #000000;
 
-  --background-image-gradient-bg-0: linear-gradient(0deg, #000F0E 0%, #011E1B 100%);
-  --background-image-gradient-bg-180: linear-gradient(180deg, #000F0E 0%, #011E1B 100%);
+  --background-image-gradient-bg-0: linear-gradient(
+    0deg,
+    #000f0e 0%,
+    #011e1b 100%
+  );
+  --background-image-gradient-bg-180: linear-gradient(
+    180deg,
+    #000f0e 0%,
+    #011e1b 100%
+  );
 
-  --background-image-gradient-primary-light-0: linear-gradient(0deg, #06F9E4 0%, #CDFEFA 100%);
-  --background-image-gradient-primary-light-180: linear-gradient(180deg, #06F9E4 0%, #CDFEFA 100%);
+  --background-image-gradient-primary-light-0: linear-gradient(
+    0deg,
+    #06f9e4 0%,
+    #cdfefa 100%
+  );
+  --background-image-gradient-primary-light-180: linear-gradient(
+    180deg,
+    #06f9e4 0%,
+    #cdfefa 100%
+  );
 
-  --background-image-gradient-primary-dark-0: linear-gradient(0deg, #011E1B 0%, #06F9E4 100%);
-  --background-image-gradient-primary-dark-180: linear-gradient(180deg, #011E1B 0%, #06F9E4 100%);
+  --background-image-gradient-primary-dark-0: linear-gradient(
+    0deg,
+    #011e1b 0%,
+    #06f9e4 100%
+  );
+  --background-image-gradient-primary-dark-180: linear-gradient(
+    180deg,
+    #011e1b 0%,
+    #06f9e4 100%
+  );
 
-  --background-image-gradient-fg-0: linear-gradient(0deg, #CDFEFA 0%, #E6FEFC 100%);
-  --background-image-gradient-fg-180: linear-gradient(180deg, #CDFEFA 0%, #E6FEFC 100%);
+  --background-image-gradient-fg-0: linear-gradient(
+    0deg,
+    #cdfefa 0%,
+    #e6fefc 100%
+  );
+  --background-image-gradient-fg-180: linear-gradient(
+    180deg,
+    #cdfefa 0%,
+    #e6fefc 100%
+  );
 
-  --background-image-gradient-nav-border: linear-gradient(180deg, #CDFEFA -95.74%, #011E1B 100%);
-  --background-image-gradient-border: linear-gradient(180deg, var(--color-primary) -167.86%, var(--color-bg-light) 100%);
-  --background-image-gradient-input-border: var(--background-image-gradient-border);
+  --background-image-gradient-nav-border: linear-gradient(
+    180deg,
+    #cdfefa -95.74%,
+    #011e1b 100%
+  );
+  --background-image-gradient-border: linear-gradient(
+    180deg,
+    var(--color-primary) -167.86%,
+    var(--color-bg-light) 100%
+  );
+  --background-image-gradient-input-border: var(
+    --background-image-gradient-border
+  );
 
   --text-h1: 3rem;
   --text-h2: 2.5rem;
@@ -51,7 +94,7 @@
   --text-smaller: 0.625rem;
   --text-smallest: 0.5rem;
 
-  --font-inconsolata: 'Inconsolata', monospace;
+  --font-inconsolata: "Inconsolata", monospace;
   --animate-pop-in: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
@@ -82,7 +125,9 @@
     background: hsla(175, 95%, 50%, 0.25);
     border-radius: 9999px;
     border: 2px solid var(--color-bg);
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
@@ -122,7 +167,8 @@
   }
 }
 
-@layer components {}
+@layer components {
+}
 
 /****************************************************
   custom global styles
@@ -180,10 +226,17 @@
     inset: 0;
     border-radius: inherit;
     padding: var(--border-gradient-width, 1px);
-    background: var(--border-gradient-source, var(--background-image-gradient-border));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    background: var(
+      --border-gradient-source,
+      var(--background-image-gradient-border)
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
     mask-composite: exclude;
     pointer-events: none;
   }
@@ -197,10 +250,17 @@
     inset: 0;
     border-radius: inherit;
     padding: var(--border-gradient-width, 1px);
-    background: var(--border-gradient-source, var(--background-image-gradient-nav-border));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    background: var(
+      --border-gradient-source,
+      var(--background-image-gradient-nav-border)
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
     mask-composite: exclude;
     pointer-events: none;
   }

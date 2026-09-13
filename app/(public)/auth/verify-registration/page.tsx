@@ -284,7 +284,7 @@ export default function VerifyRegistrationPage() {
                   disabled={loading}
                   aria-label={`Digit ${index + 1}`}
                   className={cn(
-                    "w-9 h-9 sm:w-12 sm:h-12 align-middle text-center font-bold font-mono",
+                    "w-9 h-9 sm:w-12 sm:h-12 align-middle text-center font-bold ",
                     "rounded-full bg-glass border transition-all duration-150",
                     "outline-none focus:outline-none focus:border-primary text-md sm:text-lg",
                     error

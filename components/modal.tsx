@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { Button, Text, Wrapper } from "@/components";
 import { Icon } from "@iconify/react";
+import { Button } from "./button";
+import { Text } from "./text";
+import { Wrapper } from "./wrapper";
 
 export interface ModalProps {
   isOpen: boolean;

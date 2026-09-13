@@ -19,10 +19,17 @@ describe("Button & NavButton Component", () => {
     expect(container.innerHTML).toContain("Click Me");
   });
 
-  it("renders all 4 variants correctly", () => {
+  it("renders all variants correctly", () => {
     const { rerender } = render(<Button variant="glass">Glass</Button>);
-    let button = screen.getByRole("button", { name: /glass/i });
+    let button = screen.getByRole("button", { name: /^glass$/i });
     expect(button.className).toContain("bg-glass");
+    expect(button.className).toContain("text-fg");
+    expect(button.className).toContain("backdrop-blur-[20px]");
+    expect(button.className).toContain("font-bold");
+
+    rerender(<Button variant="glass-dark">Glass Dark</Button>);
+    button = screen.getByRole("button", { name: /glass dark/i });
+    expect(button.className).toContain("bg-glass-dark");
     expect(button.className).toContain("text-fg");
     expect(button.className).toContain("backdrop-blur-[20px]");
     expect(button.className).toContain("font-bold");
@@ -40,7 +47,7 @@ describe("Button & NavButton Component", () => {
     expect(button.className).toContain("font-bold");
 
     rerender(<Button variant="dark">Dark</Button>);
-    button = screen.getByRole("button", { name: /dark/i });
+    button = screen.getByRole("button", { name: /^dark$/i });
     expect(button.className).toContain("bg-bg-light");
     expect(button.className).toContain("text-glass");
     expect(button.className).toContain("font-bold");

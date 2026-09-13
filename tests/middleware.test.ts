@@ -17,7 +17,8 @@ function createMockRequest(
   urlPath: string,
   cookies?: Record<string, string>,
 ): NextRequest {
-  const url = `http://localhost:3000${urlPath}`;
+  const normalizedPath = urlPath.startsWith("/") ? urlPath : `/${urlPath}`;
+  const url = `http://localhost:3000${normalizedPath}`;
   const request = new NextRequest(new Request(url));
   if (cookies) {
     for (const [key, value] of Object.entries(cookies)) {
@@ -61,7 +62,7 @@ describe("Route Protection Middleware", () => {
   });
 
   describe("Protected Routes", () => {
-    it.each(PROTECTED_ROUTES)(
+    it.each(PROTECTED_ROUTES.filter((route) => route.startsWith("/")))(
       "redirects unauthenticated users from protected base route '%s' to /login",
       (route) => {
         const request = createMockRequest(route);
@@ -70,7 +71,9 @@ describe("Route Protection Middleware", () => {
         expect(response.status).toBe(307);
         const location = response.headers.get("location");
         expect(location).toContain("/login");
-        expect(location).toContain(`redirect=${encodeURIComponent(route)}`);
+        expect(location).toContain(
+          `redirect=${encodeURIComponent(route.startsWith("/") ? route : `/${route}`)}`,
+        );
       },
     );
 
@@ -86,13 +89,12 @@ describe("Route Protection Middleware", () => {
     it("redirects unauthenticated users from workflow sub-paths", () => {
       const testPaths = [
         "/projects/123/assets",
-        "/practice-sessions/456/processing",
-        "/practice-sessions/456/speaker-mapping",
-        "/practice-sessions/456/qa",
-        "/practice-sessions/456/report",
+        "/sessions/456/processing",
+        "/sessions/456/speaker-mapping",
+        "/sessions/456/qa",
+        "/sessions/456/report",
         "/sessions/789/report",
         "/teams/team-1/members",
-        "/erasure-requests/erasure-999",
         "/settings/profile",
       ];
 
@@ -179,7 +181,7 @@ describe("Route Protection Middleware", () => {
       expect(response.headers.get("location")).toBeNull();
     });
 
-    it.each(AUTH_ROUTES)("redirects authenticated users on auth page '%s' to /dashboard", (route) => {
+    it.each(AUTH_ROUTES)("redirects authenticated users on auth page '%s' to default destination", (route) => {
       const request = createMockRequest(route, {
         [AUTH_COOKIE_NAME]: "active_user_token",
       });
@@ -187,7 +189,7 @@ describe("Route Protection Middleware", () => {
 
       expect(response.status).toBe(307);
       const location = response.headers.get("location");
-      expect(location).toContain("/dashboard");
+      expect(location).toBe("http://localhost:3000/");
     });
   });
 

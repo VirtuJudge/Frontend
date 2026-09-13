@@ -92,7 +92,7 @@ export function ProjectList({
                   Created: {new Date(proj.created_at).toLocaleDateString()}
                 </Text>
                 <Button
-                  href={`/teams/${teamId}/projects/${proj.id}`}
+                  href={`/projects/${proj.id}`}
                   size="sm"
                   variant="primary"
                 >
