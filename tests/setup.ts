@@ -135,3 +135,4 @@ if (typeof window !== 'undefined' && typeof window.MediaRecorder === 'undefined'
   // @ts-expect-error MockMediaRecorder for testing
   global.MediaRecorder = MockMediaRecorder;
 }
+
