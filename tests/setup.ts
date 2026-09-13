@@ -76,63 +76,56 @@ if (typeof URL !== 'undefined') {
   }
 }
 
-// Provide MockMediaRecorder in jsdom environment
-class MockMediaRecorder {
-  public state: 'inactive' | 'recording' | 'paused' = 'inactive';
-  public stream: MediaStream;
-  public mimeType: string = 'video/webm';
-  public ondataavailable: ((e: { data: Blob }) => void) | null = null;
-  public onstop: (() => void) | null = null;
-  public onpause: (() => void) | null = null;
-  public onresume: (() => void) | null = null;
-
-  constructor(stream: MediaStream, options?: { mimeType?: string }) {
-    this.stream = stream;
-    if (options?.mimeType) {
-      this.mimeType = options.mimeType;
-    }
-  }
-
-  start() {
-    this.state = 'recording';
-    if (this.ondataavailable) {
-      this.ondataavailable({
-        data: new Blob(['mock-video-stream-chunk-data'], { type: this.mimeType }),
-      });
-    }
-  }
-
-  stop() {
-    this.state = 'inactive';
-    if (this.ondataavailable) {
-      this.ondataavailable({
-        data: new Blob(['mock-video-stream-final-chunk-data'], { type: this.mimeType }),
-      });
-    }
-    if (this.onstop) {
-      this.onstop();
-    }
-  }
-
-  pause() {
-    this.state = 'paused';
-    if (this.onpause) this.onpause();
-  }
-
-  resume() {
-    this.state = 'recording';
-    if (this.onresume) this.onresume();
-  }
-
-  static isTypeSupported(type: string) {
-    return type.includes('webm') || type.includes('mp4');
-  }
-}
-
 if (typeof window !== 'undefined' && typeof window.MediaRecorder === 'undefined') {
+  class MockMediaRecorder {
+    public state: 'inactive' | 'recording' | 'paused' = 'inactive';
+    public stream: MediaStream;
+    public mimeType: string = 'video/webm';
+    public ondataavailable: ((e: { data: Blob }) => void) | null = null;
+    public onstop: (() => void) | null = null;
+    public onpause: (() => void) | null = null;
+    public onresume: (() => void) | null = null;
+
+    constructor(stream: MediaStream, options?: { mimeType?: string }) {
+      this.stream = stream;
+      if (options?.mimeType) {
+        this.mimeType = options.mimeType;
+      }
+    }
+
+    start() {
+      this.state = 'recording';
+    }
+
+    stop() {
+      this.state = 'inactive';
+      if (this.ondataavailable) {
+        this.ondataavailable({
+          data: new Blob(['mock-video-stream-chunk'], { type: this.mimeType }),
+        });
+      }
+      if (this.onstop) {
+        this.onstop();
+      }
+    }
+
+    pause() {
+      this.state = 'paused';
+      if (this.onpause) this.onpause();
+    }
+
+    resume() {
+      this.state = 'recording';
+      if (this.onresume) this.onresume();
+    }
+
+    static isTypeSupported() {
+      return true;
+    }
+  }
+
   // @ts-expect-error MockMediaRecorder for testing
   window.MediaRecorder = MockMediaRecorder;
   // @ts-expect-error MockMediaRecorder for testing
   global.MediaRecorder = MockMediaRecorder;
 }
-
