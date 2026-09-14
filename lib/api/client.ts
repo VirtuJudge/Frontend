@@ -262,7 +262,75 @@ export const MOCK_DATA = {
         },
       ],
     },
+    {
+      id: "01J6GZ6F000000000000000007",
+      project_id: "01J6GZ3C000000000000000003",
+      kind: "supporting_document",
+      file_name: "pitch_deck.pptx",
+      media_type:
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      size_bytes: 18400000,
+      state: "verified",
+      checksum:
+        "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      created_at: "2026-09-02T14:20:00Z",
+      version_id: "01J6GZVER00000000000000003",
+      versions: [
+        {
+          id: "01J6GZVER00000000000000003",
+          asset_id: "01J6GZ6F000000000000000007",
+          version_number: 1,
+          checksum:
+            "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+          size_bytes: 18400000,
+          media_type:
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+          created_at: "2026-09-02T14:20:00Z",
+        },
+      ],
+    },
   ] as Asset[],
+  sessions: [
+    {
+      id: "01J6GZ4D000000000000000004",
+      project_id: "01J6GZ3C000000000000000003",
+      state: "ready",
+      manifest_frozen: false,
+      presentation_asset_id: "01J6GZ5E000000000000000005",
+      document_asset_ids: [
+        "01J6GZ6F000000000000000006",
+        "01J6GZ6F000000000000000007",
+      ],
+      stages: [
+        { stage: "ingestion", status: "completed" },
+        { stage: "transcription", status: "completed" },
+        { stage: "diarization", status: "completed" },
+        { stage: "vision", status: "completed" },
+        { stage: "audio", status: "completed" },
+        { stage: "grounding", status: "completed" },
+      ],
+      created_at: "2026-09-01T12:00:00Z",
+      version: 1,
+    },
+    {
+      id: "01J6GZ4D000000000000000005",
+      project_id: "01J6GZ3C000000000000000003",
+      state: "completed",
+      manifest_frozen: true,
+      presentation_asset_id: "01J6GZ5E000000000000000005",
+      document_asset_ids: ["01J6GZ6F000000000000000006"],
+      stages: [
+        { stage: "ingestion", status: "completed" },
+        { stage: "transcription", status: "completed" },
+        { stage: "diarization", status: "completed" },
+        { stage: "vision", status: "completed" },
+        { stage: "audio", status: "completed" },
+        { stage: "grounding", status: "completed" },
+      ],
+      created_at: "2026-09-03T14:30:00Z",
+      version: 1,
+    },
+  ] as PracticeSession[],
   session: {
     id: "01J6GZ4D000000000000000004",
     project_id: "01J6GZ3C000000000000000003",
@@ -877,6 +945,16 @@ export class ApiClient {
     return this.request<Asset>(API_ENDPOINTS.asset(assetId));
   }
 
+  public async deleteAsset(assetId: string): Promise<void> {
+    if (this.useMock) {
+      MOCK_DATA.assets = MOCK_DATA.assets.filter((a) => a.id !== assetId);
+      return;
+    }
+    return this.request<void>(API_ENDPOINTS.asset(assetId), {
+      method: "DELETE",
+    });
+  }
+
   public async createUploadIntent(
     projectId: string,
     req: CreateUploadIntentRequest,
@@ -1107,6 +1185,42 @@ export class ApiClient {
     return this.request<PracticeSession>(
       API_ENDPOINTS.practiceSession(sessionId),
     );
+  }
+
+  public async getPracticeSessions(
+    projectId: string,
+    cursor?: string,
+  ): Promise<Page<PracticeSession>> {
+    if (this.useMock) {
+      const allSessions = (MOCK_DATA.sessions || [MOCK_DATA.session]).map(
+        (s) => ({
+          ...s,
+          project_id: projectId,
+        }),
+      );
+      return {
+        items: allSessions,
+        has_more: false,
+      };
+    }
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+    return this.request<Page<PracticeSession>>(
+      `${API_ENDPOINTS.projectSessions(projectId)}${query}`,
+    );
+  }
+
+  public async deletePracticeSession(sessionId: string): Promise<void> {
+    if (this.useMock) {
+      if (MOCK_DATA.sessions) {
+        MOCK_DATA.sessions = MOCK_DATA.sessions.filter(
+          (s) => s.id !== sessionId,
+        );
+      }
+      return;
+    }
+    return this.request<void>(API_ENDPOINTS.practiceSession(sessionId), {
+      method: "DELETE",
+    });
   }
 
   public async startAnalysis(

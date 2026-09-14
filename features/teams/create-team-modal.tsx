@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Input, Modal } from "@/components";
+import { Button, Input, Modal } from "@/components";
 import { apiClient } from "@/lib/api/client";
 import { Team } from "@/lib/api/types";
 
@@ -46,23 +46,39 @@ export function CreateTeamModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Create a New Team"
+      title="Create a team"
       titleId="create-team-title"
       error={error}
       loading={loading}
-      onSubmit={handleSubmit}
-      submitText="Create Team"
-      loadingText="Creating..."
+      footer={null}
     >
-      <Input
-        label="Team Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="e.g. VirtuJudge Pitch Team"
-        disabled={loading}
-        autoFocus
-        className="w-full"
-      />
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-xl flex flex-col gap-2.5 my-4"
+      >
+        <span className="pl-6 text-sm text-foreground/80 font-medium text-left">
+          Team name
+        </span>
+        <div className="flex items-center gap-3 w-full">
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. VirtuJudge Pitch Team"
+            disabled={loading}
+            autoFocus
+            wrapperClassName="!w-full !rounded-full !bg-white/5 !border-white/10"
+            className="w-full"
+          />
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={loading}
+            className="rounded-full px-8 py-3.5 font-bold shrink-0"
+          >
+            {loading ? "Creating..." : "Create"}
+          </Button>
+        </div>
+      </form>
     </Modal>
   );
 }

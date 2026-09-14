@@ -14,6 +14,7 @@ interface ManageMemberModalProps {
   onClose: () => void;
   onMemberRemoved: (userId: string) => void;
   onOwnershipTransferred?: (newOwnerUserId: string) => void;
+  initialView?: ManageView;
 }
 
 type ManageView = "overview" | "remove" | "transfer";
@@ -23,7 +24,7 @@ export function ManageMemberModal(props: ManageMemberModalProps) {
 
   return (
     <ManageMemberModalDialog
-      key={props.member.user_id}
+      key={`${props.member.user_id}-${props.initialView || "overview"}`}
       {...props}
       member={props.member}
     />
@@ -38,8 +39,9 @@ function ManageMemberModalDialog({
   onClose,
   onMemberRemoved,
   onOwnershipTransferred,
+  initialView = "overview",
 }: Omit<ManageMemberModalProps, "member"> & { member: TeamMembership }) {
-  const [view, setView] = useState<ManageView>("overview");
+  const [view, setView] = useState<ManageView>(initialView);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,7 +96,7 @@ function ManageMemberModalDialog({
       ? `Manage a team member`
       : view === "remove"
         ? `Remove Member`
-        : `Transfer Team Ownership`;
+        : `Transfer Ownership`;
 
   return (
     <Modal
@@ -104,7 +106,6 @@ function ManageMemberModalDialog({
       titleId="manage-member-modal-title"
       error={error}
       loading={loading}
-      className="w-full max-w-xl max-h-[80vh] overflow-y-auto"
     >
       {view === "overview" && (
         <div className="flex flex-col gap-5">
@@ -155,8 +156,50 @@ function ManageMemberModalDialog({
         </div>
       )}
 
-      {view === "transfer" && (
-        <div className="flex flex-col gap-4">
+      {view === "transfer" &&
+        (initialView === "transfer" ? (
+          <div className="flex flex-col items-center gap-8 text-center my-4">
+            <Text
+              size="sm"
+              className="text-foreground/80 leading-relaxed text-center"
+            >
+              You are going to transfer the ownership of{" "}
+              <span className="text-primary font-semibold">
+                {teamName}
+              </span>{" "}
+              to{" "}
+              <span className="text-primary font-semibold">
+                {member.display_name}
+              </span>
+              . You will completely lose the ownership of the project and become
+              a guest member.{" "}
+              <span className="font-bold text-foreground">Are you sure?</span>
+            </Text>
+
+            <div className="flex items-center justify-center gap-4">
+              <Button
+                variant="glass"
+                size="sm"
+                onClick={onClose}
+                disabled={loading}
+                className="rounded-full px-8 py-3"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleTransfer}
+                disabled={loading}
+                loading={loading}
+                className="rounded-full px-8 py-3 bg-[#e11d48] text-white font-bold"
+              >
+                Transfer
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
           <button
             type="button"
             onClick={() => {
@@ -272,83 +315,126 @@ function ManageMemberModalDialog({
             </Button>
           </div>
         </div>
-      )}
+      ))}
 
-      {view === "remove" && (
-        <div className="flex flex-col gap-4">
-          <button
-            type="button"
-            onClick={() => {
-              setError(null);
-              setView("overview");
-            }}
-            className="text-primary hover:text-fg transition-colors flex items-center gap-1.5 cursor-pointer w-fit"
-          >
-            <Icon icon="mdi:arrow-left" /> Back to member options
-          </button>
-
-          <div className="px-4 flex flex-col gap-2.5">
-            <div className="flex items-center gap-2 text-danger-lighter font-bold text-sm">
-              <Text as="span" className="font-bold text-danger">
-                Warning: Confirm Member Removal
-              </Text>
-            </div>
-            <Text size="sm" className="text-left">
-              You are going to remove <strong>{member.display_name}</strong> from{" "}
-              <strong>{teamName || "this team"}</strong>. Upcoming consequences of
-              this action include:
-            </Text>
-            <ul className="list-disc pl-4 text-left">
-              <li>
-                They will immediately lose access to all projects, practice
-                sessions, and data in this team.
-              </li>
-              <li>
-                Any active invitations or roles linked to this team will be
-                revoked.
-              </li>
-              <li>
-                They will require a new invitation from the team owner to rejoin in
-                the future.
-              </li>
-            </ul>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Wrapper
-              variant="glass"
-              borderGradient="neutral"
-              className="p-3 rounded-xl flex gap-2.5 cursor-pointer select-none"
-              onClick={() => setConfirmRemoveChecked(!confirmRemoveChecked)}
-            >
-              <input
-                type="checkbox"
-                checked={confirmRemoveChecked}
-                onChange={(e) => setConfirmRemoveChecked(e.target.checked)}
-                onClick={(e) => e.stopPropagation()}
-                className="rounded border-foreground/30 accent-danger"
-              />
-              <Text size="sm" className="text-foreground/90 text-left">
-                I understand that <strong>{member.display_name}</strong> will be
-                removed from the team and lose all access immediately.
-              </Text>
-            </Wrapper>
-          </div>
-
-          <div className="flex flex-col gap-2 pt-2">
-            <Button
-              variant="danger"
+      {view === "remove" &&
+        (initialView === "remove" ? (
+          <div className="flex flex-col items-center gap-8 text-center my-4">
+            <Text
               size="sm"
-              onClick={handleRemove}
-              disabled={!confirmRemoveChecked || loading}
-              loading={loading}
-              className="w-full uppercase tracking-wider text-wrap"
+              className="text-foreground/80 leading-relaxed text-center"
             >
-              Remove member
-            </Button>
+              You are going to remove{" "}
+              <span className="text-primary font-semibold">
+                {member.display_name}
+              </span>{" "}
+              from{" "}
+              <span className="text-primary font-semibold">
+                {teamName || "Team 1"}
+              </span>
+              . They will lose access to this team and all projects and session
+              inside it.{" "}
+              <span className="font-bold text-foreground">Are you sure?</span>
+            </Text>
+
+            <div className="flex items-center justify-center gap-4">
+              <Button
+                variant="glass"
+                size="sm"
+                onClick={onClose}
+                disabled={loading}
+                className="rounded-full px-8 py-3"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleRemove}
+                disabled={loading}
+                loading={loading}
+                className="rounded-full px-8 py-3 bg-[#e11d48] text-white font-bold"
+                aria-label="Remove member"
+              >
+                Remove
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex flex-col gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setView("overview");
+              }}
+              className="text-primary hover:text-fg transition-colors flex items-center gap-1.5 cursor-pointer w-fit"
+            >
+              <Icon icon="mdi:arrow-left" /> Back to member options
+            </button>
+
+            <div className="px-4 flex flex-col gap-2.5">
+              <div className="flex items-center gap-2 text-danger-lighter font-bold text-sm">
+                <Text as="span" className="font-bold text-danger">
+                  Warning: Confirm Member Removal
+                </Text>
+              </div>
+              <Text size="sm" className="text-left">
+                You are going to remove <strong>{member.display_name}</strong> from{" "}
+                <strong>{teamName || "this team"}</strong>. Upcoming consequences of
+                this action include:
+              </Text>
+              <ul className="list-disc pl-4 text-left">
+                <li>
+                  They will immediately lose access to all projects, practice
+                  sessions, and data in this team.
+                </li>
+                <li>
+                  Any active invitations or roles linked to this team will be
+                  revoked.
+                </li>
+                <li>
+                  They will require a new invitation from the team owner to rejoin in
+                  the future.
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Wrapper
+                variant="glass"
+                borderGradient="neutral"
+                className="p-3 rounded-xl flex gap-2.5 cursor-pointer select-none"
+                onClick={() => setConfirmRemoveChecked(!confirmRemoveChecked)}
+              >
+                <input
+                  type="checkbox"
+                  checked={confirmRemoveChecked}
+                  onChange={(e) => setConfirmRemoveChecked(e.target.checked)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="rounded border-foreground/30 accent-danger"
+                />
+                <Text size="sm" className="text-foreground/90 text-left">
+                  I understand that <strong>{member.display_name}</strong> will be
+                  removed from the team and lose all access immediately.
+                </Text>
+              </Wrapper>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-2">
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleRemove}
+                disabled={!confirmRemoveChecked || loading}
+                loading={loading}
+                className="w-full uppercase tracking-wider text-wrap"
+              >
+                Remove member
+              </Button>
+            </div>
+          </div>
+        ))}
     </Modal>
   );
 }

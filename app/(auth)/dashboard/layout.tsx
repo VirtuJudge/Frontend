@@ -1,5 +1,5 @@
 import React from "react";
-import NavBar from "@/components/Nav-Bar/nav-bar";
+import DashboardNavBar from "@/components/Nav-Bar/dashboard-nav-bar";
 
 export default function DashboardLayout({
   children,
@@ -8,7 +8,7 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex flex-col">
-      <NavBar />
+      <DashboardNavBar />
       {children}
     </div>
   );

@@ -349,21 +349,29 @@ describe("Project Page Navigation & Custom Layout", () => {
   });
 
   describe("ProjectDetailsPage Component", () => {
-    it("renders project information, team link, and asset overview sections", async () => {
+    it("renders assets and sessions sections with action controls", async () => {
       renderWithProviders(
         <ProjectDetailsContent projectId="01J6GZ3C000000000000000003" />,
       );
 
-      expect(
-        await screen.findByText("Preparing for the investor demo day showcase"),
-      ).toBeDefined();
+      // Section titles
+      expect(await screen.findByText("Assets")).toBeDefined();
+      expect(screen.getByText("Sessions")).toBeDefined();
 
-      expect(screen.getByText("Slides & Documents")).toBeDefined();
-      expect(
-        screen.getByRole("link", {
-          name: /(start practice session|prepare session)/i,
-        }),
-      ).toBeDefined();
+      // Assets rendered
+      expect(screen.getByText("investor_deck.pdf")).toBeDefined();
+      expect(screen.getByText("pitch_deck.pptx")).toBeDefined();
+
+      // Sessions rendered with assets count
+      expect(screen.getByText("Session 1")).toBeDefined();
+      expect(screen.getByText("Session 2")).toBeDefined();
+
+      // Link to prepare session
+      const sessionLinks = screen.getAllByRole("link", {
+        name: /open session 1/i,
+      });
+      expect(sessionLinks.length).toBeGreaterThan(0);
+      expect(sessionLinks[0].getAttribute("href")).toContain("/session/prepare");
     });
   });
 

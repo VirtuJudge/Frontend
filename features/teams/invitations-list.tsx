@@ -8,6 +8,7 @@ import { InviteMemberModal } from "./invite-member-modal";
 
 interface InvitationsListProps {
   teamId: string;
+  teamName: string;
   invitations: TeamInvitation[];
   onInvitationUpdated: () => void;
   isOwner?: boolean;
@@ -15,6 +16,7 @@ interface InvitationsListProps {
 
 export function InvitationsList({
   teamId,
+  teamName,
   invitations,
   onInvitationUpdated,
   isOwner = true,
@@ -183,6 +185,7 @@ export function InvitationsList({
       />
 
       <ManageInvitationModal
+        teamName={teamName}
         teamId={teamId}
         invitation={selectedManageInvitation}
         isOpen={selectedManageInvitation !== null}

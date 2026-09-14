@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Input, Modal } from "@/components";
+import { Button, Input, Modal } from "@/components";
 import { apiClient } from "@/lib/api/client";
 import { Project } from "@/lib/api/types";
 
@@ -57,31 +57,47 @@ export function CreateProjectModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Create a New Project"
+      title="Create a project"
       titleId="create-project-title"
       error={error}
       loading={loading}
-      onSubmit={handleSubmit}
-      submitText="Create Project"
-      loadingText="Creating..."
+      footer={null}
     >
-      <Input
-        label="Project Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="e.g. Series A Pitch Rehearsal"
-        disabled={loading}
-        className="w-full"
-      />
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-2xl flex flex-col gap-2.5 my-4"
+      >
+        <div className="flex flex-col flex-wrap justify-center items-center gap-5 w-full">
+            <Input
+              value={name}
+              label="Project name"
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Series A Pitch Rehearsal"
+              disabled={loading}
+              autoFocus
+              wrapperClassName="!rounded-full !bg-white/5 !border-white/10"
+              className="max-w-md w-full"
+            />
+            <Input
+              value={description}
+              label="Project description"
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe the project's goals and scope"
+              disabled={loading}
+              wrapperClassName="!rounded-full !bg-white/5 !border-white/10"
+              className="max-w-md w-full"
+            />
 
-      <Input
-        label="Description (Optional)"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Preparing for investor pitch demo day"
-        disabled={loading}
-        className="w-full"
-      />
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={loading}
+            className="rounded-full px-10 py-2 font-bold shrink-0"
+          >
+            {loading ? "Creating..." : "Create"}
+          </Button>
+        </div>
+      </form>
     </Modal>
   );
 }
