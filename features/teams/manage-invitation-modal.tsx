@@ -8,7 +8,7 @@ import { apiClient, ApiClientError } from "@/lib/api/client";
 
 interface ManageInvitationModalProps {
   teamId: string;
-  teamName: string;
+  teamName?: string;
   invitation: TeamInvitation | null;
   isOpen: boolean;
   onClose: () => void;

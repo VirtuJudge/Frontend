@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Modal, Text, Button } from "@/components";
+import { Modal } from "@/components";
 import { useDirectUpload } from "@/hooks/use-direct-upload";
 import { cn } from "@/lib/utils";
 
@@ -139,7 +139,7 @@ export function UploadAssetModal({
             "w-full rounded-[36px] sm:rounded-[44px] border border-dashed transition-all duration-200 flex flex-col items-center justify-center py-10 px-6 sm:py-12 sm:px-12 cursor-pointer group",
             isDragOver
               ? "border-primary bg-primary/10 shadow-[0_0_25px_rgba(6,249,228,0.2)]"
-              : "border-primary/40 hover:border-primary/80 bg-transparent hover:bg-white/[0.02]",
+              : "border-primary/40 hover:border-primary/80 bg-transparent hover:bg-white/2",
             isUploading && "pointer-events-none opacity-80",
           )}
         >
