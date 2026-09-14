@@ -12,6 +12,18 @@ import {
   SessionTimerBadge,
   SessionConfirmationModal,
 } from "@/features/session";
+import {
+  saveSessionConfig,
+  savePresentationVideo,
+  getSessionConfig,
+} from "@/lib/storage";
+import { apiClient } from "@/lib/api/client";
+import {
+  uploadFileDirectly,
+  validateFile,
+  computeFileChecksum,
+  generateIdempotencyKey,
+} from "@/lib/upload";
 
 export function SessionRecordContent({ projectId }: { projectId: string }) {
   const router = useRouter();
@@ -21,28 +33,19 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
   const pauseParam = searchParams.get("pause");
   const durationParam = searchParams.get("duration");
 
-  interface StoredSessionConfig {
-    projectId?: string;
-    timer?: boolean;
-    pause?: boolean;
-    presentationDuration?: number;
-  }
-
-  const storedConfig = useMemo<StoredSessionConfig | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const raw = sessionStorage.getItem(`session_config_${projectId}`);
-      return raw ? (JSON.parse(raw) as StoredSessionConfig) : null;
-    } catch {
-      return null;
-    }
+  const storedConfig = useMemo(() => {
+    return getSessionConfig(projectId);
   }, [projectId]);
 
   const showTimer =
-    timerParam !== null ? timerParam === "true" : (storedConfig?.timer ?? true);
+    timerParam !== null
+      ? timerParam === "true"
+      : (storedConfig?.showTimer ?? true);
 
   const allowPauses =
-    pauseParam !== null ? pauseParam === "true" : (storedConfig?.pause ?? true);
+    pauseParam !== null
+      ? pauseParam === "true"
+      : (storedConfig?.allowPauses ?? true);
 
   const initialDuration = useMemo<number>(() => {
     if (durationParam) {
@@ -57,6 +60,8 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
 
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [downloadId] = useState(() => Date.now());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [showStartModal, setShowStartModal] = useState(false);
   const [showRestartModal, setShowRestartModal] = useState(false);
@@ -66,6 +71,11 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
   const [isPaused, setIsPaused] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+
+  const [uploadProgress, setUploadProgress] = useState<{
+    stage: string;
+    percent: number;
+  } | null>(null);
 
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -164,6 +174,10 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
               const url = URL.createObjectURL(blob);
               videoUrlRef.current = url;
               setVideoUrl(url);
+              savePresentationVideo(projectId, {
+                videoUrl: url,
+                fileName: `recording-${Date.now()}.webm`,
+              });
             }
 
             if (mediaStreamRef.current) {
@@ -193,7 +207,7 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
           setShowStartModal(false);
         });
     },
-    [],
+    [projectId],
   );
 
   const stopRecording = useCallback(() => {
@@ -343,6 +357,8 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
       videoUrlRef.current = null;
     }
     setVideoUrl(null);
+    setSubmitError(null);
+    setUploadProgress(null);
     setIsRequesting(true);
     setIsBlocked(false);
     resetTimer(initialDuration);
@@ -431,6 +447,10 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
           const url = URL.createObjectURL(blob);
           videoUrlRef.current = url;
           setVideoUrl(url);
+          savePresentationVideo(projectId, {
+            videoUrl: url,
+            fileName: `recording-${Date.now()}.webm`,
+          });
         }
 
         if (mediaStreamRef.current) {
@@ -451,6 +471,195 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
       setIsRequesting(true);
       setIsBlocked(false);
       initCamera(false, true);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (isSubmitting || !videoUrl) return;
+
+    try {
+      setIsSubmitting(true);
+      setSubmitError(null);
+      setUploadProgress({ stage: "Preparing presentation video...", percent: 5 });
+
+      // 1. Get stored session configuration from localStorage
+      const config = getSessionConfig(projectId);
+      const sessionKey = generateIdempotencyKey("session");
+
+      // 2. Prepare the recorded video file to upload
+      let fileToUpload: File;
+      if (
+        recordedChunksRef.current &&
+        recordedChunksRef.current.length > 0
+      ) {
+        const mime = recordedChunksRef.current[0].type || "video/webm";
+        const ext = mime.includes("mp4") ? ".mp4" : ".webm";
+        fileToUpload = new File(
+          recordedChunksRef.current,
+          `presentation-${Date.now()}${ext}`,
+          { type: mime },
+        );
+      } else {
+        try {
+          const res = await fetch(videoUrl);
+          const blob = await res.blob();
+          const mime = blob.type || "video/webm";
+          const ext = mime.includes("mp4") ? ".mp4" : ".webm";
+          fileToUpload = new File([blob], `presentation-${Date.now()}${ext}`, {
+            type: mime,
+          });
+        } catch {
+          fileToUpload = new File([], `presentation-${Date.now()}.webm`, {
+            type: "video/webm",
+          });
+        }
+      }
+
+      // Validate video file size and format (max 500 MB, .mp4 or .webm)
+      const validation = validateFile(fileToUpload, "presentation_video");
+      if (!validation.valid) {
+        throw new Error(
+          validation.error ||
+            "The presentation video must be .mp4 or .webm and under 500 MB.",
+        );
+      }
+
+      const mediaType = fileToUpload.type.includes("mp4")
+        ? "video/mp4"
+        : "video/webm";
+      const fileName = fileToUpload.name;
+
+      // 3. Compute SHA256 checksum
+      setUploadProgress({ stage: "Calculating video checksum...", percent: 15 });
+      let checksum =
+        "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+      try {
+        checksum = await computeFileChecksum(fileToUpload, (pct) => {
+          setUploadProgress({
+            stage: "Calculating video checksum...",
+            percent: Math.min(25, Math.round(pct * 0.25)),
+          });
+        });
+      } catch (checksumErr) {
+        console.warn("Checksum calculation notice:", checksumErr);
+      }
+
+      // 4. Create upload intent
+      setUploadProgress({ stage: "Requesting upload slot...", percent: 30 });
+      const intentKey = generateIdempotencyKey("intent");
+      const intent = await apiClient.createUploadIntent(
+        projectId,
+        {
+          file_name: fileName,
+          declared_size_bytes: fileToUpload.size || 1024 * 1024,
+          declared_media_type: mediaType,
+          kind: "presentation_video",
+        },
+        intentKey,
+      );
+
+      const presentationAssetId = intent.asset_id;
+      const presentationVersionId = intent.version_id || intent.asset_id;
+      let videoPlaybackLink = videoUrl;
+
+      // 5. Upload video file to storage destination
+      if (intent.upload_url) {
+        setUploadProgress({
+          stage: "Uploading presentation video...",
+          percent: 35,
+        });
+        await uploadFileDirectly({
+          uploadUrl: intent.upload_url,
+          file: fileToUpload,
+          headers: intent.required_headers,
+          onProgress: (prog) => {
+            setUploadProgress({
+              stage: `Uploading presentation video (${prog.percentage}%)...`,
+              percent: 35 + Math.round(prog.percentage * 0.45),
+            });
+          },
+        });
+        videoPlaybackLink = intent.upload_url;
+      }
+
+      // 6. Complete upload verification on backend
+      setUploadProgress({
+        stage: "Completing upload verification...",
+        percent: 85,
+      });
+      const completeKey = generateIdempotencyKey("complete");
+      await apiClient.completeUpload(
+        presentationAssetId,
+        presentationVersionId,
+        {
+          checksum,
+          size_bytes: fileToUpload.size,
+        },
+        completeKey,
+      );
+
+      // 7. Save presentation video details to localStorage under projectId
+      savePresentationVideo(projectId, {
+        videoUrl,
+        link: videoPlaybackLink,
+        assetId: presentationAssetId,
+        versionId: presentationVersionId,
+        fileName,
+        uploadedAt: new Date().toISOString(),
+      });
+
+      // 8. Create practice session via API with all configurations ready
+      setUploadProgress({ stage: "Creating practice session...", percent: 92 });
+      const docAssetIds =
+        config?.documentAssetIds ||
+        config?.selectedAssets?.map((a) => a.assetId || a.id).filter(Boolean) ||
+        [];
+      const docVersionIds =
+        config?.documentVersionIds ||
+        config?.selectedAssets
+          ?.map((a) => a.versionId)
+          .filter((v): v is string => Boolean(v)) ||
+        [];
+
+      const session = await apiClient.createPracticeSession(
+        projectId,
+        {
+          name: `Practice Session ${new Date().toLocaleDateString()}`,
+          presentation_asset_id: presentationAssetId,
+          presentation_asset_version_id: presentationVersionId,
+          document_asset_ids: docAssetIds,
+          supporting_document_version_ids: docVersionIds,
+          policy_version: "1.0",
+          rubric: {
+            rubric_id: "startup_pitch",
+            version: 1,
+          },
+        },
+        sessionKey,
+      );
+
+      // 9. Save created sessionId in localStorage
+      saveSessionConfig(projectId, {
+        sessionId: session.id,
+      });
+
+      setUploadProgress({
+        stage: "Session created! Redirecting to Q&A...",
+        percent: 100,
+      });
+
+      // 10. Successfully navigate to sessions/:id/qa route
+      router.push(`/sessions/${session.id}/qa`);
+    } catch (err: unknown) {
+      console.error("Failed to submit session:", err);
+      setSubmitError(
+        err instanceof Error
+          ? err.message
+          : "Failed to upload presentation video and create session",
+      );
+      setUploadProgress(null);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -475,8 +684,33 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
               />
             </div>
 
+            {uploadProgress && (
+              <div className="w-full flex flex-col gap-2 px-2">
+                <div className="flex justify-between text-xs sm:text-sm text-white/80 font-medium">
+                  <span>{uploadProgress.stage}</span>
+                  <span>{uploadProgress.percent}%</span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className="bg-[#00e5cc] h-full transition-all duration-300 rounded-full"
+                    style={{ width: `${uploadProgress.percent}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {submitError && (
+              <div className="p-3 rounded-xl bg-danger/10 border border-danger/30 text-danger text-sm text-center w-full">
+                {submitError}
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center justify-between gap-4 w-full *:min-w-65">
-              <Button onClick={handleRecordAgain} className="flex-1">
+              <Button
+                onClick={handleRecordAgain}
+                className="flex-1"
+                disabled={isSubmitting}
+              >
                 <Icon icon="tabler:rotate" />
                 <span>Record Again</span>
               </Button>
@@ -484,13 +718,19 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
               <Button
                 variant="primary"
                 className="flex-1"
-                // onClick={handleRecordAgain} will be replaced with the actual submit handler when integrated
+                onClick={handleSubmit}
+                loading={isSubmitting}
+                disabled={isSubmitting}
               >
                 <Icon icon="tabler:upload" />
-                <span>Submit</span>
+                <span>
+                  {isSubmitting
+                    ? uploadProgress?.stage || "Submitting..."
+                    : "Submit"}
+                </span>
               </Button>
 
-              <Button className="flex-1">
+              <Button className="flex-1" disabled={isSubmitting}>
                 <a
                   href={videoUrl}
                   download={`recording-${downloadId}.webm`}
@@ -505,6 +745,19 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
         ) : (
           /* Live Camera View & Active Recording Controls */
           <>
+            {submitError && (
+              <div className="fixed top-20 inset-x-4 max-w-md mx-auto p-3 rounded-xl bg-danger/20 border border-danger/40 text-white text-sm text-center z-50 backdrop-blur-md shadow-lg flex items-center justify-between gap-2">
+                <span>{submitError}</span>
+                <button
+                  type="button"
+                  onClick={() => setSubmitError(null)}
+                  className="text-white/80 hover:text-white cursor-pointer"
+                  aria-label="Dismiss error"
+                >
+                  <Icon icon="tabler:x" className="text-base" />
+                </button>
+              </div>
+            )}
             <video
               ref={liveVideoRef}
               autoPlay

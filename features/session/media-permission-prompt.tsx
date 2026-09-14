@@ -68,7 +68,7 @@ export function MediaPermissionPrompt({
           className="h-12 w-60 py-0 rounded-full  font-medium text-white/90 hover:brightness-125 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 text-center"
         >
           <Icon icon="tabler:arrow-left" className="text-xl" />
-          <span>Edit Configurations</span>
+          <span>Back to Prepare</span>
         </Wrapper>
       </div>
     </div>

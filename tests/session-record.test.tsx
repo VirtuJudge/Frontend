@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionRecordContent } from "@/app/(auth)/projects/[projectId]/session/record/page";
-import { apiClient } from "@/lib/api/client";
 
 const pushMock = vi.fn();
 let mockSearchParams = new URLSearchParams();
@@ -34,7 +33,6 @@ function renderWithProviders(ui: React.ReactElement) {
 describe("SessionRecordContent (/projects/:id/session/record)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiClient.setUseMock(true);
     mockSearchParams = new URLSearchParams();
 
     Object.defineProperty(global.navigator, "mediaDevices", {
@@ -218,11 +216,11 @@ describe("SessionRecordContent (/projects/:id/session/record)", () => {
     expect(screen.getByText(/in your address bar/i)).toBeDefined();
     expect(screen.getByRole("button", { name: /try again/i })).toBeDefined();
     expect(
-      screen.getByRole("button", { name: /edit configurations/i }),
+      screen.getByRole("button", { name: /back to prepare/i }),
     ).toBeDefined();
   });
 
-  it("navigates back to session prepare when clicking Edit Configurations from permission prompt", async () => {
+  it("navigates back to session prepare when clicking Back to Prepare from permission prompt", async () => {
     Object.defineProperty(global.navigator, "mediaDevices", {
       value: {
         getUserMedia: vi.fn().mockRejectedValue(new Error("Permission denied")),
@@ -236,7 +234,7 @@ describe("SessionRecordContent (/projects/:id/session/record)", () => {
     );
 
     const backBtn = await screen.findByRole("button", {
-      name: /edit configurations/i,
+      name: /back to prepare/i,
     });
     fireEvent.click(backBtn);
 

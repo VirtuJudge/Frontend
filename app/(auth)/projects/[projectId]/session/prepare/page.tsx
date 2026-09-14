@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use, useMemo } from "react";
+import { useState, use, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Button,
@@ -15,10 +15,14 @@ import {
   useDurationState,
   useProjectAssets,
   useDirectUpload,
+  isAllowedFile,
+  MAX_FILE_SIZE,
+  formatFileSize,
 } from "@/hooks";
 import { Asset, AssetVersion } from "@/lib/api/types";
 import { UploadProgressList } from "@/features/upload";
 import { WorkspaceNavBar } from "@/components/Nav-Bar";
+import { saveSessionConfig, getSessionConfig } from "@/lib/storage";
 
 export default function PrepareSessionPage({
   params,
@@ -28,22 +32,51 @@ export default function PrepareSessionPage({
   const { projectId } = use(params);
   const router = useRouter();
 
-  const [discussionPanel, setDiscussionPanel] = useState(true);
-  const [showTimer, setShowTimer] = useState(true);
-  const [allowPauses, setAllowPauses] = useState(true);
+  const savedConfig = useMemo(() => getSessionConfig(projectId), [projectId]);
+
+  const [discussionPanel, setDiscussionPanel] = useState(
+    () => savedConfig?.discussionPanel ?? true,
+  );
+  const [showTimer, setShowTimer] = useState(
+    () => savedConfig?.showTimer ?? true,
+  );
+  const [allowPauses, setAllowPauses] = useState(
+    () => savedConfig?.allowPauses ?? true,
+  );
   const [isStarting, setIsStarting] = useState(false);
 
-  const presentationTime = useDurationState(6, 30);
-  const questionsTime = useDurationState(5, 0);
+  const presentationTime = useDurationState(
+    savedConfig?.presentationMinutes ?? 6,
+    savedConfig?.presentationSeconds ?? 30,
+  );
+  const questionsTime = useDurationState(
+    savedConfig?.questionsMinutes ?? 5,
+    savedConfig?.questionsSeconds ?? 0,
+  );
 
   const { documentAssets, refetch: refetchAssets } = useProjectAssets({
     projectId,
   });
 
-  const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
+  const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>(
+    () => savedConfig?.documentAssetIds ?? [],
+  );
   const [selectedVersionIds, setSelectedVersionIds] = useState<
     Record<string, string>
-  >({});
+  >(() => {
+    if (savedConfig?.selectedAssets) {
+      const verMap: Record<string, string> = {};
+      for (const a of savedConfig.selectedAssets) {
+        if (a.assetId && a.versionId) {
+          verMap[a.assetId] = a.versionId;
+        }
+      }
+      return verMap;
+    }
+    return {};
+  });
+
+  const [selectionNotice, setSelectionNotice] = useState<string | null>(null);
 
   const {
     items: uploadItems,
@@ -56,7 +89,7 @@ export default function PrepareSessionPage({
     onUploadSuccess: (asset) => {
       refetchAssets();
       setSelectedAssetIds((prev) =>
-        prev.includes(asset.id) ? prev : [...prev, asset.id],
+        prev.length < 5 && !prev.includes(asset.id) ? [...prev, asset.id] : prev,
       );
       if (asset.version_id) {
         setSelectedVersionIds((prev) => ({
@@ -82,6 +115,7 @@ export default function PrepareSessionPage({
 
   const selectedProjectFiles = useMemo(() => {
     return selectedAssetIds
+      .slice(0, 5)
       .map((id) => documentAssets.find((a) => a.id === id))
       .filter((a): a is Asset => !!a)
       .map((asset) => ({
@@ -110,7 +144,7 @@ export default function PrepareSessionPage({
       const alreadyIncluded = files.some(
         (item) => item.name === f.name && item.size === f.size,
       );
-      if (!alreadyIncluded) {
+      if (!alreadyIncluded && files.length < 5) {
         files.push({
           id: `local-${f.name}-${f.size}`,
           name: f.name,
@@ -118,12 +152,62 @@ export default function PrepareSessionPage({
         });
       }
     }
-    return files;
+    return files.slice(0, 5);
   }, [selectedProjectFiles, attachedFiles]);
 
-  const totalSessionCount = combinedFiles.length;
-  const isProjectFilesLimitReached = documentAssets.length >= 5;
-  const isLimitReached = totalSessionCount >= 5 || isProjectFilesLimitReached;
+  // Automatically sync configurations to localStorage whenever any setting changes
+  useEffect(() => {
+    const totalPresentationSec =
+      presentationTime.minutes * 60 + presentationTime.seconds;
+    const totalQuestionsSec =
+      questionsTime.minutes * 60 + questionsTime.seconds;
+
+    const selectedAssets = combinedFiles.map((f) => ({
+      id: f.id,
+      assetId: f.assetId,
+      versionId: f.versionId,
+      name: f.name,
+      size: f.size,
+      type: f.name.endsWith(".pdf")
+        ? "application/pdf"
+        : "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    }));
+
+    const documentAssetIds = combinedFiles
+      .map((f) => f.assetId)
+      .filter((id): id is string => !!id);
+
+    const documentVersionIds = combinedFiles
+      .map((f) => f.versionId)
+      .filter((id): id is string => !!id);
+
+    saveSessionConfig(projectId, {
+      projectId,
+      discussionPanel,
+      showTimer,
+      allowPauses,
+      presentationDuration: totalPresentationSec,
+      presentationMinutes: presentationTime.minutes,
+      presentationSeconds: presentationTime.seconds,
+      questionsDuration: totalQuestionsSec,
+      questionsMinutes: questionsTime.minutes,
+      questionsSeconds: questionsTime.seconds,
+      selectedAssets,
+      documentAssetIds,
+      documentVersionIds,
+    });
+  }, [
+    projectId,
+    discussionPanel,
+    showTimer,
+    allowPauses,
+    presentationTime.minutes,
+    presentationTime.seconds,
+    questionsTime.minutes,
+    questionsTime.seconds,
+    combinedFiles,
+  ]);
+
   const currentSelectedFile =
     combinedFiles[selectedFileIndex] || combinedFiles[combinedFiles.length - 1];
 
@@ -144,16 +228,20 @@ export default function PrepareSessionPage({
     if (selectedFileIndex >= combinedFiles.length - 1) {
       setSelectedFileIndex(Math.max(0, combinedFiles.length - 2));
     }
+    setSelectionNotice(null);
   };
 
   const handleToggleProjectDocument = (doc: Asset) => {
     const isSelected = selectedAssetIds.includes(doc.id);
     if (isSelected) {
       setSelectedAssetIds((prev) => prev.filter((id) => id !== doc.id));
+      setSelectionNotice(null);
     } else {
-      if (totalSessionCount >= 5) {
+      if (combinedFiles.length >= 5) {
+        setSelectionNotice("Maximum 5 files can be selected for a session.");
         return;
       }
+      setSelectionNotice(null);
       setSelectedAssetIds((prev) => [...prev, doc.id]);
       if (!selectedVersionIds[doc.id]) {
         const verId =
@@ -172,21 +260,46 @@ export default function PrepareSessionPage({
     }));
   };
 
+  const handleIncomingFiles = (incomingFiles: File[]) => {
+    if (!incomingFiles.length) return;
+
+    const invalidFormat = incomingFiles.find((f) => !isAllowedFile(f));
+    if (invalidFormat) {
+      setSelectionNotice(
+        `Invalid format for "${invalidFormat.name}". Supported: PDF, PPTX`,
+      );
+      return;
+    }
+    const oversized = incomingFiles.find((f) => f.size > MAX_FILE_SIZE);
+    if (oversized) {
+      setSelectionNotice(
+        `"${oversized.name}" exceeds the 25 MB limit (${formatFileSize(oversized.size)})`,
+      );
+      return;
+    }
+
+    const remainingSlots = Math.max(0, 5 - combinedFiles.length);
+    const filesToSelect = incomingFiles.slice(0, remainingSlots);
+    if (filesToSelect.length > 0) {
+      handleAddFiles(filesToSelect);
+    }
+
+    if (incomingFiles.length > remainingSlots) {
+      setSelectionNotice(
+        "Maximum 5 files can be selected for a session. All files were uploaded to your project.",
+      );
+    } else {
+      setSelectionNotice(null);
+    }
+
+    uploadFiles(incomingFiles, "supporting_document").catch(() => {});
+  };
+
   const handleFileInputChangeWithUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    if (isLimitReached) {
-      e.target.value = "";
-      return;
-    }
     if (e.target.files?.length) {
-      const files = Array.from(e.target.files);
-      handleAddFiles(files);
-      const remainingSlots = Math.max(0, 5 - documentAssets.length);
-      const toUpload = files.slice(0, remainingSlots);
-      if (toUpload.length > 0) {
-        uploadFiles(toUpload, "supporting_document").catch(() => {});
-      }
+      handleIncomingFiles(Array.from(e.target.files));
     }
     e.target.value = "";
   };
@@ -194,29 +307,20 @@ export default function PrepareSessionPage({
   const handleDirectDropWithUpload = (e: React.DragEvent) => {
     e.preventDefault();
     handleDragLeave();
-    if (isLimitReached) return;
     if (e.dataTransfer.files?.length) {
-      const files = Array.from(e.dataTransfer.files);
-      handleAddFiles(files);
-      const remainingSlots = Math.max(0, 5 - documentAssets.length);
-      const toUpload = files.slice(0, remainingSlots);
-      if (toUpload.length > 0) {
-        uploadFiles(toUpload, "supporting_document").catch(() => {});
-      }
+      handleIncomingFiles(Array.from(e.dataTransfer.files));
     }
   };
 
   const handleOpenPicker = () => {
-    if (!isLimitReached && fileInputRef.current) {
+    if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  const handleDragOverWithLimit = (e: React.DragEvent) => {
+  const handleDragOverAlways = (e: React.DragEvent) => {
     e.preventDefault();
-    if (!isLimitReached) {
-      handleDragOver(e);
-    }
+    handleDragOver(e);
   };
 
   const handleStart = () => {
@@ -228,52 +332,61 @@ export default function PrepareSessionPage({
       const totalQuestionsSec =
         questionsTime.minutes * 60 + questionsTime.seconds;
 
-      const config = {
+      const selectedAssets = combinedFiles.map((f) => ({
+        id: f.id,
+        assetId: f.assetId,
+        versionId: f.versionId,
+        name: f.name,
+        size: f.size,
+        type: f.name.endsWith(".pdf")
+          ? "application/pdf"
+          : "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      }));
+
+      const documentAssetIds = combinedFiles
+        .map((f) => f.assetId)
+        .filter((id): id is string => !!id);
+
+      const documentVersionIds = combinedFiles
+        .map((f) => f.versionId)
+        .filter((id): id is string => !!id);
+
+      // Save complete session configuration to localStorage under projectId
+      saveSessionConfig(projectId, {
         projectId,
-        timer: showTimer,
-        pause: allowPauses,
-        panel: discussionPanel,
+        discussionPanel,
+        showTimer,
+        allowPauses,
         presentationDuration: totalPresentationSec,
+        presentationMinutes: presentationTime.minutes,
+        presentationSeconds: presentationTime.seconds,
         questionsDuration: totalQuestionsSec,
-        documentAssetIds: combinedFiles
-          .map((f) => f.assetId)
-          .filter((id): id is string => !!id),
-        documentVersionIds: combinedFiles
-          .map((f) => f.versionId)
-          .filter((id): id is string => !!id),
-        attachedFiles: combinedFiles.map((f) => ({
-          name: f.name,
-          size: f.size,
-          type: f.name.endsWith(".pdf")
-            ? "application/pdf"
-            : "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-          assetId: f.assetId,
-          versionId: f.versionId,
-        })),
-        selectedFileIndex,
-      };
+        questionsMinutes: questionsTime.minutes,
+        questionsSeconds: questionsTime.seconds,
+        selectedAssets,
+        documentAssetIds,
+        documentVersionIds,
+      });
 
       try {
         sessionStorage.setItem(
           `session_config_${projectId}`,
-          JSON.stringify(config),
+          JSON.stringify({
+            projectId,
+            timer: showTimer,
+            pause: allowPauses,
+            panel: discussionPanel,
+            presentationDuration: totalPresentationSec,
+            questionsDuration: totalQuestionsSec,
+            documentAssetIds,
+            documentVersionIds,
+            attachedFiles: selectedAssets,
+            selectedFileIndex,
+          }),
         );
       } catch {}
 
-      const query = new URLSearchParams({
-        timer: String(showTimer),
-        pause: String(allowPauses),
-        panel: String(discussionPanel),
-        duration: String(totalPresentationSec),
-        questionsDuration: String(totalQuestionsSec),
-      });
-      if (config.documentAssetIds.length > 0) {
-        query.set("documentAssetIds", config.documentAssetIds.join(","));
-      }
-      if (config.documentVersionIds.length > 0) {
-        query.set("documentVersionIds", config.documentVersionIds.join(","));
-      }
-      router.push(`/projects/${projectId}/session/record?${query.toString()}`);
+      router.push(`/projects/${projectId}/session/record`);
     }, 500);
   };
 
@@ -322,22 +435,21 @@ export default function PrepareSessionPage({
           <FileDropzone
             attachedFiles={combinedFiles}
             currentSelectedFile={currentSelectedFile}
-            isLimitReached={isLimitReached}
             isDropzoneDragOver={isDropzoneDragOver}
             fileInputRef={fileInputRef}
             onDrop={handleDirectDropWithUpload}
-            onDragOver={handleDragOverWithLimit}
+            onDragOver={handleDragOverAlways}
             onDragLeave={handleDragLeave}
             onFileInputChange={handleFileInputChangeWithUpload}
             onClick={handleOpenPicker}
           />
 
-          {fileError && (
+          {(fileError || selectionNotice) && (
             <Text
               size="xs"
               className="text-danger mt-1.5 font-medium text-center text-sm"
             >
-              {fileError}
+              {fileError || selectionNotice}
             </Text>
           )}
 
