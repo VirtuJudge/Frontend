@@ -74,115 +74,127 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
   const videoUrlRef = useRef<string | null>(null);
   const isStoppedRef = useRef(false);
   const hasInitializedRef = useRef(false);
+  const isRestartingRef = useRef(false);
 
-  const initCamera = useCallback((openModalOnReady = true) => {
-    if (isStoppedRef.current) {
-      return;
-    }
+  const initCamera = useCallback(
+    (openModalOnReady = true, startCountdownOnReady = false) => {
+      if (isStoppedRef.current) {
+        return;
+      }
 
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-      mediaStreamRef.current = null;
-    }
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state !== "inactive"
-    ) {
-      try {
-        mediaRecorderRef.current.stop();
-      } catch {}
-      mediaRecorderRef.current = null;
-    }
-    if (liveVideoRef.current && liveVideoRef.current.srcObject) {
-      liveVideoRef.current.srcObject = null;
-    }
-    if (videoUrlRef.current) {
-      URL.revokeObjectURL(videoUrlRef.current);
-      videoUrlRef.current = null;
-    }
-
-    recordedChunksRef.current = [];
-
-    navigator.mediaDevices
-      ?.getUserMedia({
-        video: {
-          width: { ideal: 1920, max: 1920 },
-          height: { ideal: 1080, max: 1080 },
-          frameRate: { ideal: 30, max: 60 },
-        },
-        audio: true,
-      })
-      .then((stream) => {
-        if (isStoppedRef.current) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-
-        mediaStreamRef.current = stream;
-
-        if (liveVideoRef.current) {
-          liveVideoRef.current.srcObject = stream;
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+      }
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.onstop = null;
+        mediaRecorderRef.current.ondataavailable = null;
+        if (mediaRecorderRef.current.state !== "inactive") {
           try {
-            liveVideoRef.current.play()?.catch(() => {});
+            mediaRecorderRef.current.stop();
           } catch {}
         }
+        mediaRecorderRef.current = null;
+      }
+      if (liveVideoRef.current && liveVideoRef.current.srcObject) {
+        liveVideoRef.current.srcObject = null;
+      }
+      if (videoUrlRef.current) {
+        URL.revokeObjectURL(videoUrlRef.current);
+        videoUrlRef.current = null;
+      }
 
-        const options: MediaRecorderOptions = {};
-        if (
-          typeof MediaRecorder !== "undefined" &&
-          MediaRecorder.isTypeSupported?.("video/webm")
-        ) {
-          options.mimeType = "video/webm";
-        }
+      recordedChunksRef.current = [];
 
-        let recorder: MediaRecorder;
-        try {
-          recorder = new MediaRecorder(stream, options);
-        } catch {
-          recorder = new MediaRecorder(stream);
-        }
-        mediaRecorderRef.current = recorder;
-
-        recorder.ondataavailable = (event) => {
-          if (event.data && event.data.size > 0) {
-            recordedChunksRef.current.push(event.data);
-          }
-        };
-
-        recorder.onstop = () => {
-          if (recordedChunksRef.current.length > 0) {
-            const blob = new Blob(recordedChunksRef.current, {
-              type: options.mimeType || "video/webm",
-            });
-            const url = URL.createObjectURL(blob);
-            videoUrlRef.current = url;
-            setVideoUrl(url);
+      navigator.mediaDevices
+        ?.getUserMedia({
+          video: {
+            width: { ideal: 1920, max: 1920 },
+            height: { ideal: 1080, max: 1080 },
+            frameRate: { ideal: 30, max: 60 },
+          },
+          audio: true,
+        })
+        .then((stream) => {
+          if (isStoppedRef.current) {
+            stream.getTracks().forEach((track) => track.stop());
+            return;
           }
 
-          if (mediaStreamRef.current) {
-            mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-            mediaStreamRef.current = null;
+          mediaStreamRef.current = stream;
+
+          if (liveVideoRef.current) {
+            liveVideoRef.current.srcObject = stream;
+            try {
+              liveVideoRef.current.play()?.catch(() => {});
+            } catch {}
           }
-          mediaRecorderRef.current = null;
-          setIsRecording(false);
+
+          const options: MediaRecorderOptions = {};
+          if (
+            typeof MediaRecorder !== "undefined" &&
+            MediaRecorder.isTypeSupported?.("video/webm")
+          ) {
+            options.mimeType = "video/webm";
+          }
+
+          let recorder: MediaRecorder;
+          try {
+            recorder = new MediaRecorder(stream, options);
+          } catch {
+            recorder = new MediaRecorder(stream);
+          }
+          mediaRecorderRef.current = recorder;
+
+          recorder.ondataavailable = (event) => {
+            if (isRestartingRef.current) return;
+            if (event.data && event.data.size > 0) {
+              recordedChunksRef.current.push(event.data);
+            }
+          };
+
+          recorder.onstop = () => {
+            if (isRestartingRef.current) {
+              return;
+            }
+            if (recordedChunksRef.current.length > 0) {
+              const blob = new Blob(recordedChunksRef.current, {
+                type: options.mimeType || "video/webm",
+              });
+              const url = URL.createObjectURL(blob);
+              videoUrlRef.current = url;
+              setVideoUrl(url);
+            }
+
+            if (mediaStreamRef.current) {
+              mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+              mediaStreamRef.current = null;
+            }
+            mediaRecorderRef.current = null;
+            setIsRecording(false);
+            setHasCamera(false);
+          };
+
+          setHasCamera(true);
+          setIsRequesting(false);
+          setIsBlocked(false);
+
+          if (openModalOnReady) {
+            setShowStartModal(true);
+          } else if (startCountdownOnReady) {
+            isRestartingRef.current = false;
+            setCountdown(3);
+          }
+        })
+        .catch(() => {
           setHasCamera(false);
-        };
-
-        setHasCamera(true);
-        setIsRequesting(false);
-        setIsBlocked(false);
-
-        if (openModalOnReady) {
-          setShowStartModal(true);
-        }
-      })
-      .catch(() => {
-        setHasCamera(false);
-        setIsRequesting(false);
-        setIsBlocked(true);
-        setShowStartModal(false);
-      });
-  }, []);
+          setIsRequesting(false);
+          setIsBlocked(true);
+          setShowStartModal(false);
+        });
+    },
+    [],
+  );
 
   const stopRecording = useCallback(() => {
     isStoppedRef.current = true;
@@ -346,20 +358,100 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
   };
 
   const handleConfirmRestart = () => {
+    isRestartingRef.current = true;
     setShowRestartModal(false);
+    setShowStartModal(false);
     isStoppedRef.current = false;
     hasInitializedRef.current = true;
     setIsRecording(false);
+    setIsPaused(false);
     setCountdown(null);
+
     if (videoUrlRef.current) {
       URL.revokeObjectURL(videoUrlRef.current);
       videoUrlRef.current = null;
     }
     setVideoUrl(null);
-    setIsRequesting(true);
-    setIsBlocked(false);
+    recordedChunksRef.current = [];
+
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.ondataavailable = null;
+      if (mediaRecorderRef.current.state !== "inactive") {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch {}
+      }
+      mediaRecorderRef.current = null;
+    }
+
     resetTimer(initialDuration);
-    initCamera(true);
+
+    const stream = mediaStreamRef.current;
+    const hasLiveTracks =
+      stream &&
+      stream.getTracks &&
+      stream.getTracks().length > 0 &&
+      stream.getTracks().some((t) => t.readyState !== "ended");
+
+    if (hasLiveTracks && stream) {
+      stream.getTracks().forEach((t) => (t.enabled = true));
+
+      const options: MediaRecorderOptions = {};
+      if (
+        typeof MediaRecorder !== "undefined" &&
+        MediaRecorder.isTypeSupported?.("video/webm")
+      ) {
+        options.mimeType = "video/webm";
+      }
+
+      let recorder: MediaRecorder;
+      try {
+        recorder = new MediaRecorder(stream, options);
+      } catch {
+        recorder = new MediaRecorder(stream);
+      }
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (event) => {
+        if (isRestartingRef.current) return;
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        if (isRestartingRef.current) {
+          return;
+        }
+        if (recordedChunksRef.current.length > 0) {
+          const blob = new Blob(recordedChunksRef.current, {
+            type: options.mimeType || "video/webm",
+          });
+          const url = URL.createObjectURL(blob);
+          videoUrlRef.current = url;
+          setVideoUrl(url);
+        }
+
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+          mediaStreamRef.current = null;
+        }
+        mediaRecorderRef.current = null;
+        setIsRecording(false);
+        setHasCamera(false);
+      };
+
+      setHasCamera(true);
+      setIsRequesting(false);
+      setIsBlocked(false);
+      isRestartingRef.current = false;
+      setCountdown(3);
+    } else {
+      setIsRequesting(true);
+      setIsBlocked(false);
+      initCamera(false, true);
+    }
   };
 
   return (
@@ -367,7 +459,7 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
       <div className="relative w-full h-full flex items-center justify-center">
         {videoUrl ? (
           /* Recorded Preview & Download Section */
-          <div className="relative w-full max-w-5xl p-6 sm:p-8 rounded-2xl bg-[#0e1716]/90 border border-primary/10 backdrop-blur-xl shadow-2xl flex flex-col items-center gap-6 z-40">
+          <div className="relative w-full max-w-5xl p-6 m-4 sm:p-8 rounded-2xl bg-[#0e1716]/90 border border-primary/10 backdrop-blur-xl shadow-2xl flex flex-col items-center gap-6 z-40">
             <Text size="lg" className="text-center">
               Recorded Preview
             </Text>
@@ -481,12 +573,12 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
 
             {countdown !== null && countdown > 0 && (
               <div
-                className="fixed inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center z-50 pointer-events-none"
+                className="fixed inset-0 flex flex-col items-center justify-center z-50 pointer-events-none"
                 aria-live="assertive"
                 aria-label={`Recording starts in ${countdown}`}
               >
                 <div className="flex flex-col items-center justify-center">
-                  <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-black/70 backdrop-blur-md flex items-center justify-center shadow-[0_0_60px_rgba(6,249,228,0.4)] transition-all transform scale-100">
+                  <div className="w-36 h-36 sm:w-44 sm:h-44 bg-fg/10 backdrop-blur-md rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(6,249,228,0.4)] transition-all transform scale-100">
                     <span className="text-8xl sm:text-9xl  font-bold text-primary">
                       {countdown}
                     </span>
