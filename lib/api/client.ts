@@ -1,9 +1,8 @@
-import {
+import type {
   User,
   Team,
   Project,
   Asset,
-  AssetKind,
   AssetVersion,
   UploadIntent,
   DownloadIntent,
@@ -13,8 +12,10 @@ import {
   CompleteUploadRequest,
   PracticeSession,
   SpeakerMapping,
+  QARound,
   Question,
   Answer,
+  AnswerUploadIntentResponse,
   Report,
   Page,
   InvitationPreview,
@@ -27,6 +28,8 @@ import {
 import { getClientAuthToken } from "@/lib/auth/cookies";
 import { AUTH_COOKIE_NAME } from "@/lib/auth/middleware";
 import { generateIdempotencyKey } from "@/lib/upload/idempotency";
+
+export * from "./types";
 
 export class ApiClientError extends Error {
   constructor(
@@ -72,9 +75,13 @@ export const API_ENDPOINTS = {
   speakerMappings: (sessionId: string) =>
     `/practice-sessions/${sessionId}/speaker-mappings`,
   questions: (sessionId: string) => `/practice-sessions/${sessionId}/questions`,
-  submitAnswer: (questionId: string) => `/questions/${questionId}/answers`,
+  qaRound: (sessionId: string) => `/practice-sessions/${sessionId}/qa`,
+  answerUploadIntents: (questionId: string) => `/questions/${questionId}/answer-upload-intents`,
+  submitAnswer: (answerId: string) => `/answers/${answerId}/submit`,
   skipAnswer: (questionId: string) => `/questions/${questionId}/skip`,
   report: (sessionId: string) => `/practice-sessions/${sessionId}/report`,
+  evaluation: (sessionId: string) => `/practice-sessions/${sessionId}/evaluation`,
+  sessionEvents: (sessionId: string) => `/practice-sessions/${sessionId}/events`,
   teamMembers: (teamId: string) => `/teams/${teamId}/members`,
   teamMember: (teamId: string, userId: string) =>
     `/teams/${teamId}/members/${userId}`,
@@ -91,374 +98,16 @@ export const API_ENDPOINTS = {
 export interface ClientConfig {
   baseUrl?: string;
   getToken?: () => Promise<string | null> | string | null;
-  useMock?: boolean;
 }
-
-export const MOCK_DATA = {
-  user: {
-    id: "01J6GZ1A000000000000000001",
-    display_name: "Alex Presenter",
-    email: "alex@example.com",
-    created_at: "2026-09-01T10:00:00Z",
-  } as User,
-  teams: [
-    {
-      id: "01J6GZ2B000000000000000002",
-      name: "VirtuJudge Pitch Team",
-      role: "owner",
-      member_count: 3,
-      created_at: "2026-09-01T10:15:00Z",
-      version: 1,
-    },
-    {
-      id: "01J6GZ2B000000000000000009",
-      name: "AI Pitch Accelerator",
-      role: "member",
-      member_count: 5,
-      created_at: "2026-09-05T14:30:00Z",
-      version: 1,
-    },
-  ] as Team[],
-  teamMembers: [
-    {
-      team_id: "01J6GZ2B000000000000000002",
-      user_id: "01J6GZ1A000000000000000001",
-      role: "owner",
-      display_name: "Alex Presenter",
-      joined_at: "2026-09-01T10:15:00Z",
-      version: 1,
-    },
-    {
-      team_id: "01J6GZ2B000000000000000002",
-      user_id: "01J6GZ1B000000000000000002",
-      role: "member",
-      display_name: "Morgan Engineer",
-      joined_at: "2026-09-01T11:00:00Z",
-      version: 1,
-    },
-    {
-      team_id: "01J6GZ2B000000000000000002",
-      user_id: "01J6GZ1C000000000000000003",
-      role: "member",
-      disinviter_display_name: "Taylor Design",
-      joined_at: "2026-09-01T11:30:00Z",
-      version: 1,
-    },
-  ] as TeamMembership[],
-  teamInvitations: [
-    {
-      id: "01J6GZINV00000000000000001",
-      team_id: "01J6GZ2B000000000000000002",
-      email: "sam@example.com",
-      role: "member",
-      status: "pending",
-      delivery_status: "accepted_by_gmail",
-      delivery_attempts: 1,
-      expires_at: "2026-09-14T12:00:00Z",
-      created_at: "2026-09-07T10:00:00Z",
-    },
-    {
-      id: "01J6GZINV00000000000000002",
-      team_id: "01J6GZ2B000000000000000002",
-      email: "jordan@example.com",
-      role: "member",
-      status: "pending",
-      delivery_status: "queued",
-      delivery_attempts: 0,
-      expires_at: "2026-09-14T12:00:00Z",
-      created_at: "2026-09-07T12:00:00Z",
-    },
-    {
-      id: "01J6GZINV00000000000000003",
-      team_id: "01J6GZ2B000000000000000002",
-      email: "casey@example.com",
-      role: "member",
-      status: "pending",
-      delivery_status: "failed",
-      delivery_attempts: 3,
-      expires_at: "2026-09-14T12:00:00Z",
-      created_at: "2026-09-07T08:00:00Z",
-    },
-  ] as TeamInvitation[],
-  projects: [
-    {
-      id: "01J6GZ3C000000000000000003",
-      team_id: "01J6GZ2B000000000000000002",
-      name: "Series A Pitch Practice",
-      description: "Preparing for the investor demo day showcase",
-      created_by: "01J6GZ1A000000000000000001",
-      created_at: "2026-09-01T11:00:00Z",
-      version: 1,
-    },
-    {
-      id: "01J6GZ3C000000000000000004",
-      team_id: "01J6GZ2B000000000000000002",
-      name: "Demo Day Showcase",
-      description: "Final rehearsal before angel investor presentation",
-      created_by: "01J6GZ1A000000000000000001",
-      created_at: "2026-09-03T16:00:00Z",
-      version: 1,
-    },
-    {
-      id: "01J6GZ3C000000000000000005",
-      team_id: "01J6GZ2B000000000000000009",
-      name: "Seed Round Pitch",
-      description: "Early stage startup competition preparation",
-      created_by: "01J6GZ1A000000000000000001",
-      created_at: "2026-09-06T09:00:00Z",
-      version: 1,
-    },
-  ] as Project[],
-  assets: [
-    {
-      id: "01J6GZ5E000000000000000005",
-      project_id: "01J6GZ3C000000000000000003",
-      kind: "presentation_video",
-      file_name: "pitch_demo.mp4",
-      media_type: "video/mp4",
-      size_bytes: 45000000,
-      state: "verified",
-      checksum:
-        "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      duration_ms: 360000,
-      created_at: "2026-09-01T11:30:00Z",
-      version_id: "01J6GZVER00000000000000001",
-      versions: [
-        {
-          id: "01J6GZVER00000000000000001",
-          asset_id: "01J6GZ5E000000000000000005",
-          version_number: 1,
-          checksum:
-            "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          size_bytes: 45000000,
-          media_type: "video/mp4",
-          duration_ms: 360000,
-          created_at: "2026-09-01T11:30:00Z",
-        },
-      ],
-    },
-    {
-      id: "01J6GZ6F000000000000000006",
-      project_id: "01J6GZ3C000000000000000003",
-      kind: "supporting_document",
-      file_name: "investor_deck.pdf",
-      media_type: "application/pdf",
-      size_bytes: 12500000,
-      state: "verified",
-      checksum:
-        "sha256:f4c8996fb92427ae41e4649b934ca495991b7852b855e3b0c44298fc1c149afb",
-      created_at: "2026-09-01T11:45:00Z",
-      version_id: "01J6GZVER00000000000000002",
-      versions: [
-        {
-          id: "01J6GZVER00000000000000002",
-          asset_id: "01J6GZ6F000000000000000006",
-          version_number: 1,
-          checksum:
-            "sha256:f4c8996fb92427ae41e4649b934ca495991b7852b855e3b0c44298fc1c149afb",
-          size_bytes: 12500000,
-          media_type: "application/pdf",
-          created_at: "2026-09-01T11:45:00Z",
-        },
-      ],
-    },
-    {
-      id: "01J6GZ6F000000000000000007",
-      project_id: "01J6GZ3C000000000000000003",
-      kind: "supporting_document",
-      file_name: "pitch_deck.pptx",
-      media_type:
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      size_bytes: 18400000,
-      state: "verified",
-      checksum:
-        "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
-      created_at: "2026-09-02T14:20:00Z",
-      version_id: "01J6GZVER00000000000000003",
-      versions: [
-        {
-          id: "01J6GZVER00000000000000003",
-          asset_id: "01J6GZ6F000000000000000007",
-          version_number: 1,
-          checksum:
-            "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
-          size_bytes: 18400000,
-          media_type:
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-          created_at: "2026-09-02T14:20:00Z",
-        },
-      ],
-    },
-  ] as Asset[],
-  sessions: [
-    {
-      id: "01J6GZ4D000000000000000004",
-      project_id: "01J6GZ3C000000000000000003",
-      state: "ready",
-      manifest_frozen: false,
-      presentation_asset_id: "01J6GZ5E000000000000000005",
-      document_asset_ids: [
-        "01J6GZ6F000000000000000006",
-        "01J6GZ6F000000000000000007",
-      ],
-      stages: [
-        { stage: "ingestion", status: "completed" },
-        { stage: "transcription", status: "completed" },
-        { stage: "diarization", status: "completed" },
-        { stage: "vision", status: "completed" },
-        { stage: "audio", status: "completed" },
-        { stage: "grounding", status: "completed" },
-      ],
-      created_at: "2026-09-01T12:00:00Z",
-      version: 1,
-    },
-    {
-      id: "01J6GZ4D000000000000000005",
-      project_id: "01J6GZ3C000000000000000003",
-      state: "completed",
-      manifest_frozen: true,
-      presentation_asset_id: "01J6GZ5E000000000000000005",
-      document_asset_ids: ["01J6GZ6F000000000000000006"],
-      stages: [
-        { stage: "ingestion", status: "completed" },
-        { stage: "transcription", status: "completed" },
-        { stage: "diarization", status: "completed" },
-        { stage: "vision", status: "completed" },
-        { stage: "audio", status: "completed" },
-        { stage: "grounding", status: "completed" },
-      ],
-      created_at: "2026-09-03T14:30:00Z",
-      version: 1,
-    },
-  ] as PracticeSession[],
-  session: {
-    id: "01J6GZ4D000000000000000004",
-    project_id: "01J6GZ3C000000000000000003",
-    state: "ready",
-    manifest_frozen: false,
-    presentation_asset_id: "01J6GZ5E000000000000000005",
-    document_asset_ids: ["01J6GZ6F000000000000000006"],
-    stages: [
-      { stage: "ingestion", status: "completed" },
-      { stage: "transcription", status: "completed" },
-      { stage: "diarization", status: "completed" },
-      { stage: "vision", status: "completed" },
-      { stage: "audio", status: "completed" },
-      { stage: "grounding", status: "completed" },
-    ],
-    created_at: "2026-09-01T12:00:00Z",
-    version: 1,
-  } as PracticeSession,
-  questions: [
-    {
-      id: "01J6GZ7G000000000000000007",
-      session_id: "01J6GZ4D000000000000000004",
-      sequence: 1,
-      type: "primary",
-      text: "How do you plan to handle enterprise data retention when dealing with sensitive pitch recordings?",
-      reason:
-        "Contradiction between document privacy retention policy and stated pipeline persistence",
-      rubric_dimension: "Security & Compliance",
-      evidence_references: [
-        {
-          asset_id: "01J6GZ6F000000000000000006",
-          source_type: "document",
-          page_number: 4,
-          excerpt: "Customer audio is permanently archived in tier-1 storage.",
-        },
-      ],
-      status: "active",
-    },
-    {
-      id: "01J6GZ8H000000000000000008",
-      session_id: "01J6GZ4D000000000000000004",
-      sequence: 2,
-      type: "primary",
-      text: "What is the projected unit economics and customer acquisition cost for the team tier?",
-      reason: "Omission of CAC assumptions in financial forecast slide",
-      rubric_dimension: "Business Model",
-      evidence_references: [
-        {
-          asset_id: "01J6GZ5E000000000000000005",
-          source_type: "video",
-          start_ms: 120000,
-          end_ms: 145000,
-          excerpt:
-            "Speaker mentions 80% margins without factoring pipeline inference compute.",
-        },
-      ],
-      status: "active",
-    },
-    {
-      id: "01J6GZ9J000000000000000009",
-      session_id: "01J6GZ4D000000000000000004",
-      sequence: 3,
-      type: "primary",
-      text: "How will the AI pipeline differentiate between multiple speakers in noisy presentation environments?",
-      reason: "Weak explanation of audio diarization fallback mechanisms",
-      rubric_dimension: "Technical Architecture",
-      evidence_references: [
-        {
-          asset_id: "01J6GZ5E000000000000000005",
-          source_type: "video",
-          start_ms: 210000,
-          end_ms: 230000,
-          excerpt:
-            "Presenter claims pyannote handles arbitrary acoustic noise perfectly.",
-        },
-      ],
-      status: "active",
-    },
-  ] as Question[],
-  report: {
-    id: "01J6GZAK000000000000000010",
-    session_id: "01J6GZ4D000000000000000004",
-    status: "ready",
-    team_score: 0.85,
-    team_feedback:
-      "Strong cohesive narrative and compelling market thesis. Clarify retention guarantees and unit economics during Q&A.",
-    member_feedback: [
-      {
-        speaker_id: "SPEAKER_00",
-        score: 0.88,
-        strengths: ["Clear pacing", "Effective posture and eye contact"],
-        areas_for_improvement: [
-          "Avoid filler phrases during technical questions",
-        ],
-        transcript_citations: ['Timestamp 02:15 - "You know, basically..."'],
-      },
-    ],
-    created_at: "2026-09-01T13:00:00Z",
-    pdf_download_url:
-      "/api/v1/practice-sessions/01J6GZ4D000000000000000004/report.pdf",
-  } as Report,
-  pendingUploads: {} as Record<
-    string,
-    { projectId: string; fileName: string; mediaType: string; kind: AssetKind }
-  >,
-};
 
 export class ApiClient {
   private readonly baseUrl: string;
   private readonly getToken?: () => Promise<string | null> | string | null;
-  private useMock: boolean;
 
   constructor(config?: ClientConfig) {
     this.baseUrl =
       config?.baseUrl ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/v1";
     this.getToken = config?.getToken ?? getClientAuthToken;
-    this.useMock =
-      config?.useMock ??
-      (typeof process !== "undefined" &&
-        process.env.NEXT_PUBLIC_MOCK_API === "true");
-  }
-
-  public setUseMock(enabled: boolean): void {
-    this.useMock = enabled;
-  }
-
-  public isMocking(): boolean {
-    return this.useMock;
   }
 
   private async getAuthToken(): Promise<string | null> {
@@ -555,7 +204,6 @@ export class ApiClient {
   // ================= Identity & Teams =================
 
   public async getMe(): Promise<User> {
-    if (this.useMock) return MOCK_DATA.user;
     const res = await this.request<Record<string, unknown>>(API_ENDPOINTS.me);
     return {
       id: String(res.id ?? ""),
@@ -566,7 +214,6 @@ export class ApiClient {
   }
 
   public async getTeams(cursor?: string): Promise<Page<Team>> {
-    if (this.useMock) return { items: MOCK_DATA.teams, has_more: false };
     const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
     return this.request<Page<Team>>(`${API_ENDPOINTS.teams}${query}`);
   }
@@ -575,20 +222,6 @@ export class ApiClient {
     name: string,
     idempotencyKey?: string,
   ): Promise<Team> {
-    if (this.useMock) {
-      const newTeam: Team = {
-        id:
-          "01J6GZ2B" +
-          Math.random().toString(36).substring(2, 10).toUpperCase(),
-        name,
-        role: "owner",
-        member_count: 1,
-        created_at: new Date().toISOString(),
-        version: 1,
-      };
-      MOCK_DATA.teams.push(newTeam);
-      return newTeam;
-    }
     return this.request<Team>(API_ENDPOINTS.teams, {
       method: "POST",
       body: JSON.stringify({ name }),
@@ -597,11 +230,6 @@ export class ApiClient {
   }
 
   public async getTeam(teamId: string): Promise<Team> {
-    if (this.useMock) {
-      const team =
-        MOCK_DATA.teams.find((t) => t.id === teamId) ?? MOCK_DATA.teams[0];
-      return team;
-    }
     return await this.request<Team>(API_ENDPOINTS.team(teamId));
   }
 
@@ -609,13 +237,6 @@ export class ApiClient {
     teamId: string,
     cursor?: string,
   ): Promise<Page<TeamMembership>> {
-    if (this.useMock) {
-      const filtered = MOCK_DATA.teamMembers.filter(
-        (m) => m.team_id === teamId,
-      );
-      const items = filtered.length > 0 ? filtered : MOCK_DATA.teamMembers;
-      return { items, has_more: false };
-    }
     const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
     return await this.request<Page<TeamMembership>>(
       `${API_ENDPOINTS.teamMembers(teamId)}${query}`,
@@ -623,12 +244,6 @@ export class ApiClient {
   }
 
   public async removeTeamMember(teamId: string, userId: string): Promise<void> {
-    if (this.useMock) {
-      MOCK_DATA.teamMembers = MOCK_DATA.teamMembers.filter(
-        (m) => !(m.team_id === teamId && m.user_id === userId),
-      );
-      return;
-    }
     return this.request<void>(API_ENDPOINTS.teamMember(teamId, userId), {
       method: "DELETE",
     });
@@ -638,19 +253,6 @@ export class ApiClient {
     teamId: string,
     newOwnerUserId: string,
   ): Promise<TeamMembership> {
-    if (this.useMock) {
-      MOCK_DATA.teamMembers = MOCK_DATA.teamMembers.map((m) => {
-        if (m.team_id === teamId) {
-          if (m.user_id === newOwnerUserId) return { ...m, role: "owner" as const };
-          if (m.role === "owner") return { ...m, role: "member" as const };
-        }
-        return m;
-      });
-      const updated = MOCK_DATA.teamMembers.find(
-        (m) => m.team_id === teamId && m.user_id === newOwnerUserId,
-      );
-      return updated!;
-    }
     return this.request<TeamMembership>(API_ENDPOINTS.teamOwner(teamId), {
       method: "PATCH",
       headers: {
@@ -664,13 +266,6 @@ export class ApiClient {
     teamId: string,
     cursor?: string,
   ): Promise<Page<TeamInvitation>> {
-    if (this.useMock) {
-      const filtered = MOCK_DATA.teamInvitations.filter(
-        (inv) => inv.team_id === teamId,
-      );
-      const items = filtered.length > 0 ? filtered : MOCK_DATA.teamInvitations;
-      return { items, has_more: false };
-    }
     const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
     return await this.request<Page<TeamInvitation>>(
       `${API_ENDPOINTS.teamInvitations(teamId)}${query}`,
@@ -683,23 +278,6 @@ export class ApiClient {
     role: TeamRole = "member",
     idempotencyKey?: string,
   ): Promise<TeamInvitation> {
-    if (this.useMock) {
-      const newInv: TeamInvitation = {
-        id:
-          "01J6GZINV" +
-          Math.random().toString(36).substring(2, 10).toUpperCase(),
-        team_id: teamId,
-        email,
-        role,
-        status: "pending",
-        delivery_status: "accepted_by_gmail",
-        delivery_attempts: 1,
-        expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
-        created_at: new Date().toISOString(),
-      };
-      MOCK_DATA.teamInvitations.push(newInv);
-      return newInv;
-    }
     return this.request<TeamInvitation>(API_ENDPOINTS.teamInvitations(teamId), {
       method: "POST",
       body: JSON.stringify({ email, role }),
@@ -712,19 +290,6 @@ export class ApiClient {
     invitationId: string,
     idempotencyKey?: string,
   ): Promise<TeamInvitation> {
-    if (this.useMock) {
-      const inv = MOCK_DATA.teamInvitations.find((i) => i.id === invitationId);
-      if (inv) {
-        inv.delivery_status = "accepted_by_gmail";
-        inv.delivery_attempts += 1;
-        return inv;
-      }
-      throw new ApiClientError(404, {
-        type: "https://virtujudge.local/errors/not-found",
-        title: "Invitation not found",
-        status: 404,
-      });
-    }
     return this.request<TeamInvitation>(
       API_ENDPOINTS.resendInvitation(teamId, invitationId),
       {
@@ -739,12 +304,6 @@ export class ApiClient {
     invitationId: string,
     ifMatch?: string,
   ): Promise<void> {
-    if (this.useMock) {
-      MOCK_DATA.teamInvitations = MOCK_DATA.teamInvitations.filter(
-        (i) => i.id !== invitationId,
-      );
-      return;
-    }
     const cleanIfMatch = ifMatch
       ? ifMatch === "*"
         ? "*"
@@ -760,18 +319,6 @@ export class ApiClient {
   }
 
   public async getInvitationPreview(token: string): Promise<InvitationPreview> {
-    if (this.useMock) {
-      return {
-        team_name: "VirtuJudge Pitch Team",
-        invited_by_name: "Alex Presenter",
-        inviter_display_name: "Alex Presenter",
-        invited_email: "a***@example.com",
-        email_masked: "a***@example.com",
-        role: "member",
-        expires_at: "2026-09-10T12:00:00Z",
-        status: "pending",
-      };
-    }
     const raw = await this.request<Record<string, unknown>>(
       API_ENDPOINTS.invitationPreview(token),
     );
@@ -794,16 +341,6 @@ export class ApiClient {
   }
 
   public async acceptInvitation(token: string): Promise<TeamMembership> {
-    if (this.useMock) {
-      return {
-        team_id: MOCK_DATA.teams[0].id,
-        user_id: MOCK_DATA.user.id,
-        role: "member",
-        display_name: MOCK_DATA.user.display_name,
-        joined_at: new Date().toISOString(),
-        version: 1,
-      };
-    }
     return this.request<TeamMembership>(API_ENDPOINTS.acceptInvitation(token), {
       method: "POST",
     });
@@ -815,13 +352,6 @@ export class ApiClient {
     teamId: string,
     cursor?: string,
   ): Promise<Page<Project>> {
-    if (this.useMock) {
-      const filtered = MOCK_DATA.projects.filter((p) => p.team_id === teamId);
-      return {
-        items: filtered.length > 0 ? filtered : MOCK_DATA.projects,
-        has_more: false,
-      };
-    }
     const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
     return this.request<Page<Project>>(
       `${API_ENDPOINTS.teamProjects(teamId)}${query}`,
@@ -833,21 +363,6 @@ export class ApiClient {
     data: { name: string; description?: string },
     idempotencyKey?: string,
   ): Promise<Project> {
-    if (this.useMock) {
-      const newProj: Project = {
-        id:
-          "01J6GZ3C" +
-          Math.random().toString(36).substring(2, 10).toUpperCase(),
-        team_id: teamId,
-        name: data.name,
-        description: data.description,
-        created_by: MOCK_DATA.user.id,
-        created_at: new Date().toISOString(),
-        version: 1,
-      };
-      MOCK_DATA.projects.push(newProj);
-      return newProj;
-    }
     return this.request<Project>(API_ENDPOINTS.teamProjects(teamId), {
       method: "POST",
       body: JSON.stringify(data),
@@ -856,12 +371,6 @@ export class ApiClient {
   }
 
   public async getProject(projectId: string): Promise<Project> {
-    if (this.useMock) {
-      return (
-        MOCK_DATA.projects.find((p) => p.id === projectId) ??
-        MOCK_DATA.projects[0]
-      );
-    }
     return this.request<Project>(API_ENDPOINTS.project(projectId));
   }
 
@@ -869,27 +378,6 @@ export class ApiClient {
     projectId: string,
     filters?: AssetFilterParams,
   ): Promise<Page<Asset>> {
-    if (this.useMock) {
-      let filtered = MOCK_DATA.assets.filter(
-        (a) => a.project_id === projectId || projectId === "proj-123",
-      );
-      if (filtered.length === 0) {
-        filtered = MOCK_DATA.assets.map((a) => ({
-          ...a,
-          project_id: projectId,
-        }));
-      }
-      if (filters?.kind) {
-        filtered = filtered.filter((a) => a.kind === filters.kind);
-      }
-      if (filters?.state) {
-        filtered = filtered.filter((a) => a.state === filters.state);
-      }
-      return {
-        items: filtered,
-        has_more: false,
-      };
-    }
     const params = new URLSearchParams();
     if (filters?.kind) params.set("kind", filters.kind);
     if (filters?.state) params.set("state", filters.state);
@@ -924,32 +412,16 @@ export class ApiClient {
   public async getAssetVersions(
     assetId: string,
   ): Promise<Page<AssetVersion>> {
-    if (this.useMock) {
-      const asset = MOCK_DATA.assets.find((a) => a.id === assetId);
-      return {
-        items: asset?.versions || [],
-        has_more: false,
-      };
-    }
     return this.request<Page<AssetVersion>>(
       API_ENDPOINTS.assetVersions(assetId),
     );
   }
 
   public async getAsset(assetId: string): Promise<Asset> {
-    if (this.useMock) {
-      const asset = MOCK_DATA.assets.find((a) => a.id === assetId);
-      if (asset) return asset;
-      return MOCK_DATA.assets[0];
-    }
     return this.request<Asset>(API_ENDPOINTS.asset(assetId));
   }
 
   public async deleteAsset(assetId: string): Promise<void> {
-    if (this.useMock) {
-      MOCK_DATA.assets = MOCK_DATA.assets.filter((a) => a.id !== assetId);
-      return;
-    }
     return this.request<void>(API_ENDPOINTS.asset(assetId), {
       method: "DELETE",
     });
@@ -960,37 +432,6 @@ export class ApiClient {
     req: CreateUploadIntentRequest,
     idempotencyKey: string,
   ): Promise<UploadIntent> {
-    if (this.useMock) {
-      const assetId =
-        "01J6GZ5E" +
-        Math.random().toString(36).substring(2, 10).toUpperCase();
-      const versionId =
-        "01J6GZVER" +
-        Math.random().toString(36).substring(2, 10).toUpperCase();
-
-      const existingAsset = MOCK_DATA.assets.find(
-        (a) => a.project_id === projectId && a.file_name === req.file_name,
-      );
-
-      MOCK_DATA.pendingUploads = MOCK_DATA.pendingUploads || {};
-      MOCK_DATA.pendingUploads[existingAsset?.id || assetId] = {
-        projectId,
-        fileName: req.file_name,
-        mediaType: req.declared_media_type,
-        kind: req.kind || "supporting_document",
-      };
-
-      return {
-        asset_id: existingAsset?.id || assetId,
-        version_id: versionId,
-        upload_url:
-          "https://storage.virtujudge.local/mock-bucket/signed-upload",
-        method: "PUT",
-        expires_at: new Date(Date.now() + 3600000).toISOString(),
-        required_headers: { "content-type": req.declared_media_type },
-        maximum_size_bytes: req.declared_size_bytes,
-      };
-    }
     const raw = await this.request<
       UploadIntent & { asset_version_id?: string }
     >(API_ENDPOINTS.uploadIntents(projectId), {
@@ -1009,31 +450,6 @@ export class ApiClient {
     req: CreateVersionUploadIntentRequest,
     idempotencyKey: string,
   ): Promise<UploadIntent> {
-    if (this.useMock) {
-      const versionId =
-        "01J6GZVER" +
-        Math.random().toString(36).substring(2, 10).toUpperCase();
-
-      const targetAsset = MOCK_DATA.assets.find((a) => a.id === assetId);
-      MOCK_DATA.pendingUploads = MOCK_DATA.pendingUploads || {};
-      MOCK_DATA.pendingUploads[versionId] = {
-        projectId: targetAsset?.project_id || "",
-        fileName: req.file_name,
-        mediaType: req.declared_media_type,
-        kind: targetAsset?.kind || "supporting_document",
-      };
-
-      return {
-        asset_id: assetId,
-        version_id: versionId,
-        upload_url:
-          "https://storage.virtujudge.local/mock-bucket/signed-upload",
-        method: "PUT",
-        expires_at: new Date(Date.now() + 3600000).toISOString(),
-        required_headers: { "content-type": req.declared_media_type },
-        maximum_size_bytes: req.declared_size_bytes,
-      };
-    }
     const raw = await this.request<
       UploadIntent & { asset_version_id?: string }
     >(API_ENDPOINTS.versionUploadIntents(assetId), {
@@ -1054,63 +470,6 @@ export class ApiClient {
     idempotencyKey?: string,
   ): Promise<Asset> {
     const key = idempotencyKey || generateIdempotencyKey("complete");
-    if (this.useMock) {
-      const existing = MOCK_DATA.assets.find((a) => a.id === assetId);
-      if (existing) {
-        existing.state = "verified";
-        existing.checksum = req.checksum;
-        existing.size_bytes = req.size_bytes;
-        existing.version_id = versionId;
-        const pending = MOCK_DATA.pendingUploads?.[versionId];
-        const newVersion: AssetVersion = {
-          id: versionId,
-          asset_id: assetId,
-          version_number: (existing.versions?.length || 1) + 1,
-          checksum: req.checksum,
-          size_bytes: req.size_bytes,
-          media_type: pending?.mediaType || existing.media_type,
-          created_at: new Date().toISOString(),
-        };
-        existing.versions = [...(existing.versions || []), newVersion];
-        return existing;
-      }
-
-      const pending = MOCK_DATA.pendingUploads?.[assetId];
-      const kind = pending?.kind || "supporting_document";
-      const fileName = pending?.fileName || "document.pdf";
-      const mediaType =
-        pending?.mediaType ||
-        (fileName.endsWith(".pptx")
-          ? "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-          : "application/pdf");
-      const projId = pending?.projectId || MOCK_DATA.projects[0].id;
-
-      const newAsset: Asset = {
-        id: assetId,
-        project_id: projId,
-        kind,
-        file_name: fileName,
-        media_type: mediaType,
-        size_bytes: req.size_bytes,
-        state: "verified",
-        checksum: req.checksum,
-        version_id: versionId,
-        versions: [
-          {
-            id: versionId,
-            asset_id: assetId,
-            version_number: 1,
-            checksum: req.checksum,
-            size_bytes: req.size_bytes,
-            media_type: mediaType,
-            created_at: new Date().toISOString(),
-          },
-        ],
-        created_at: new Date().toISOString(),
-      };
-      MOCK_DATA.assets.push(newAsset);
-      return newAsset;
-    }
     return this.request<Asset>(
       API_ENDPOINTS.completeUpload(assetId, versionId),
       {
@@ -1125,24 +484,6 @@ export class ApiClient {
     assetId: string,
     versionId?: string,
   ): Promise<DownloadIntent> {
-    if (this.useMock) {
-      const asset = MOCK_DATA.assets.find((a) => a.id === assetId);
-      const targetVersion = versionId
-        ? asset?.versions?.find((v) => v.id === versionId)
-        : undefined;
-      return {
-        download_url:
-          "https://storage.virtujudge.local/mock-bucket/signed-download",
-        expires_at: new Date(Date.now() + 3600000).toISOString(),
-        media_type:
-          targetVersion?.media_type ||
-          asset?.media_type ||
-          "application/octet-stream",
-        size_bytes:
-          targetVersion?.size_bytes || asset?.size_bytes || 1048576,
-        file_name: asset?.file_name || "downloaded_file",
-      };
-    }
     const endpoint = versionId
       ? API_ENDPOINTS.versionDownloadIntents(assetId, versionId)
       : API_ENDPOINTS.downloadIntents(assetId);
@@ -1156,32 +497,42 @@ export class ApiClient {
   public async createPracticeSession(
     projectId: string,
     data: {
-      presentation_asset_id: string;
-      document_asset_ids: string[];
-      policy_version: string;
+      name?: string;
+      presentation_asset_id?: string;
+      presentation_asset_version_id?: string;
+      document_asset_ids?: string[];
+      supporting_document_version_ids?: string[];
+      policy_version?: string;
+      rubric?: { rubric_id: string; version: number };
     },
     idempotencyKey: string,
   ): Promise<PracticeSession> {
-    if (this.useMock) {
-      return {
-        ...MOCK_DATA.session,
-        project_id: projectId,
-        presentation_asset_id: data.presentation_asset_id,
-        document_asset_ids: data.document_asset_ids,
-      };
-    }
+    const presentationVersionId =
+      data.presentation_asset_version_id || data.presentation_asset_id;
+    const supportingDocs = (
+      data.supporting_document_version_ids ||
+      data.document_asset_ids ||
+      []
+    ).slice(0, 5);
+
+    const payload = {
+      name: data.name || `Practice Session ${new Date().toLocaleDateString()}`,
+      presentation_asset_version_id: presentationVersionId,
+      supporting_document_version_ids: supportingDocs,
+      rubric: data.rubric || { rubric_id: "startup_pitch", version: 1 },
+    };
+
     return this.request<PracticeSession>(
       API_ENDPOINTS.projectSessions(projectId),
       {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
         idempotencyKey,
       },
     );
   }
 
   public async getPracticeSession(sessionId: string): Promise<PracticeSession> {
-    if (this.useMock) return MOCK_DATA.session;
     return this.request<PracticeSession>(
       API_ENDPOINTS.practiceSession(sessionId),
     );
@@ -1191,18 +542,6 @@ export class ApiClient {
     projectId: string,
     cursor?: string,
   ): Promise<Page<PracticeSession>> {
-    if (this.useMock) {
-      const allSessions = (MOCK_DATA.sessions || [MOCK_DATA.session]).map(
-        (s) => ({
-          ...s,
-          project_id: projectId,
-        }),
-      );
-      return {
-        items: allSessions,
-        has_more: false,
-      };
-    }
     const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
     return this.request<Page<PracticeSession>>(
       `${API_ENDPOINTS.projectSessions(projectId)}${query}`,
@@ -1210,14 +549,6 @@ export class ApiClient {
   }
 
   public async deletePracticeSession(sessionId: string): Promise<void> {
-    if (this.useMock) {
-      if (MOCK_DATA.sessions) {
-        MOCK_DATA.sessions = MOCK_DATA.sessions.filter(
-          (s) => s.id !== sessionId,
-        );
-      }
-      return;
-    }
     return this.request<void>(API_ENDPOINTS.practiceSession(sessionId), {
       method: "DELETE",
     });
@@ -1227,9 +558,6 @@ export class ApiClient {
     sessionId: string,
     idempotencyKey: string,
   ): Promise<PracticeSession> {
-    if (this.useMock) {
-      return { ...MOCK_DATA.session, state: "processing" };
-    }
     return this.request<PracticeSession>(
       API_ENDPOINTS.startAnalysis(sessionId),
       {
@@ -1244,9 +572,6 @@ export class ApiClient {
     mappings: SpeakerMapping[],
     idempotencyKey: string,
   ): Promise<PracticeSession> {
-    if (this.useMock) {
-      return { ...MOCK_DATA.session, speaker_mappings: mappings, state: "qa" };
-    }
     return this.request<PracticeSession>(
       API_ENDPOINTS.speakerMappings(sessionId),
       {
@@ -1259,27 +584,41 @@ export class ApiClient {
 
   // ================= Q&A and Reports =================
 
+  public async getQARound(sessionId: string): Promise<QARound> {
+    return this.request<QARound>(API_ENDPOINTS.qaRound(sessionId));
+  }
+
+  /** @deprecated Use getQARound() which returns the full QARound envelope */
   public async getQuestions(sessionId: string): Promise<Question[]> {
-    if (this.useMock) return MOCK_DATA.questions;
-    return this.request<Question[]>(API_ENDPOINTS.questions(sessionId));
+    const round = await this.getQARound(sessionId);
+    return round.questions;
+  }
+
+  public async createAnswerUploadIntent(
+    questionId: string,
+    data: {
+      file_name: string;
+      declared_media_type: string;
+      declared_size_bytes: number;
+    },
+    idempotencyKey: string,
+  ): Promise<AnswerUploadIntentResponse> {
+    return this.request<AnswerUploadIntentResponse>(
+      API_ENDPOINTS.answerUploadIntents(questionId),
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+        idempotencyKey,
+      },
+    );
   }
 
   public async submitAnswer(
-    questionId: string,
-    data: { asset_id: string; duration_ms: number },
+    answerId: string,
+    data: { checksum: string; size_bytes: number },
     idempotencyKey: string,
   ): Promise<Answer> {
-    if (this.useMock) {
-      return {
-        id: "01J6GZANS00000000000000001",
-        question_id: questionId,
-        status: "submitted",
-        asset_id: data.asset_id,
-        duration_ms: data.duration_ms,
-        submitted_at: new Date().toISOString(),
-      };
-    }
-    return this.request<Answer>(API_ENDPOINTS.submitAnswer(questionId), {
+    return this.request<Answer>(API_ENDPOINTS.submitAnswer(answerId), {
       method: "POST",
       body: JSON.stringify(data),
       idempotencyKey,
@@ -1289,23 +628,16 @@ export class ApiClient {
   public async skipAnswer(
     questionId: string,
     idempotencyKey: string,
+    reason?: string,
   ): Promise<Answer> {
-    if (this.useMock) {
-      return {
-        id: "01J6GZANS00000000000000002",
-        question_id: questionId,
-        status: "skipped",
-        submitted_at: new Date().toISOString(),
-      };
-    }
     return this.request<Answer>(API_ENDPOINTS.skipAnswer(questionId), {
       method: "POST",
+      body: reason ? JSON.stringify({ reason }) : undefined,
       idempotencyKey,
     });
   }
 
   public async getReport(sessionId: string): Promise<Report> {
-    if (this.useMock) return MOCK_DATA.report;
     return this.request<Report>(API_ENDPOINTS.report(sessionId));
   }
 }

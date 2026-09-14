@@ -32,7 +32,130 @@ function renderWithProviders(ui: React.ReactElement) {
 describe("Project Page Navigation & Custom Layout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiClient.setUseMock(true);
+    vi.spyOn(apiClient, "getTeams").mockResolvedValue({
+      items: [
+        {
+          id: "01J6GZ2B000000000000000002",
+          name: "VirtuJudge Pitch Team",
+          role: "owner",
+          member_count: 3,
+          created_at: "2026-09-01T10:15:00Z",
+          version: 1,
+        },
+        {
+          id: "01J6GZ2B000000000000000009",
+          name: "AI Pitch Accelerator",
+          role: "member",
+          member_count: 5,
+          created_at: "2026-09-05T14:30:00Z",
+          version: 1,
+        },
+      ],
+      has_more: false,
+    });
+    vi.spyOn(apiClient, "getTeam").mockResolvedValue({
+      id: "01J6GZ2B000000000000000002",
+      name: "VirtuJudge Pitch Team",
+      role: "owner",
+      member_count: 3,
+      created_at: "2026-09-01T10:15:00Z",
+      version: 1,
+    });
+    vi.spyOn(apiClient, "getProjects").mockResolvedValue({
+      items: [
+        {
+          id: "01J6GZ3C000000000000000003",
+          team_id: "01J6GZ2B000000000000000002",
+          name: "Series A Pitch Practice",
+          description: "Preparing for the investor demo day showcase",
+          created_by: "01J6GZ1A000000000000000001",
+          created_at: "2026-09-01T11:00:00Z",
+          version: 1,
+        },
+        {
+          id: "01J6GZ3C000000000000000004",
+          team_id: "01J6GZ2B000000000000000002",
+          name: "Demo Day Showcase",
+          description: "Final rehearsal before angel investor presentation",
+          created_by: "01J6GZ1A000000000000000001",
+          created_at: "2026-09-03T16:00:00Z",
+          version: 1,
+        },
+      ],
+      has_more: false,
+    });
+    vi.spyOn(apiClient, "getProject").mockResolvedValue({
+      id: "01J6GZ3C000000000000000003",
+      team_id: "01J6GZ2B000000000000000002",
+      name: "Series A Pitch Practice",
+      description: "Preparing for the investor demo day showcase",
+      created_by: "01J6GZ1A000000000000000001",
+      created_at: "2026-09-01T11:00:00Z",
+      version: 1,
+    });
+    vi.spyOn(apiClient, "getAssets").mockResolvedValue({
+      items: [
+        {
+          id: "01J6GZ6F000000000000000006",
+          project_id: "01J6GZ3C000000000000000003",
+          kind: "supporting_document",
+          file_name: "investor_deck.pdf",
+          media_type: "application/pdf",
+          size_bytes: 12500000,
+          state: "verified",
+          checksum: "sha256:dummy",
+          created_at: "2026-09-01T11:45:00Z",
+        },
+        {
+          id: "01J6GZ6F000000000000000007",
+          project_id: "01J6GZ3C000000000000000003",
+          kind: "supporting_document",
+          file_name: "pitch_deck.pptx",
+          media_type:
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+          size_bytes: 18400000,
+          state: "verified",
+          checksum: "sha256:dummy2",
+          created_at: "2026-09-02T14:20:00Z",
+        },
+      ],
+      has_more: false,
+    });
+    vi.spyOn(apiClient, "getPracticeSessions").mockResolvedValue({
+      items: [
+        {
+          id: "01J6GZ4D000000000000000004",
+          project_id: "01J6GZ3C000000000000000003",
+          team_id: "01J6GZ2B000000000000000001",
+          state: "ready",
+          manifest_frozen: false,
+          presentation_asset_id: "01J6GZ5E000000000000000005",
+          document_asset_ids: ["01J6GZ6F000000000000000006"],
+          stages: [],
+          limitations: [],
+          created_by: "01J6GZ1A000000000000000001",
+          created_at: "2026-09-01T12:00:00Z",
+          updated_at: "2026-09-01T12:00:00Z",
+          version: 1,
+        },
+        {
+          id: "01J6GZ4D000000000000000005",
+          project_id: "01J6GZ3C000000000000000003",
+          team_id: "01J6GZ2B000000000000000001",
+          state: "completed",
+          manifest_frozen: true,
+          presentation_asset_id: "01J6GZ5E000000000000000005",
+          document_asset_ids: ["01J6GZ6F000000000000000006"],
+          stages: [],
+          limitations: [],
+          created_by: "01J6GZ1A000000000000000001",
+          created_at: "2026-09-03T14:30:00Z",
+          updated_at: "2026-09-03T14:30:00Z",
+          version: 1,
+        },
+      ],
+      has_more: false,
+    });
   });
 
   describe("NavDropdown Component", () => {
@@ -371,7 +494,7 @@ describe("Project Page Navigation & Custom Layout", () => {
         name: /open session 1/i,
       });
       expect(sessionLinks.length).toBeGreaterThan(0);
-      expect(sessionLinks[0].getAttribute("href")).toContain("/session/prepare");
+      expect(sessionLinks[0].getAttribute("href")).toContain("/session/");
     });
   });
 

@@ -242,7 +242,7 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
                         Session {index + 1}
                       </Text>
                       <Link
-                        href={`/projects/${projectId}/session/prepare`}
+                        href={`/projects/${projectId}/session/${session.id}`}
                         className="text-foreground/70 hover:text-primary transition-colors flex items-center p-1 shrink-0"
                         aria-label={`Open Session ${index + 1}`}
                       >
