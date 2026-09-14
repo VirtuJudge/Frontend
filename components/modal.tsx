@@ -39,30 +39,24 @@ export function Modal({
   footer,
   className,
 }: ModalProps) {
-  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   const [isMounted, setIsMounted] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(false);
 
-  if (isOpen !== prevIsOpen) {
-    setPrevIsOpen(isOpen);
-    if (isOpen) {
-      setIsMounted(true);
-    } else {
-      setIsVisible(false);
-    }
-  }
-
   useEffect(() => {
     if (isOpen) {
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-      }, 20);
-      return () => clearTimeout(timer);
+      const mountTimer = setTimeout(() => setIsMounted(true), 0);
+      const visibleTimer = setTimeout(() => setIsVisible(true), 20);
+      return () => {
+        clearTimeout(mountTimer);
+        clearTimeout(visibleTimer);
+      };
     } else {
-      const timer = setTimeout(() => {
-        setIsMounted(false);
-      }, 300);
-      return () => clearTimeout(timer);
+      const hideTimer = setTimeout(() => setIsVisible(false), 0);
+      const unmountTimer = setTimeout(() => setIsMounted(false), 300);
+      return () => {
+        clearTimeout(hideTimer);
+        clearTimeout(unmountTimer);
+      };
     }
   }, [isOpen]);
 
