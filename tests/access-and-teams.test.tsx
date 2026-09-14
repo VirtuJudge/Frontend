@@ -11,6 +11,7 @@ import { InvitationAcceptContent } from "@/app/(public)/invitations/[token]/acce
 import { AuthProvider } from "@/features/auth";
 import { setClientAuthToken, removeClientAuthToken } from "@/lib/auth/cookies";
 import { createSyntheticJwt } from "@/lib/auth/jwt";
+import * as nextNavigation from "next/navigation";
 
 function renderWithProviders(ui: React.ReactElement) {
   const queryClient = new QueryClient({
@@ -413,6 +414,61 @@ describe("Access and Teams - Screens and Components", () => {
         screen.getByRole("link", { name: /sign in/i }),
       ).toBeDefined();
     });
+
+    it("allows switching account when email mismatch occurs on preview page", async () => {
+      setClientAuthToken(
+        createSyntheticJwt({ email: "wrong@example.com", sub: "user_wrong" }),
+      );
+
+      const pushMock = vi.fn();
+      vi.spyOn(nextNavigation, "useRouter").mockReturnValue({
+        push: pushMock,
+        replace: vi.fn(),
+        prefetch: vi.fn(),
+        back: vi.fn(),
+        forward: vi.fn(),
+        refresh: vi.fn(),
+      } as unknown as ReturnType<typeof nextNavigation.useRouter>);
+
+      vi.spyOn(apiClient, "getInvitationPreview").mockResolvedValue({
+        team_name: "VirtuJudge Pitch Team",
+        inviter_display_name: "Alex Presenter",
+        email_masked: "a***@example.com",
+        expires_at: "2026-09-10T12:00:00Z",
+        status: "pending",
+      });
+
+      vi.spyOn(apiClient, "acceptInvitation").mockRejectedValue(
+        new ApiClientError(409, {
+          type: "https://virtujudge.local/errors/conflict",
+          title: "Invitation email does not match",
+          status: 409,
+          detail: "Invitation email does not match the authenticated user",
+        }),
+      );
+
+      renderWithProviders(<InvitationPreviewContent token="test_token_123" />);
+
+      const acceptBtn = await screen.findByRole("button", {
+        name: /accept invitation/i,
+      });
+      fireEvent.click(acceptBtn);
+
+      const switchBtn = await screen.findByRole("button", {
+        name: /sign in with a different account/i,
+      });
+      expect(switchBtn).toBeDefined();
+
+      fireEvent.click(switchBtn);
+
+      await waitFor(() => {
+        expect(pushMock).toHaveBeenCalledWith(
+          `/auth/login?redirect=${encodeURIComponent("/invitations/test_token_123")}`,
+        );
+      });
+
+      removeClientAuthToken();
+    });
   });
 
   describe("InvitationAcceptPage Component", () => {
@@ -460,6 +516,40 @@ describe("Access and Teams - Screens and Components", () => {
       expect(
         screen.getByRole("button", { name: /sign in with invited account/i }),
       ).toBeDefined();
+    });
+
+    it("signs out and navigates to login when switching accounts", async () => {
+      const pushMock = vi.fn();
+      vi.spyOn(nextNavigation, "useRouter").mockReturnValue({
+        push: pushMock,
+        replace: vi.fn(),
+        prefetch: vi.fn(),
+        back: vi.fn(),
+        forward: vi.fn(),
+        refresh: vi.fn(),
+      } as unknown as ReturnType<typeof nextNavigation.useRouter>);
+
+      vi.spyOn(apiClient, "acceptInvitation").mockRejectedValue(
+        new ApiClientError(409, {
+          type: "https://virtujudge.local/errors/conflict",
+          title: "Invitation email does not match",
+          status: 409,
+          detail: "Invitation email does not match the authenticated user",
+        }),
+      );
+
+      renderWithProviders(<InvitationAcceptContent token="test_token_mismatch" />);
+
+      const switchBtn = await screen.findByRole("button", {
+        name: /sign in with invited account/i,
+      });
+      fireEvent.click(switchBtn);
+
+      await waitFor(() => {
+        expect(pushMock).toHaveBeenCalledWith(
+          `/auth/login?redirect=${encodeURIComponent("/invitations/test_token_mismatch/accept")}`,
+        );
+      });
     });
   });
 });
