@@ -168,14 +168,8 @@ export interface AssetFilterParams {
   limit?: number;
 }
 
-export interface ErasureRequest {
-  id: ResourceId;
-  target_resource_id: ResourceId;
-  target_resource_type: string;
-  status: 'pending' | 'completed' | 'failed';
-  requested_by: ResourceId;
-  created_at: UtcTimestamp;
-}
+
+
 
 export interface CreateUploadIntentRequest {
   kind: AssetKind;
@@ -200,28 +194,43 @@ export interface CompleteUploadRequest {
 export type SessionState =
   | 'draft'
   | 'ready'
-  | 'processing'
-  | 'speaker_mapping'
-  | 'qa'
-  | 'report_pending'
+  | 'analyzing'
+  | 'questions_ready'
+  | 'qa_in_progress'
+  | 'report_generating'
   | 'completed'
-  | 'failed';
+  | 'failed'
+  | 'cancelled';
 
 export type AnalysisStage =
   | 'ingestion'
-  | 'transcription'
+  | 'speech'
   | 'diarization'
   | 'vision'
-  | 'audio'
-  | 'grounding';
+  | 'audio_features'
+  | 'documents'
+  | 'aggregation'
+  | 'grounding'
+  | 'questions'
+  | 'answers'
+  | 'report'
+  | 'processing';
 
-export type StageStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'skipped';
+export type StageStatus =
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'skipped'
+  | 'cancelled';
 
 export interface StageProgress {
   stage: AnalysisStage;
   status: StageStatus;
-  progress_pct?: number;
-  error_message?: string;
+  progress: number;
+  started_at?: UtcTimestamp;
+  completed_at?: UtcTimestamp;
+  limitation_code?: string;
 }
 
 export interface SpeakerMapping {
@@ -237,9 +246,25 @@ export interface ConsentRecord {
   affirmed_by: ResourceId;
 }
 
+export interface SafeFailure {
+  code: string;
+  stage?: string;
+  retryable: boolean;
+  message: string;
+  trace_id: string;
+}
+
+export interface Limitation {
+  code: string;
+  scope: string;
+  message: string;
+  affected_dimensions: string[];
+}
+
 export interface PracticeSession {
   id: ResourceId;
   project_id: ResourceId;
+  team_id: ResourceId;
   state: SessionState;
   manifest_frozen: boolean;
   presentation_asset_id: ResourceId;
@@ -247,14 +272,65 @@ export interface PracticeSession {
   stages: StageProgress[];
   speaker_mappings?: SpeakerMapping[];
   consent?: ConsentRecord;
+  current_attempt?: number;
+  current_question_id?: ResourceId;
+  failure?: SafeFailure;
+  limitations: Limitation[];
+  created_by: ResourceId;
   created_at: UtcTimestamp;
+  updated_at: UtcTimestamp;
   version: number;
 }
 
-// ================= Q&A and Reports =================
+// ================= Q&A =================
 
-export type QuestionType = 'primary' | 'follow_up';
-export type QuestionStatus = 'active' | 'answered' | 'skipped';
+export type QARoundState = 'not_started' | 'in_progress' | 'completed';
+export type QuestionKind = 'primary' | 'follow_up';
+export type QuestionState = 'pending' | 'active' | 'answered' | 'skipped';
+export type AnswerStatus = 'draft' | 'submitted' | 'skipped';
+
+export interface QARound {
+  id: ResourceId;
+  practice_session_id: ResourceId;
+  state: QARoundState;
+  questions: Question[];
+  answers: Answer[];
+  current_question_id: ResourceId | null;
+  follow_up_count: number;
+  version: number;
+}
+
+export interface Question {
+  id: ResourceId;
+  practice_session_id: ResourceId;
+  kind: QuestionKind;
+  position: number;
+  text: string;
+  reason: string;
+  rubric_dimension: string;
+  evidence_ids: string[];
+  parent_answer_id?: ResourceId;
+  state: QuestionState;
+}
+
+export interface Answer {
+  id: ResourceId;
+  question_id: ResourceId;
+  answered_by: ResourceId;
+  status: AnswerStatus;
+  audio_asset_version_id?: ResourceId;
+  transcript_artifact_id?: ResourceId;
+  duration_ms?: DurationMs;
+  submitted_at?: UtcTimestamp;
+}
+
+/** Response from POST /questions/{id}/answer-upload-intents */
+export interface AnswerUploadIntentResponse {
+  answer: Answer;
+  upload_intent: UploadIntent;
+}
+
+// ================= Reports =================
 
 export interface EvidenceReference {
   asset_id: ResourceId;
@@ -263,28 +339,6 @@ export interface EvidenceReference {
   end_ms?: number;
   page_number?: number;
   excerpt: string;
-}
-
-export interface Question {
-  id: ResourceId;
-  session_id: ResourceId;
-  sequence: number;
-  type: QuestionType;
-  text: string;
-  reason: string;
-  rubric_dimension: string;
-  evidence_references: EvidenceReference[];
-  status: QuestionStatus;
-}
-
-export interface Answer {
-  id: ResourceId;
-  question_id: ResourceId;
-  status: 'submitted' | 'skipped';
-  asset_id?: ResourceId;
-  transcript?: string;
-  duration_ms?: DurationMs;
-  submitted_at: UtcTimestamp;
 }
 
 export interface MemberFeedback {
@@ -306,3 +360,89 @@ export interface Report {
   created_at: UtcTimestamp;
   pdf_download_url?: string;
 }
+
+// ================= Erasure =================
+
+export interface ErasureStep {
+  store: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  attempts: number;
+}
+
+export interface ErasureRequest {
+  id: ResourceId;
+  scope: 'asset' | 'practice_session' | 'project' | 'team';
+  scope_id: ResourceId;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  requested_by: ResourceId;
+  requested_at: UtcTimestamp;
+  deadline_at: UtcTimestamp;
+  completed_at?: UtcTimestamp;
+  steps: ErasureStep[];
+}
+
+// ================= SSE Events =================
+
+export interface SseSessionEvent {
+  sequence: number;
+  practice_session_id: ResourceId;
+  occurred_at: UtcTimestamp;
+  trace_id: string;
+}
+
+export interface SessionUpdatedEvent extends SseSessionEvent {
+  version: number;
+  state: SessionState;
+  current_attempt?: number;
+}
+
+export interface AnalysisProgressedEvent extends SseSessionEvent {
+  analysis_attempt_id: ResourceId;
+  analysis_attempt_number: number;
+  stage: AnalysisStage;
+  status: StageStatus;
+  progress: number;
+}
+
+export interface QuestionAvailableEvent extends SseSessionEvent {
+  qa_round_id: ResourceId;
+  question_id: ResourceId;
+  position: number;
+  kind: QuestionKind;
+  state: 'active';
+  version: number;
+}
+
+export interface AnswerUpdatedEvent extends SseSessionEvent {
+  qa_round_id: ResourceId;
+  question_id: ResourceId;
+  answer_id: ResourceId;
+  status: 'submitted' | 'skipped';
+  version: number;
+}
+
+export interface ReportReadyEvent extends SseSessionEvent {
+  report_id: ResourceId;
+  evaluation_id: ResourceId;
+  status: 'ready';
+  version: number;
+}
+
+export interface ErasureUpdatedEvent extends SseSessionEvent {
+  erasure_request_id: ResourceId;
+  scope: 'practice_session' | 'project' | 'team' | 'asset';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+}
+
+export type ResyncReason =
+  | 'cursor_missing'
+  | 'cursor_trimmed'
+  | 'cursor_expired'
+  | 'cursor_future';
+
+export interface ResyncRequiredEvent extends SseSessionEvent {
+  reason: ResyncReason;
+  current_sequence: number;
+  requested_sequence?: number;
+}
+

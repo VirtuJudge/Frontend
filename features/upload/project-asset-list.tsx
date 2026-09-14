@@ -300,7 +300,6 @@ export function ProjectAssetList({
           <FileDropzone
             attachedFiles={attachedItems}
             currentSelectedFile={currentSelectedFile}
-            isLimitReached={isLimitReached}
             isDropzoneDragOver={isDropzoneDragOver}
             fileInputRef={fileInputRef}
             onDrop={handleDrop}

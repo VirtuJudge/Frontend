@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, act, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -14,8 +14,17 @@ import {
   syncSessionToCookies,
 } from "@/lib/auth/cookies";
 import { AuthProvider, useAuth, useOptionalAuth } from "@/features/auth";
-import { isSupabaseConfigured } from "@/lib/auth/supabase";
-import { MOCK_DATA } from "@/lib/api/client";
+import { isSupabaseConfigured, getSupabaseClient } from "@/lib/auth/supabase";
+
+vi.mock("@/lib/auth/supabase", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/auth/supabase")>(
+    "@/lib/auth/supabase",
+  );
+  return {
+    ...actual,
+    getSupabaseClient: vi.fn(),
+  };
+});
 
 describe("JWT Utilities", () => {
   it("encodes and decodes synthetic JWT payloads accurately", () => {
@@ -80,7 +89,7 @@ describe("Client Cookie Management", () => {
 });
 
 function TestAuthConsumer() {
-  const { user, isAuthenticated, signInWithMock, signOut } = useAuth();
+  const { user, isAuthenticated, signInWithJwt, signOut } = useAuth();
   return (
     <div>
       <div data-testid="auth-state">
@@ -90,7 +99,12 @@ function TestAuthConsumer() {
       <button
         type="button"
         onClick={async () => {
-          await signInWithMock({ email: "custom@example.com", display_name: "Custom User" });
+          const testToken = createSyntheticJwt({
+            sub: "custom-id-123",
+            email: "custom@example.com",
+            display_name: "Custom User",
+          });
+          await signInWithJwt(testToken);
         }}
       >
         Sign In
@@ -111,13 +125,61 @@ describe("AuthProvider and useAuth", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     removeClientAuthToken();
-    MOCK_DATA.user.email = "alex@example.com";
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
       },
     });
+
+    vi.mocked(getSupabaseClient).mockReturnValue({
+      auth: {
+        getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+        onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
+        signInWithPassword: vi.fn().mockResolvedValue({
+          data: {
+            session: {
+              access_token: createSyntheticJwt({ sub: "user-pwd-1", email: "signin@example.com" }),
+            },
+          },
+          error: null,
+        }),
+        signUp: vi.fn().mockResolvedValue({
+          data: {
+            session: {
+              access_token: createSyntheticJwt({ sub: "user-signup-1", email: "newuser@example.com" }),
+            },
+          },
+          error: null,
+        }),
+        verifyOtp: vi.fn().mockResolvedValue({ error: null }),
+        resend: vi.fn().mockResolvedValue({ error: null }),
+        resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }),
+        signOut: vi.fn().mockResolvedValue({ error: null }),
+      },
+      rpc: vi.fn().mockImplementation(async (name: string, args: { user_email?: string }) => {
+        if (name === "check_user_verification_status") {
+          if (args.user_email === "resend@example.com") {
+            return {
+              data: { exists: true, waiting_confirmation: true, is_confirmed: false },
+              error: null,
+            };
+          }
+          if (args.user_email === "alex@example.com") {
+            return {
+              data: { exists: true, waiting_confirmation: false, is_confirmed: true },
+              error: null,
+            };
+          }
+          return {
+            data: { exists: false, waiting_confirmation: false, is_confirmed: false },
+            error: null,
+          };
+        }
+        return { data: null, error: null };
+      }),
+    } as unknown as ReturnType<typeof getSupabaseClient>);
   });
 
   it("handles sign in with synthetic JWT and sign out", async () => {
@@ -151,7 +213,7 @@ describe("AuthProvider and useAuth", () => {
 
   it("supports signOut with redirectTo: false without triggering default location assign", async () => {
     function SignOutNoRedirectConsumer() {
-      const { signInWithMock, signOut, isAuthenticated } = useAuth();
+      const { signInWithJwt, signOut, isAuthenticated } = useAuth();
       return (
         <div>
           <div data-testid="custom-auth-state">
@@ -160,7 +222,8 @@ describe("AuthProvider and useAuth", () => {
           <button
             type="button"
             onClick={async () => {
-              await signInWithMock();
+              const testToken = createSyntheticJwt({ sub: "user-test" });
+              await signInWithJwt(testToken);
             }}
           >
             Sign In Test
@@ -333,7 +396,7 @@ describe("AuthProvider and useAuth", () => {
       /already verified/i,
     );
 
-    // Resend with unconfirmed registered email succeeds in mock mode
+    // Resend with unconfirmed registered email succeeds
     await expect(resendFn!("resend@example.com")).resolves.toBeUndefined();
   });
 

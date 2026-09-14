@@ -5,6 +5,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import VerifyRegistrationPage from "@/app/(public)/auth/verify-registration/page";
 import { AuthProvider } from "@/features/auth";
 import * as navigation from "next/navigation";
+import { getSupabaseClient } from "@/lib/auth/supabase";
+
+vi.mock("@/lib/auth/supabase", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/auth/supabase")>(
+    "@/lib/auth/supabase",
+  );
+  return {
+    ...actual,
+    getSupabaseClient: vi.fn(),
+  };
+});
 
 function renderWithProviders(ui: React.ReactElement) {
   const queryClient = new QueryClient({
@@ -26,6 +37,41 @@ describe("VerifyRegistrationPage", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getSupabaseClient).mockReturnValue({
+      auth: {
+        getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+        onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
+        verifyOtp: vi.fn().mockResolvedValue({ error: null }),
+        resend: vi.fn().mockResolvedValue({ error: null }),
+        signOut: vi.fn().mockResolvedValue({ error: null }),
+      },
+      rpc: vi.fn().mockImplementation(async (name: string, args: { user_email?: string }) => {
+        if (name === "check_user_verification_status") {
+          const email = args.user_email?.toLowerCase();
+          if (email === "alex@example.com") {
+            return {
+              data: { exists: true, waiting_confirmation: false, is_confirmed: true },
+              error: null,
+            };
+          }
+          if (
+            email === "resend@example.com" ||
+            email === "test@example.com" ||
+            email === "user@example.com"
+          ) {
+            return {
+              data: { exists: true, waiting_confirmation: true, is_confirmed: false },
+              error: null,
+            };
+          }
+          return {
+            data: { exists: false, waiting_confirmation: false, is_confirmed: false },
+            error: null,
+          };
+        }
+        return { data: null, error: null };
+      }),
+    } as unknown as ReturnType<typeof getSupabaseClient>);
     vi.spyOn(navigation, "useRouter").mockReturnValue({
       replace: replaceMock,
       push: pushMock,
