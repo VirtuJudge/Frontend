@@ -149,6 +149,56 @@ describe("AuthProvider and useAuth", () => {
     expect(screen.getByTestId("auth-state").textContent).toBe("Unauthenticated");
   });
 
+  it("supports signOut with redirectTo: false without triggering default location assign", async () => {
+    function SignOutNoRedirectConsumer() {
+      const { signInWithMock, signOut, isAuthenticated } = useAuth();
+      return (
+        <div>
+          <div data-testid="custom-auth-state">
+            {isAuthenticated ? "Authenticated" : "Unauthenticated"}
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              await signInWithMock();
+            }}
+          >
+            Sign In Test
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              await signOut({ redirectTo: false });
+            }}
+          >
+            Sign Out Test
+          </button>
+        </div>
+      );
+    }
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <SignOutNoRedirectConsumer />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /sign in test/i }));
+    });
+    expect(getClientAuthToken()).not.toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /sign out test/i }));
+    });
+    expect(getClientAuthToken()).toBeNull();
+    expect(screen.getByTestId("custom-auth-state").textContent).toBe(
+      "Unauthenticated",
+    );
+  });
+
   it("handles signInWithPassword and signUpWithPassword", async () => {
     function PasswordAuthConsumer() {
       const { user, isAuthenticated, signInWithPassword, signUpWithPassword } = useAuth();

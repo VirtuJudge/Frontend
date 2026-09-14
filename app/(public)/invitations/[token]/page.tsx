@@ -11,9 +11,10 @@ import LoadingPage from "@/app/loading";
 
 export function InvitationPreviewContent({ token }: { token: string }) {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, signOut } = useAuth();
 
   const [isAccepting, setIsAccepting] = useState(false);
+  const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
   const [acceptError, setAcceptError] = useState<string | null>(null);
 
   const {
@@ -25,6 +26,24 @@ export function InvitationPreviewContent({ token }: { token: string }) {
     queryFn: () => apiClient.getInvitationPreview(token),
     retry: false,
   });
+
+  const handleSwitchAccount = async () => {
+    try {
+      setIsSwitchingAccount(true);
+      await signOut({ redirectTo: false });
+      const loginUrl =
+        preview?.invited_email && !preview.invited_email.includes("*")
+          ? `/auth/login?redirect=${encodeURIComponent(`/invitations/${token}`)}&email=${encodeURIComponent(preview.invited_email)}`
+          : `/auth/login?redirect=${encodeURIComponent(`/invitations/${token}`)}`;
+      router.push(loginUrl);
+    } catch {
+      router.push(
+        `/auth/login?redirect=${encodeURIComponent(`/invitations/${token}`)}`,
+      );
+    } finally {
+      setIsSwitchingAccount(false);
+    }
+  };
 
   const handleAccept = async () => {
     try {
@@ -140,12 +159,17 @@ export function InvitationPreviewContent({ token }: { token: string }) {
             className="p-4 text-center rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex flex-col gap-2"
           >
             <span>{acceptError}</span>
-            {acceptError.includes("Email mismatch") && (
+            {(acceptError.includes("Email mismatch") ||
+              acceptError.toLowerCase().includes("mismatch")) && (
               <button
                 type="button"
-                className="text-primary hover:underline font-semibold text-left cursor-pointer"
+                onClick={handleSwitchAccount}
+                disabled={isSwitchingAccount}
+                className="text-primary hover:underline font-semibold text-left cursor-pointer disabled:opacity-50"
               >
-                Sign in with a different account →
+                {isSwitchingAccount
+                  ? "Signing out..."
+                  : "Sign in with a different account →"}
               </button>
             )}
           </div>
@@ -166,10 +190,18 @@ export function InvitationPreviewContent({ token }: { token: string }) {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3">
-            <div className="flex justify-center items-center w-full">
+            <div className="flex justify-center items-center gap-2 w-full flex-wrap">
               <Text size="sm" className="truncate text-wrap">
                 Signed in as {user?.email}
               </Text>
+              <button
+                type="button"
+                onClick={handleSwitchAccount}
+                disabled={isSwitchingAccount}
+                className="text-xs text-primary hover:underline cursor-pointer disabled:opacity-50"
+              >
+                {isSwitchingAccount ? "Signing out..." : "(Switch account)"}
+              </button>
             </div>
 
             <Button
