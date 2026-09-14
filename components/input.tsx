@@ -81,7 +81,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     };
 
     const mergedInputClassName = cn(
-      "bg-transparent border-none outline-none focus:outline-none focus-visible:outline-none text-fg placeholder:text-fg-light/50 leading-none disabled:pointer-events-none w-full",
+      "bg-transparent border-none outline-none focus:outline-none focus-visible:outline-none text-fg placeholder:text-fg-light/50 leading-none disabled:pointer-events-none w-full caret-fg selection:bg-primary/30 selection:text-fg",
       sizeConfig.text,
       className,
     );

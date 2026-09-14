@@ -6,8 +6,8 @@
 
 @theme {
   --color-primary: hsla(175, 95%, 50%, 1);
-  --color-glass: #cdfefa1a;
-  --color-glass-dark: hsla(177, 100%, 3.5%, 0.5);
+  --color-glass: hsla(176, 92%, 90%, 0.07);
+  --color-glass-dark: hsla(177, 50%, 3%, 0.7);
 
   --color-fg: hsla(175, 95%, 95%, 1);
   --color-fg-light: hsla(175, 95%, 90%, 1);
@@ -99,6 +99,10 @@
 }
 
 @layer base {
+  :root {
+    color-scheme: dark;
+  }
+
   html,
   * {
     scrollbar-width: thin;
@@ -109,6 +113,103 @@
     background-color: var(--color-bg);
     color: var(--color-fg);
     overflow-x: hidden;
+  }
+
+  /* Autofill styling overrides: maintain transparent background and theme text color */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  textarea:-webkit-autofill:active,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus,
+  select:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--color-fg) !important;
+    color: var(--color-fg) !important;
+    caret-color: var(--color-fg) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    background-color: transparent !important;
+    transition: background-color 5000000s ease-in-out 0s;
+    box-shadow: 0 0 0 1000px transparent inset !important;
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  }
+
+  input:autofill,
+  input:autofill:hover,
+  input:autofill:focus,
+  input:autofill:active,
+  textarea:autofill,
+  textarea:autofill:hover,
+  textarea:autofill:focus,
+  textarea:autofill:active,
+  select:autofill,
+  select:autofill:hover,
+  select:autofill:focus,
+  select:autofill:active {
+    -webkit-text-fill-color: var(--color-fg) !important;
+    color: var(--color-fg) !important;
+    caret-color: var(--color-fg) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    background-color: transparent !important;
+    transition: background-color 5000000s ease-in-out 0s;
+    box-shadow: 0 0 0 1000px transparent inset !important;
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  }
+
+  input:-moz-autofill,
+  input:-moz-autofill:hover,
+  input:-moz-autofill:focus,
+  textarea:-moz-autofill,
+  textarea:-moz-autofill:hover,
+  textarea:-moz-autofill:focus,
+  select:-moz-autofill,
+  select:-moz-autofill:hover,
+  select:-moz-autofill:focus {
+    filter: none !important;
+    -moz-text-fill-color: var(--color-fg) !important;
+    color: var(--color-fg) !important;
+    caret-color: var(--color-fg) !important;
+    background-color: transparent !important;
+    transition: background-color 5000000s ease-in-out 0s;
+    box-shadow: 0 0 0 1000px transparent inset !important;
+  }
+
+  /* Selection styling */
+  ::selection {
+    background-color: hsla(175, 95%, 50%, 0.3);
+    color: var(--color-fg);
+  }
+
+  ::-moz-selection {
+    background-color: hsla(175, 95%, 50%, 0.3);
+    color: var(--color-fg);
+  }
+
+  input::selection,
+  textarea::selection {
+    background-color: hsla(175, 95%, 50%, 0.35) !important;
+    color: var(--color-fg) !important;
+    -webkit-text-fill-color: var(--color-fg) !important;
+  }
+
+  input:-webkit-autofill::selection,
+  textarea:-webkit-autofill::selection {
+    background-color: hsla(175, 95%, 50%, 0.35) !important;
+    color: var(--color-fg) !important;
+    -webkit-text-fill-color: var(--color-fg) !important;
+  }
+
+  input:autofill::selection,
+  textarea:autofill::selection {
+    background-color: hsla(175, 95%, 50%, 0.35) !important;
+    color: var(--color-fg) !important;
+    -webkit-text-fill-color: var(--color-fg) !important;
   }
 
   /* Custom themed scrollbar for WebKit browsers */

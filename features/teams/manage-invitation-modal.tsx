@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Modal, Text, Wrapper } from "@/components";
+import { Button, Modal, Text } from "@/components";
 import { Icon } from "@iconify/react";
 import { TeamInvitation } from "@/lib/api/types";
 import { apiClient, ApiClientError } from "@/lib/api/client";
 
 interface ManageInvitationModalProps {
   teamId: string;
+  teamName: string;
   invitation: TeamInvitation | null;
   isOpen: boolean;
   onClose: () => void;
@@ -30,6 +31,7 @@ export function ManageInvitationModal(props: ManageInvitationModalProps) {
 
 function ManageInvitationModalDialog({
   teamId,
+  teamName,
   invitation,
   isOpen,
   onClose,
@@ -42,7 +44,6 @@ function ManageInvitationModalDialog({
   const [revoking, setRevoking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [confirmRevokeChecked, setConfirmRevokeChecked] = useState(false);
 
   const handleResend = async () => {
     try {
@@ -69,7 +70,11 @@ function ManageInvitationModalDialog({
     try {
       setRevoking(true);
       if (invitation.etag) {
-        await apiClient.revokeInvitation(teamId, invitation.id, invitation.etag);
+        await apiClient.revokeInvitation(
+          teamId,
+          invitation.id,
+          invitation.etag,
+        );
       } else {
         await apiClient.revokeInvitation(teamId, invitation.id);
       }
@@ -109,7 +114,6 @@ function ManageInvitationModalDialog({
       titleId="manage-invitation-modal-title"
       error={error}
       loading={resending || revoking}
-      className="w-full max-w-xl max-h-[80vh] overflow-y-auto"
     >
       {successMessage && (
         <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm">
@@ -121,7 +125,10 @@ function ManageInvitationModalDialog({
         <div className="flex flex-col gap-5">
           <Text size="sm" className="text-justify">
             Manage the pending invitation sent to{" "}
-            <span className="font-semibold text-primary truncate">
+            <span
+              className="text-primary inline-block max-w-[25ch] sm:max-w-[40ch] truncate align-bottom"
+              title={invitation.email}
+            >
               {invitation.email}
             </span>
             . You can trigger an email resend with a new secure token, or revoke
@@ -145,13 +152,13 @@ function ManageInvitationModalDialog({
             Select an action:
           </Text>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex items-center justify-center gap-4">
             <Button
               variant="primary"
               size="sm"
               onClick={handleResend}
               loading={resending}
-              className="flex flex-1 items-center justify-center gap-1.5"
+              className="flex flex-1 items-center justify-center gap-1.5 max-w-52"
             >
               <Icon
                 icon="mdi:email-sync-outline"
@@ -167,7 +174,7 @@ function ManageInvitationModalDialog({
                 setError(null);
                 setView("revoke");
               }}
-              className="flex flex-1 items-center justify-center gap-1.5"
+              className="flex flex-1 items-center justify-center gap-1.5 max-w-52"
             >
               <Icon
                 icon="mdi:close-circle-outline"
@@ -181,69 +188,48 @@ function ManageInvitationModalDialog({
 
       {view === "revoke" && (
         <div className="flex flex-col gap-4">
-          <button
-            type="button"
-            onClick={() => {
-              setError(null);
-              setView("overview");
-            }}
-            className="text-primary hover:text-fg transition-colors flex items-center gap-1.5 cursor-pointer w-fit"
-          >
-            <Icon icon="mdi:arrow-left" /> Back to invitation options
-          </button>
-
           <div className="px-4 flex flex-col gap-2.5">
-            <div className="flex items-center gap-2 text-danger-lighter font-bold text-sm">
-              <Text as="span" className="font-bold text-danger">
-                Warning: Revoke Invitation
-              </Text>
-            </div>
-            <Text size="sm" className="text-left">
-              You are about to revoke the pending invitation for{" "}
-              <strong>{invitation.email}</strong>. Upcoming consequences:
-            </Text>
-            <ul className="list-disc pl-4 text-left text-sm">
-              <li>
-                The invitation link and token will become immediately invalid.
-              </li>
-              <li>
-                The recipient will no longer be able to accept or join the team
-                using this invitation.
-              </li>
-              <li>You can issue a new invitation at any time if needed.</li>
-            </ul>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Wrapper
-              variant="glass"
-              borderGradient="neutral"
-              className="p-3 rounded-xl flex gap-2.5 cursor-pointer select-none"
-              onClick={() => setConfirmRevokeChecked(!confirmRevokeChecked)}
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setView("overview");
+              }}
+              className="text-primary hover:text-fg transition-colors flex items-center gap-1.5 cursor-pointer w-fit"
             >
-              <input
-                type="checkbox"
-                checked={confirmRevokeChecked}
-                onChange={(e) => setConfirmRevokeChecked(e.target.checked)}
-                onClick={(e) => e.stopPropagation()}
-                className="rounded border-foreground/30 accent-danger"
-              />
-              <Text size="sm" className="text-foreground/90 text-left">
-                I understand that this invitation will be permanently revoked.
-              </Text>
-            </Wrapper>
+              <Icon icon="mdi:arrow-left" /> Back to invitation options
+            </button>
+
+            <Text size="sm" className="text-left">
+              You are going to revoke the pending invitation of{" "}
+              <span
+                className="text-primary inline-block max-w-[25ch] sm:max-w-[40ch] truncate align-bottom"
+                title={invitation.email}
+              >
+                {invitation.email}
+              </span>{" "}
+              for <span className="text-primary">{teamName}</span>. Are you
+              sure?
+            </Text>
           </div>
 
-          <div className="flex flex-col gap-2 pt-2">
+          <div className="flex items-center justify-center gap-4">
+            <Button
+              size="sm"
+              onClick={onClose}
+              className="rounded-full px-8 py-3"
+            >
+              Cancel
+            </Button>
             <Button
               variant="danger"
               size="sm"
               onClick={handleRevoke}
-              disabled={!confirmRevokeChecked || revoking}
+              disabled={revoking}
               loading={revoking}
-              className="w-full uppercase tracking-wider text-wrap"
+              className="rounded-full px-8 py-3"
             >
-              Revoke invitation
+              Revoke
             </Button>
           </div>
         </div>
