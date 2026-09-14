@@ -47,6 +47,10 @@ export interface VerificationStatus {
   isConfirmed: boolean;
 }
 
+export interface SignOutOptions {
+  redirectTo?: string | false;
+}
+
 export interface AuthContextValue {
   user: User | null;
   token: string | null;
@@ -64,7 +68,7 @@ export interface AuthContextValue {
   resetPassword: (email: string) => Promise<void>;
   signInWithJwt: (jwtToken: string) => Promise<void>;
   signInWithMock: (customUser?: Partial<User>) => Promise<void>;
-  signOut: () => Promise<void>;
+  signOut: (options?: SignOutOptions) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -478,25 +482,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [queryClient],
   );
 
-  const signOut = useCallback(async () => {
-    const client = getSupabaseClient();
-    if (client) {
-      try {
-        await client.auth.signOut();
-      } catch {
-        // Continue with local cleanup even if remote signOut fails
+  const signOut = useCallback(
+    async (options?: SignOutOptions) => {
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          await client.auth.signOut();
+        } catch {
+          // Continue with local cleanup even if remote signOut fails
+        }
       }
-    }
 
-    removeClientAuthToken();
-    setToken(null);
-    queryClient.removeQueries({ queryKey: ["me"] });
-    queryClient.removeQueries({ queryKey: ["teams"] });
-    if (typeof window !== "undefined" && window.location.pathname !== "/") {
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign("/");
-    }
-  }, [queryClient]);
+      syncSessionToCookies(null);
+      removeClientAuthToken();
+      setToken(null);
+      queryClient.removeQueries({ queryKey: ["me"] });
+      queryClient.removeQueries({ queryKey: ["teams"] });
+
+      if (options?.redirectTo === false) {
+        return;
+      }
+
+      const destination = options?.redirectTo ?? "/";
+      if (typeof window !== "undefined") {
+        if (options?.redirectTo !== undefined || window.location.pathname !== destination) {
+          window.location.assign(destination);
+        }
+      }
+    },
+    [queryClient],
+  );
 
   const refreshUser = useCallback(async () => {
     await refetch();
