@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionReportView } from "@/features/reports/session-report-view";
-import SessionPage from "@/app/(auth)/sessions/[sessionId]/page";
+import SessionPage from "@/app/(auth)/sessions/[sessionId]/report/page";
 import { apiClient } from "@/lib/api/client";
 import { Report, PracticeSession } from "@/lib/api/types";
 
