@@ -458,6 +458,7 @@ export interface Report {
   score_components: ScoreComponent[];
   team_feedback: FeedbackSection;
   member_feedback: MemberFeedback[];
+  markdown: string;
   transcript_timeline: Array<Record<string, unknown>>;
   document_alignment: Array<Record<string, unknown>>;
   qa_review: Array<Record<string, unknown>>;

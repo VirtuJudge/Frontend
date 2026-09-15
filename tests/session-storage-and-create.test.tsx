@@ -12,7 +12,7 @@ import {
   getSessionConfigBySessionId,
 } from "@/lib/storage/session-storage";
 import PrepareSessionPage from "@/app/(auth)/projects/[projectId]/session/prepare/page";
-import { SessionRecordContent } from "@/app/(auth)/projects/[projectId]/session/record/page";
+import { SessionRecordContent } from "@/features/session/session-record-content";
 
 const mockProjectId = "proj-test-456";
 const mockSessionId = "sess-test-789";

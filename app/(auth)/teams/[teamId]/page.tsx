@@ -27,7 +27,7 @@ import {
 import { CreateProjectModal } from "@/features/projects";
 import { Project, TeamMembership, TeamInvitation } from "@/lib/api/types";
 
-export function TeamDetailsContent({ teamId }: { teamId: string }) {
+function TeamDetailsContent({ teamId }: { teamId: string }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 

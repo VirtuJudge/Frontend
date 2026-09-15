@@ -279,6 +279,51 @@
   }
 }
 
+.report-markdown {
+  color: var(--color-fg-light);
+  line-height: 1.7;
+}
+
+.report-markdown > :first-child {
+  margin-top: 0;
+}
+
+.report-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.report-markdown h1,
+.report-markdown h2,
+.report-markdown h3,
+.report-markdown h4 {
+  color: var(--color-fg);
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 1.6rem 0 0.7rem;
+}
+
+.report-markdown h1 { font-size: 1.875rem; }
+.report-markdown h2 { font-size: 1.5rem; }
+.report-markdown h3 { font-size: 1.25rem; }
+.report-markdown p,
+.report-markdown ul,
+.report-markdown ol,
+.report-markdown pre,
+.report-markdown table { margin: 0.75rem 0; }
+.report-markdown ul,
+.report-markdown ol { padding-left: 1.5rem; }
+.report-markdown ul { list-style: disc; }
+.report-markdown ol { list-style: decimal; }
+.report-markdown a { color: var(--color-primary); text-decoration: underline; }
+.report-markdown blockquote { border-left: 3px solid var(--color-primary); padding-left: 1rem; color: color-mix(in srgb, var(--color-fg) 75%, transparent); }
+.report-markdown code { border-radius: 0.25rem; background: color-mix(in srgb, var(--color-fg) 10%, transparent); padding: 0.1rem 0.3rem; font-family: var(--font-inconsolata); }
+.report-markdown pre { overflow-x: auto; border-radius: 0.75rem; background: #001411; padding: 1rem; }
+.report-markdown pre code { background: transparent; padding: 0; }
+.report-markdown table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.report-markdown th,
+.report-markdown td { border: 1px solid color-mix(in srgb, var(--color-fg) 20%, transparent); padding: 0.55rem; vertical-align: top; }
+.report-markdown th { background: color-mix(in srgb, var(--color-fg) 8%, transparent); }
+
 @layer components {
 }
 

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Wrapper, Button, Text, PillBadge } from "@/components";
 import { apiClient } from "@/lib/api/client";
 import type { Finding, PracticeSession, Report } from "@/lib/api/types";
@@ -121,6 +123,17 @@ export function SessionReportView({ report, session, onRefresh }: SessionReportV
           <Text as="h2" size="md" className="mb-3 font-bold">Recommendations</Text>
           <ul className="list-disc space-y-2 pl-5 text-sm text-fg/80">{report.recommendations.map((item) => <li key={item}>{item}</li>)}</ul>
         </Wrapper>
+      )}
+
+      {report.markdown && (
+        <section className="flex flex-col gap-4 text-left">
+          <Text as="h2" size="md" className="text-xl font-bold">Full AI Report</Text>
+          <Wrapper variant="glass-dark" className="rounded-3xl p-6 sm:p-8">
+            <div className="report-markdown">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{report.markdown}</ReactMarkdown>
+            </div>
+          </Wrapper>
+        </section>
       )}
     </div>
   );

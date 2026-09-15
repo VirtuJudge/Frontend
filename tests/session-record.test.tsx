@@ -2,7 +2,7 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { SessionRecordContent } from "@/app/(auth)/projects/[projectId]/session/record/page";
+import { SessionRecordContent } from "@/features/session/session-record-content";
 
 const pushMock = vi.fn();
 let mockSearchParams = new URLSearchParams();

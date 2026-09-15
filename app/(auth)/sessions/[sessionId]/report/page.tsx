@@ -34,14 +34,14 @@ export default function SessionReportPage({ params }: { params: Promise<{ sessio
     queryClient.invalidateQueries({ queryKey: ["report", sessionId] });
     reportQuery.refetch();
   };
+  const pending = ["questions_in_progress", "report_generating"].includes(
+    sessionQuery.data?.state ?? ""
+  );
 
-  if (reportQuery.isLoading) {
+  if (reportQuery.isLoading && !pending) {
     return <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center"><Icon icon="tabler:loader-2" className="animate-spin text-4xl text-primary" /><Text size="md">Loading session report...</Text></div>;
   }
-  if (reportQuery.isError || !reportQuery.data) {
-    const pending = ["questions_in_progress", "report_generating"].includes(
-      sessionQuery.data?.state ?? ""
-    );
+  if (reportQuery.isLoading || reportQuery.isError || !reportQuery.data) {
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center px-4 text-center">
         <Wrapper variant="glass-dark" className="flex w-full flex-col items-center gap-4 rounded-3xl p-8">
