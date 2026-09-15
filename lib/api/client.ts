@@ -27,7 +27,6 @@ import type {
   TeamMembership,
   TeamInvitation,
   TeamRole,
-  UserInvitation,
   ProblemDetails,
 } from "./types";
 import { getClientAuthToken } from "@/lib/auth/cookies";

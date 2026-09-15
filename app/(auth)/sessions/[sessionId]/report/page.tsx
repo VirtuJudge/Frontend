@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect } from "react";
+import { use } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Icon } from "@iconify/react";
@@ -11,7 +11,12 @@ import { SessionReportView } from "@/features/reports";
 export default function SessionReportPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = use(params);
   const queryClient = useQueryClient();
-  const reportQuery = useQuery({ queryKey: ["report", sessionId], queryFn: () => apiClient.getReport(sessionId), retry: false });
+  const reportQuery = useQuery({
+    queryKey: ["report", sessionId],
+    queryFn: () => apiClient.getReport(sessionId),
+    retry: false,
+    refetchInterval: (query) => query.state.status === "error" ? 4000 : false,
+  });
   const sessionQuery = useQuery({
     queryKey: ["practice-session", sessionId],
     queryFn: () => apiClient.getPracticeSession(sessionId),
@@ -21,12 +26,6 @@ export default function SessionReportPage({ params }: { params: Promise<{ sessio
     queryClient.invalidateQueries({ queryKey: ["report", sessionId] });
     reportQuery.refetch();
   };
-
-  useEffect(() => {
-    if (sessionQuery.data?.state === "completed" && reportQuery.isError) {
-      void reportQuery.refetch();
-    }
-  }, [reportQuery.isError, reportQuery.refetch, sessionQuery.data?.state]);
 
   if (reportQuery.isLoading) {
     return <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center"><Icon icon="tabler:loader-2" className="animate-spin text-4xl text-primary" /><Text size="md">Loading session report...</Text></div>;

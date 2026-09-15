@@ -17,7 +17,6 @@ import { ReviewDraftModal } from "./review-draft-modal";
 import { SkipQuestionModal } from "./skip-question-modal";
 
 export interface QAStageViewProps {
-  sessionId?: string;
   questions: Question[];
   activeQuestion: Question | null;
   currentQuestionNumber: number;
@@ -38,7 +37,6 @@ function formatTimer(ms: number): string {
 }
 
 export function QAStageView({
-  sessionId,
   questions,
   activeQuestion,
   currentQuestionNumber,

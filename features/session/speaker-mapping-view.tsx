@@ -11,7 +11,7 @@ import {
   Text,
 } from "@/components";
 import { SessionHeader } from "./session-header";
-import { apiClient } from "@/lib/api/client";
+import { apiClient, ApiClientError } from "@/lib/api/client";
 import {
   PracticeSession,
   TeamMembership,
@@ -80,7 +80,8 @@ export function SpeakerMappingView({
   }, [sessionId]);
 
   useEffect(() => {
-    loadData();
+    const timeout = window.setTimeout(() => void loadData(), 0);
+    return () => window.clearTimeout(timeout);
   }, [loadData]);
 
   // Handle presenter assignment change
@@ -140,14 +141,14 @@ export function SpeakerMappingView({
       } else {
         router.push(`/sessions/${sessionId}/qa`);
       }
-    } catch (err: any) {
-      if (err?.status === 412) {
+    } catch (err: unknown) {
+      if (err instanceof ApiClientError && err.status === 412) {
         // Concurrency conflict (stale entity version)
         setShowConflictModal(true);
-      } else if (err?.status === 422) {
+      } else if (err instanceof ApiClientError && err.status === 422) {
         setSaveError(err.message || "Invalid speaker label or team member.");
       } else {
-        setSaveError(err?.message || "Failed to save speaker mappings. Please try again.");
+        setSaveError(err instanceof Error ? err.message : "Failed to save speaker mappings. Please try again.");
       }
     } finally {
       setIsSaving(false);
