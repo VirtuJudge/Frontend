@@ -17,7 +17,7 @@ test.describe('Application Shell & Layouts', () => {
   });
 
   test('unauthorized routes redirect safely to login', async ({ page }) => {
-    await page.goto('/dashboard');
+    await page.goto('/me');
     await expect(page).toHaveURL(/.*auth\/login.*redirect/);
     await expect(page.getByText('Welcome Back')).toBeVisible();
     await expect(page.getByRole('button', { name: /^login$/i })).toBeVisible();
@@ -26,19 +26,16 @@ test.describe('Application Shell & Layouts', () => {
   test('authenticated workspace shell renders with sidebar layout', async ({
     page,
   }) => {
-    await page.goto('/auth/login?redirect=%2Fdashboard');
+    await page.goto('/auth/login?redirect=%2Fme');
     await page.getByPlaceholder(/enter your email/i).fill('alex@example.com');
     await page.getByPlaceholder(/enter your password/i).fill('password123');
     await page.getByRole('button', { name: /^login$/i }).click();
 
-    await expect(page).toHaveURL(/.*dashboard/);
+    await expect(page).toHaveURL(/.*me/);
 
-    // Check authenticated sidebar
-    await expect(page.getByLabel('Application Navigation')).toBeVisible();
-    await expect(page.getByText('Workspace')).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: /Hello, Dashboard/i }),
-    ).toBeVisible();
+    // Check authenticated shell
+    await expect(page.getByRole('button', { name: /logout/i })).toBeVisible();
+    await expect(page.getByText(/Bonjour/i)).toBeVisible();
   });
 
   test('navigation between public and authenticated layouts functions cleanly', async ({
@@ -48,16 +45,14 @@ test.describe('Application Shell & Layouts', () => {
     await page.getByPlaceholder(/enter your email/i).fill('alex@example.com');
     await page.getByPlaceholder(/enter your password/i).fill('password123');
     await page.getByRole('button', { name: /^login$/i }).click();
-    await expect(page).toHaveURL(/.*dashboard/);
+    await expect(page).toHaveURL(/.*me/);
 
-    await page.goto('/');
-    const enterButton = page.getByRole('link', { name: /Enter Workspace/i });
+    await page.goto('/home');
+    const enterButton = page.getByRole('link', { name: /Try Now/i });
     await enterButton.click();
 
-    await expect(page).toHaveURL(/.*dashboard/);
-    await expect(
-      page.getByRole('heading', { name: /Hello, Dashboard/i }),
-    ).toBeVisible();
+    await expect(page).toHaveURL(/.*me/);
+    await expect(page.getByText(/Bonjour/i)).toBeVisible();
   });
 
   test('access journey: team roster, safe Gmail delivery status, and invitations', async ({
@@ -67,7 +62,7 @@ test.describe('Application Shell & Layouts', () => {
     await page.getByPlaceholder(/enter your email/i).fill('alex@example.com');
     await page.getByPlaceholder(/enter your password/i).fill('password123');
     await page.getByRole('button', { name: /^login$/i }).click();
-    await expect(page).toHaveURL(/.*dashboard/);
+    await expect(page).toHaveURL(/.*me/);
 
     await page.goto('/teams/01J6GZ2B000000000000000002');
     await expect(

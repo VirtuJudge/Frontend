@@ -118,7 +118,7 @@ export function WorkspaceNavBar({
             <Button
               variant="glass"
               borderGradient="nav"
-              href="/dashboard"
+              href="/me"
               aria-label="Go to My Account"
             >
               My account

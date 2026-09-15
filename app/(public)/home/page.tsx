@@ -11,7 +11,7 @@ export default function HomePage() {
         founders and presenters.
       </Text>
       <div className="flex gap-4">
-        <Button href="/dashboard" variant="primary">
+        <Button href="/me" variant="primary">
           Try Now
         </Button>
         <Button href="/about" variant="glass">

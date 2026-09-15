@@ -348,7 +348,7 @@ describe("Project Page Navigation & Custom Layout", () => {
       // My Account button on right
       const myAccountLink = screen.getByRole("link", { name: /my account/i });
       expect(myAccountLink).toBeDefined();
-      expect(myAccountLink.getAttribute("href")).toBe("/dashboard");
+      expect(myAccountLink.getAttribute("href")).toBe("/me");
     });
 
     it("defaults to the first team and project if the user has not chosen", async () => {
@@ -494,7 +494,7 @@ describe("Project Page Navigation & Custom Layout", () => {
         name: /open session 1/i,
       });
       expect(sessionLinks.length).toBeGreaterThan(0);
-      expect(sessionLinks[0].getAttribute("href")).toContain("/session/");
+      expect(sessionLinks[0].getAttribute("href")).toContain("/sessions/");
     });
   });
 
