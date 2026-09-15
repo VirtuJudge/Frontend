@@ -21,7 +21,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/dashboard");
+      router.replace("/me");
     }
   }, [isAuthenticated, router]);
 
@@ -65,7 +65,7 @@ export default function RegisterPage() {
           `/auth/verify-registration?email=${encodeURIComponent(email.trim())}`,
         );
       } else {
-        router.replace("/dashboard");
+        router.replace("/me");
       }
     } catch (err: unknown) {
       setError(

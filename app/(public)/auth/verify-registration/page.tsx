@@ -33,7 +33,7 @@ export default function VerifyRegistrationPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/dashboard");
+      router.replace("/me");
     }
   }, [isAuthenticated, router]);
 

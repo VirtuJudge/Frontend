@@ -77,7 +77,7 @@ export default function SmallNav() {
         {isAuthenticated ? (
           <Button
             variant="primary"
-            href="/dashboard"
+            href="/me"
             className="w-full"
             size="sm"
             onClick={() => setIsMenuOpen(false)}

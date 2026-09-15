@@ -3,7 +3,7 @@
 import { RefObject } from "react";
 import { Icon } from "@iconify/react";
 import { cn } from "@/lib/utils";
-import { MAX_FILES, formatFileSize } from "@/hooks/use-file-attachments";
+import { formatFileSize } from "@/hooks/use-file-attachments";
 import { UploadedFileItem } from "./uploaded-files-dropdown";
 
 export interface FileDropzoneProps {
@@ -76,7 +76,7 @@ export function FileDropzone({
               {formatFileSize(currentSelectedFile?.size || 0)}
             </span>
             <span className="text-xs sm:text-sm text-primary/85 mt-1 font-medium text-center">
-              + Add more ({attachedFiles.length}/{MAX_FILES})
+              + Add more
             </span>
           </div>
         ) : (

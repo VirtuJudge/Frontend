@@ -76,7 +76,7 @@ export function UploadProgressList({
                   )}
 
                   {isFailed && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-300 border border-red-500/30">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-300 border border-red-500/30">
                       <Icon icon="tabler:alert-circle" className="text-sm" />
                       {item.stage === "rejected" ? "Rejected" : "Failed"}
                     </span>

@@ -170,12 +170,12 @@ export function InvitationAcceptContent({ token }: { token: string }) {
                 Try Again
               </Button>
               <Button
-                href="/dashboard"
+                href="/me"
                 variant="glass"
                 size="sm"
                 className="w-full justify-center"
               >
-                Go to Dashboard
+                Go to My Account
               </Button>
             </>
           )}
