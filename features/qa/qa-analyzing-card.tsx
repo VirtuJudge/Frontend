@@ -3,12 +3,15 @@
 import React from "react";
 import { Icon } from "@iconify/react";
 import { Wrapper } from "@/components";
+import { AnalysisProgress } from "@/features/session";
+import type { AnalysisProgressedEvent } from "@/lib/api/types";
 
 export interface QAAnalyzingCardProps {
   className?: string;
+  progress?: AnalysisProgressedEvent | null;
 }
 
-export function QAAnalyzingCard({ className = "" }: QAAnalyzingCardProps) {
+export function QAAnalyzingCard({ className = "", progress = null }: QAAnalyzingCardProps) {
   return (
     <Wrapper
       variant="glass-dark"
@@ -33,6 +36,8 @@ export function QAAnalyzingCard({ className = "" }: QAAnalyzingCardProps) {
           claims, and preparing the next question or adaptive follow-up...
         </p>
       </div>
+
+      <AnalysisProgress progress={progress} />
 
       <div className="flex items-center gap-2 text-xs font-mono text-purple-300/80 bg-purple-500/10 px-4 py-2 rounded-full border border-purple-500/20">
         <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
