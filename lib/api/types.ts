@@ -255,13 +255,13 @@ export interface SpeakerPreviewInterval {
 }
 
 export interface SpeakerMapping {
-  speaker_id: string;
-  label: string;
-  speaker_label?: string;
-  assigned_user_id?: ResourceId;
-  user_id?: ResourceId;
-  confidence?: number;
-  preview?: SpeakerPreviewInterval;
+  id: ResourceId;
+  attempt_id: ResourceId;
+  speaker_label: string;
+  user_id?: ResourceId | null;
+  member_id?: ResourceId | null;
+  mapped_by: ResourceId;
+  mapped_at: UtcTimestamp;
 }
 
 export interface DetectedSpeaker {

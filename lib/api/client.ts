@@ -616,41 +616,15 @@ export class ApiClient {
 
   public async saveSpeakerMappings(
     sessionId: string,
-    mappings: Array<SpeakerMappingRequestItem | SpeakerMapping>,
-    ifMatchOrIdempotency?: number | string,
-    idempotencyKey?: string,
-  ): Promise<unknown> {
-    const formattedMappings = mappings
-      .map((m) => {
-        const item = m as unknown as Record<string, unknown>;
-        const label = String(item.speaker_label ?? item.label ?? item.speaker_id ?? "");
-        const userId = (item.user_id ?? item.assigned_user_id) as string | undefined;
-        return { speaker_label: label, user_id: userId };
-      })
-      .filter((m): m is { speaker_label: string; user_id: string } => Boolean(m.speaker_label && m.user_id));
-
-    let ifMatchHeader: string | undefined;
-    let idemKey: string | undefined = idempotencyKey;
-
-    if (typeof ifMatchOrIdempotency === "number") {
-      ifMatchHeader = `"${ifMatchOrIdempotency}"`;
-    } else if (typeof ifMatchOrIdempotency === "string") {
-      if (ifMatchOrIdempotency.startsWith('"') || /^\d+$/.test(ifMatchOrIdempotency)) {
-        ifMatchHeader = ifMatchOrIdempotency.startsWith('"')
-          ? ifMatchOrIdempotency
-          : `"${ifMatchOrIdempotency}"`;
-      } else {
-        idemKey = ifMatchOrIdempotency;
-      }
-    }
-
-    return this.request(
+    mappings: SpeakerMappingRequestItem[],
+    version: number,
+  ): Promise<SpeakerMapping[]> {
+    return this.request<SpeakerMapping[]>(
       API_ENDPOINTS.speakerMappings(sessionId),
       {
         method: "PUT",
-        ifMatch: ifMatchHeader,
-        idempotencyKey: idemKey,
-        body: JSON.stringify({ mappings: formattedMappings }),
+        ifMatch: `"${version}"`,
+        body: JSON.stringify({ mappings }),
       },
     );
   }

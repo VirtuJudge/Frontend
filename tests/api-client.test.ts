@@ -177,4 +177,24 @@ describe('API Client Boundary', () => {
       body: JSON.stringify({ reason: null }),
     }));
   });
+
+  it('updates speaker mappings with strict optimistic concurrency', async () => {
+    const client = new ApiClient({ baseUrl: '/api/v1', getToken: () => 'token' });
+    fetchSpy.mockResolvedValue(new Response(JSON.stringify([]), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }));
+
+    await client.saveSpeakerMappings(
+      'session-1',
+      [{ speaker_label: 'SPEAKER_00', user_id: 'user-1' }],
+      3,
+    );
+
+    expect(fetchSpy.mock.calls[0][1]).toEqual(expect.objectContaining({
+      method: 'PUT',
+      headers: expect.objectContaining({ 'If-Match': '"3"' }),
+      body: JSON.stringify({ mappings: [{ speaker_label: 'SPEAKER_00', user_id: 'user-1' }] }),
+    }));
+  });
 });

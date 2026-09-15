@@ -15,7 +15,6 @@ import { apiClient } from "@/lib/api/client";
 import {
   PracticeSession,
   TeamMembership,
-  SpeakerMapping,
   SpeakerPreviewInterval,
 } from "@/lib/api/types";
 
@@ -65,55 +64,13 @@ export function SpeakerMappingView({
       setSession(sess);
       setSessionVersion(sess.version || 1);
 
-      // Load team members
-      if (sess.team_id) {
-        try {
-          const membersPage = await apiClient.getTeamMembers(sess.team_id);
-          setTeamMembers(membersPage.items || []);
-        } catch {
-          // If team members fail to load, proceed with empty team list
-          setTeamMembers([]);
-        }
-      }
+      const project = await apiClient.getProject(sess.project_id);
+      const membersPage = await apiClient.getTeamMembers(project.team_id);
+      setTeamMembers(membersPage.items || []);
 
-      // Initialize detected speaker labels
-      const existingMappings = sess.speaker_mappings || [];
-      const defaultPreviewQuotes: Record<string, string> = {
-        SPEAKER_00: "Good morning judges, today we are excited to introduce our platform...",
-        SPEAKER_01: "Looking at our market traction, we have reached significant month-over-month growth...",
-        SPEAKER_02: "From a technical architecture standpoint, our real-time streaming pipeline ensures sub-second latency...",
-      };
-
-      if (existingMappings.length > 0) {
-        const initialized: SpeakerItem[] = existingMappings.map((m: SpeakerMapping, idx: number) => {
-          const label = m.speaker_label || m.label || m.speaker_id || `SPEAKER_${idx.toString().padStart(2, "0")}`;
-          const startMs = m.preview?.start_ms ?? idx * 25000 + 10000;
-          const endMs = m.preview?.end_ms ?? startMs + 12000;
-          return {
-            speaker_label: label,
-            assigned_user_id: m.user_id || m.assigned_user_id || null,
-            preview: m.preview || {
-              start_ms: startMs,
-              end_ms: endMs,
-              quote_text: defaultPreviewQuotes[label] || `Sample speech segment detected for ${label}...`,
-            },
-          };
-        });
-        setSpeakers(initialized);
-      } else {
-        // Default detected speakers if none previously saved
-        const defaultLabels = ["SPEAKER_00", "SPEAKER_01"];
-        const initialized: SpeakerItem[] = defaultLabels.map((label, idx) => ({
-          speaker_label: label,
-          assigned_user_id: null,
-          preview: {
-            start_ms: idx * 20000 + 10000,
-            end_ms: idx * 20000 + 22000,
-            quote_text: defaultPreviewQuotes[label] || `Sample presentation transcript segment for ${label}...`,
-          },
-        }));
-        setSpeakers(initialized);
-      }
+      // The current backend does not expose detected labels through a read
+      // endpoint. Never invent labels, timestamps, or transcript quotations.
+      setSpeakers([]);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to load practice session";
       setLoadError(msg);
@@ -287,6 +244,13 @@ export function SpeakerMappingView({
         )}
 
         {/* Speaker Cards List */}
+        {speakers.length === 0 && (
+          <Wrapper variant="glass" className="rounded-3xl p-6 text-center">
+            <Text size="sm" className="text-white/70">
+              Detected speaker labels are not available from the backend yet. You can continue to Q&amp;A without mapping presenters.
+            </Text>
+          </Wrapper>
+        )}
         <div className="flex flex-col gap-4" role="list" aria-label="Detected Speakers List">
           {speakers.map((speaker) => {
             const isAssigned = Boolean(speaker.assigned_user_id);
@@ -406,7 +370,7 @@ export function SpeakerMappingView({
             size="sm"
             onClick={handleSubmit}
             loading={isSaving}
-            disabled={isSaving || hasDuplicateError}
+            disabled={isSaving || hasDuplicateError || speakers.length === 0}
           >
             <Icon icon="tabler:device-floppy" className="text-xl" />
             <span>Save Mappings</span>
