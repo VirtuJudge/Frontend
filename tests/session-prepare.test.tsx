@@ -83,7 +83,6 @@ describe("Prepare Session Page (/projects/[projectId]/session/prepare)", () => {
     expect(
       await screen.findByText(/configure session settings/i),
     ).toBeDefined();
-    expect(screen.getByText("Discussion panel")).toBeDefined();
     expect(screen.getByText("Show timer")).toBeDefined();
     expect(screen.getByText("Allow pauses")).toBeDefined();
     expect(screen.getByText("Drop here")).toBeDefined();
@@ -92,11 +91,8 @@ describe("Prepare Session Page (/projects/[projectId]/session/prepare)", () => {
     expect(screen.getByRole("button", { name: /^start$/i })).toBeDefined();
   });
 
-  it("toggles the discussion panel, timer, and pauses switches when clicked", async () => {
+  it("toggles the timer and and pauses switches when clicked", async () => {
     await renderPage();
-
-    const discussionSwitch = await screen.findByText("Discussion panel");
-    fireEvent.click(discussionSwitch);
 
     const timerSwitch = screen.getByText("Show timer");
     fireEvent.click(timerSwitch);

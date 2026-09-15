@@ -386,12 +386,11 @@ export default function PrepareSessionPage({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-full px-4 gap-10">
-      {" "}
+    <div className="flex flex-col items-center justify-center w-full gap-10 pt-20 lg:pt-0">
       <WorkspaceNavBar />
       <Text
         size="lg"
-        className="font-bold tracking-tight text-fg text-center sm:mb-2 sm:mt-20 md:mt-36 mt-40"
+        className="font-bold tracking-tight text-fg text-center"
       >
         Configure Session Settings
       </Text>
