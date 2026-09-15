@@ -643,18 +643,50 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
         sessionKey,
       );
 
-      // 9. Save created sessionId in localStorage
+      // Preserve the created session immediately so a failed readiness/analysis
+      // command can be resumed without creating a duplicate session.
       saveSessionConfig(projectId, {
         sessionId: session.id,
       });
 
       setUploadProgress({
-        stage: "Session created! Redirecting to Q&A...",
+        stage: "Preparing session for analysis...",
+        percent: 95,
+      });
+
+      const readySession = await apiClient.updatePracticeSession(
+        session.id,
+        {
+          name: session.name || `Practice Session ${new Date().toLocaleDateString()}`,
+          presentation_asset_version_id: presentationVersionId,
+          supporting_document_version_ids: docVersionIds,
+          rubric: {
+            rubric_id: "startup_pitch",
+            version: 1,
+          },
+        },
+        session.version,
+      );
+
+      if (readySession.state !== "ready") {
+        throw new Error(
+          `The practice session could not be prepared for analysis (state: ${readySession.state}).`,
+        );
+      }
+
+      setUploadProgress({
+        stage: "Starting AI analysis...",
+        percent: 98,
+      });
+      const analysisKey = generateIdempotencyKey("analysis");
+      await apiClient.createAnalysisAttempt(session.id, analysisKey);
+
+      setUploadProgress({
+        stage: "Analysis started! Opening session...",
         percent: 100,
       });
 
-      // 10. Successfully navigate to sessions/:id/qa route
-      router.push(`/sessions/${session.id}/qa`);
+      router.push(`/sessions/${session.id}`);
     } catch (err: unknown) {
       console.error("Failed to submit session:", err);
       setSubmitError(
