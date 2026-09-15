@@ -100,7 +100,13 @@ export function useQASession(sessionId: string): UseQASessionReturn {
     queryKey: ["qa-round", sessionId],
     queryFn: () => apiClient.getQARound(sessionId),
     enabled: !!sessionId && qaReady,
-    refetchInterval: analyzingQuestionId ? 3500 : false,
+    refetchInterval: (query) => {
+      const round = query.state.data;
+      return analyzingQuestionId ||
+        (round?.state === "in_progress" && !round.current_question_id)
+        ? 3500
+        : false;
+    },
     refetchOnWindowFocus: true,
   });
 
@@ -166,24 +172,14 @@ export function useQASession(sessionId: string): UseQASessionReturn {
       return true;
     }
 
-    // If there are at least 3 primaries and all questions in round are answered/skipped
-    if (
-      primaryQuestions.length >= MAX_PRIMARY_QUESTIONS &&
-      allQuestions.length > 0 &&
-      allQuestions.every((q) => q.state === "answered" || q.state === "skipped") &&
-      !qaRound.current_question_id
-    ) {
-      return true;
-    }
-
     return false;
-  }, [qaRound, practiceSession, primaryQuestions, allQuestions]);
+  }, [qaRound, practiceSession]);
 
-  // Derive isAnalyzing without setState in effect
   const isAnalyzing = Boolean(
-    analyzingQuestionId &&
-      !isRoundCompleted &&
-      activeQuestion?.id === analyzingQuestionId
+    !isRoundCompleted &&
+      ((analyzingQuestionId &&
+        (!activeQuestion || activeQuestion.id === analyzingQuestionId)) ||
+        (qaRound?.state === "in_progress" && !qaRound.current_question_id))
   );
 
   // 6. Connect SSE for real-time notifications

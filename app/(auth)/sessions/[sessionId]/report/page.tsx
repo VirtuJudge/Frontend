@@ -20,7 +20,12 @@ export default function SessionReportPage({ params }: { params: Promise<{ sessio
   const sessionQuery = useQuery({
     queryKey: ["practice-session", sessionId],
     queryFn: () => apiClient.getPracticeSession(sessionId),
-    refetchInterval: (query) => query.state.data?.state === "report_generating" ? 4000 : false,
+    refetchInterval: (query) =>
+      ["questions_in_progress", "report_generating"].includes(
+        query.state.data?.state ?? ""
+      )
+        ? 4000
+        : false,
   });
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ["report", sessionId] });
@@ -31,13 +36,15 @@ export default function SessionReportPage({ params }: { params: Promise<{ sessio
     return <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center"><Icon icon="tabler:loader-2" className="animate-spin text-4xl text-primary" /><Text size="md">Loading session report...</Text></div>;
   }
   if (reportQuery.isError || !reportQuery.data) {
-    const pending = sessionQuery.data?.state === "report_generating";
+    const pending = ["questions_in_progress", "report_generating"].includes(
+      sessionQuery.data?.state ?? ""
+    );
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center px-4 text-center">
         <Wrapper variant="glass-dark" className="flex w-full flex-col items-center gap-4 rounded-3xl p-8">
           <Icon icon={pending ? "tabler:hourglass-high" : "tabler:alert-circle"} className="text-4xl text-primary" />
-          <Text as="h1" size="md" className="font-bold">{pending ? "Report Generation in Progress" : "Report Unavailable"}</Text>
-          <Text size="xs" className="text-fg/70">{pending ? "The final evaluation is still being generated." : reportQuery.error instanceof Error ? reportQuery.error.message : "The report could not be loaded."}</Text>
+          <Text as="h1" size="md" className="font-bold">{pending ? "Report Preparation in Progress" : "Report Unavailable"}</Text>
+          <Text size="xs" className="text-fg/70">{pending ? "VirtuJudge is finishing answer analysis and preparing the final evaluation." : reportQuery.error instanceof Error ? reportQuery.error.message : "The report could not be loaded."}</Text>
           <Button onClick={handleRefresh}>Try Again</Button>
           <Link href={`/sessions/${sessionId}`} className="text-xs text-primary hover:underline">Return to session status</Link>
         </Wrapper>

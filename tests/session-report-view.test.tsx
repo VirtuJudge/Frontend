@@ -79,4 +79,20 @@ describe("SessionReportPage", () => {
     });
     await waitFor(() => expect(screen.getByText("Alice Founder")).toBeDefined());
   });
+
+  it("shows preparation instead of unavailable while final answer analysis is pending", async () => {
+    vi.spyOn(apiClient, "getReport").mockRejectedValue(new Error("Report is not ready."));
+    vi.spyOn(apiClient, "getPracticeSession").mockResolvedValue({
+      ...mockSession,
+      state: "questions_in_progress",
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    await React.act(async () => {
+      render(<QueryClientProvider client={client}><React.Suspense fallback={<div>Loading</div>}><SessionPage params={Promise.resolve({ sessionId: "sess-456" })} /></React.Suspense></QueryClientProvider>);
+    });
+
+    expect(await screen.findByText("Report Preparation in Progress")).toBeDefined();
+    expect(screen.queryByText("Report Unavailable")).toBeNull();
+  });
 });

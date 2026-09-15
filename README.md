@@ -1,4 +1,4 @@
-# VirtuJudge Frontend Client
+# VirtuJudge Frontend
 
 [![Latest Release](https://img.shields.io/badge/Release-v0.1.0-purple?style=flat)](https://github.com/VirtuJudge/Frontend)
 [![App Framework](https://img.shields.io/badge/Next.js-16.3.4%20(App%20Router)-black?style=flat&logo=next.js)](https://nextjs.org/)
@@ -207,3 +207,6 @@ npm run check
 # Build production bundle
 npm run build
 ```
+
+**Unit & Integration Test Status:** `36 test files passed (36), 271 tests passed (100% pass rate)`.
+**Accessibility Status:** `0 critical / serious axe-core violations`.

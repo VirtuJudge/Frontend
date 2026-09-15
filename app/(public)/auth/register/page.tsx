@@ -24,7 +24,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/dashboard");
+      router.replace("/");
     }
   }, [isAuthenticated, router]);
 
@@ -71,21 +71,21 @@ export default function RegisterPage() {
       setError(null);
       setSuccessMessage(null);
 
-      const status = await checkEmailVerificationStatus(email.trim());
+      // const status = await checkEmailVerificationStatus(email.trim());
 
-      if (status.exists) {
-        if (status.isConfirmed || !status.waitingConfirmation) {
-          router.push(
-            `/auth/login?email=${encodeURIComponent(email.trim())}&message=${encodeURIComponent("An account with this email already exists. Please log in.")}`,
-          );
-          return;
-        }
+      // if (status.exists) {
+      //   if (status.isConfirmed || !status.waitingConfirmation) {
+      //     router.push(
+      //       `/auth/login?email=${encodeURIComponent(email.trim())}&message=${encodeURIComponent("An account with this email already exists. Please log in.")}`,
+      //     );
+      //     return;
+      //   }
 
-        router.push(
-          `/auth/verify-registration?email=${encodeURIComponent(email.trim())}`,
-        );
-        return;
-      }
+      //   router.push(
+      //     `/auth/verify-registration?email=${encodeURIComponent(email.trim())}`,
+      //   );
+      //   return;
+      // }
 
       const result = await signUpWithPassword({
         email: email.trim(),
