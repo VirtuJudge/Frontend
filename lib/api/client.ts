@@ -11,6 +11,8 @@ import type {
   CreateVersionUploadIntentRequest,
   CompleteUploadRequest,
   PracticeSession,
+  AnalysisAttempt,
+  UpdatePracticeSessionRequest,
   SpeakerMapping,
   SpeakerMappingRequestItem,
   QARound,
@@ -72,8 +74,8 @@ export const API_ENDPOINTS = {
   projectSessions: (projectId: string) =>
     `/projects/${projectId}/practice-sessions`,
   practiceSession: (sessionId: string) => `/practice-sessions/${sessionId}`,
-  startAnalysis: (sessionId: string) =>
-    `/practice-sessions/${sessionId}/start-analysis`,
+  analysisAttempts: (sessionId: string) =>
+    `/practice-sessions/${sessionId}/analysis-attempts`,
   speakerMappings: (sessionId: string) =>
     `/practice-sessions/${sessionId}/speaker-mappings`,
   questions: (sessionId: string) => `/practice-sessions/${sessionId}/questions`,
@@ -112,7 +114,7 @@ export class ApiClient {
     this.getToken = config?.getToken ?? getClientAuthToken;
   }
 
-  private async getAuthToken(): Promise<string | null> {
+  public async getAuthToken(): Promise<string | null> {
     if (typeof window !== "undefined" && window.localStorage) {
       try {
         const stored = window.localStorage.getItem(AUTH_COOKIE_NAME);
@@ -141,11 +143,15 @@ export class ApiClient {
     return null;
   }
 
+  public resolveUrl(endpoint: string): string {
+    return `${this.baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit & { idempotencyKey?: string; ifMatch?: string } = {},
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+    const url = this.resolveUrl(endpoint);
     const headers: Record<string, string> = {
       Accept: "application/json",
       ...(options.headers as Record<string, string>),
@@ -524,7 +530,7 @@ export class ApiClient {
       rubric: data.rubric || { rubric_id: "startup_pitch", version: 1 },
     };
 
-    return this.request<PracticeSession>(
+    const session = await this.request<PracticeSession & { status?: PracticeSession["state"] }>(
       API_ENDPOINTS.projectSessions(projectId),
       {
         method: "POST",
@@ -532,12 +538,14 @@ export class ApiClient {
         idempotencyKey,
       },
     );
+    return this.normalizePracticeSession(session);
   }
 
   public async getPracticeSession(sessionId: string): Promise<PracticeSession> {
-    return this.request<PracticeSession>(
+    const session = await this.request<PracticeSession & { status?: PracticeSession["state"] }>(
       API_ENDPOINTS.practiceSession(sessionId),
     );
+    return this.normalizePracticeSession(session);
   }
 
   public async getPracticeSessions(
@@ -545,9 +553,13 @@ export class ApiClient {
     cursor?: string,
   ): Promise<Page<PracticeSession>> {
     const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
-    return this.request<Page<PracticeSession>>(
+    const page = await this.request<Page<PracticeSession & { status?: PracticeSession["state"] }>>(
       `${API_ENDPOINTS.projectSessions(projectId)}${query}`,
     );
+    return {
+      ...page,
+      items: page.items.map((session) => this.normalizePracticeSession(session)),
+    };
   }
 
   public async deletePracticeSession(sessionId: string): Promise<void> {
@@ -556,17 +568,45 @@ export class ApiClient {
     });
   }
 
-  public async startAnalysis(
+  public async updatePracticeSession(
+    sessionId: string,
+    data: UpdatePracticeSessionRequest,
+    version: number,
+  ): Promise<PracticeSession> {
+    const session = await this.request<PracticeSession & { status?: PracticeSession["state"] }>(
+      API_ENDPOINTS.practiceSession(sessionId),
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+        ifMatch: `"${version}"`,
+      },
+    );
+    return this.normalizePracticeSession(session);
+  }
+
+  public async createAnalysisAttempt(
     sessionId: string,
     idempotencyKey: string,
-  ): Promise<PracticeSession> {
-    return this.request<PracticeSession>(
-      API_ENDPOINTS.startAnalysis(sessionId),
+  ): Promise<AnalysisAttempt> {
+    return this.request<AnalysisAttempt>(
+      API_ENDPOINTS.analysisAttempts(sessionId),
       {
         method: "POST",
+        body: JSON.stringify({
+          consent: { accepted: true, policy_version: 1 },
+        }),
         idempotencyKey,
       },
     );
+  }
+
+  private normalizePracticeSession(
+    session: PracticeSession & { status?: PracticeSession["state"] },
+  ): PracticeSession {
+    return {
+      ...session,
+      state: session.status ?? session.state,
+    };
   }
 
   public async saveSpeakerMappings(

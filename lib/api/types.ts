@@ -16,6 +16,8 @@ export interface ProblemDetails {
   status: number;
   detail?: string;
   instance?: string;
+  code?: string;
+  trace_id?: string;
   invalid_params?: Array<{
     name: string;
     reason: string;
@@ -209,7 +211,7 @@ export type SessionState =
   | 'ready'
   | 'analyzing'
   | 'questions_ready'
-  | 'qa_in_progress'
+  | 'questions_in_progress'
   | 'report_generating'
   | 'completed'
   | 'failed'
@@ -279,6 +281,22 @@ export interface ConsentRecord {
   affirmed_by: ResourceId;
 }
 
+export interface RubricSpec {
+  rubric_id: string;
+  version: number;
+}
+
+export interface SessionManifest {
+  id: ResourceId;
+  session_id: ResourceId;
+  presentation_version_id: ResourceId;
+  supporting_document_version_ids: ResourceId[];
+  rubric_id: string;
+  rubric_version: number;
+  snapshot?: Record<string, unknown> | null;
+  frozen_at?: UtcTimestamp | null;
+}
+
 export interface SafeFailure {
   code: string;
   stage?: string;
@@ -297,23 +315,43 @@ export interface Limitation {
 export interface PracticeSession {
   id: ResourceId;
   project_id: ResourceId;
-  team_id: ResourceId;
+  team_id?: ResourceId;
   name?: string;
   state: SessionState;
-  manifest_frozen: boolean;
-  presentation_asset_id: ResourceId;
-  document_asset_ids: ResourceId[];
-  stages: StageProgress[];
+  status?: SessionState;
+  manifest?: SessionManifest | null;
+  rubric?: RubricSpec;
+  manifest_frozen?: boolean;
+  presentation_asset_id?: ResourceId;
+  document_asset_ids?: ResourceId[];
+  stages?: StageProgress[];
   speaker_mappings?: SpeakerMapping[];
   consent?: ConsentRecord;
   current_attempt?: number;
   current_question_id?: ResourceId;
   failure?: SafeFailure;
-  limitations: Limitation[];
+  limitations?: Limitation[];
   created_by: ResourceId;
   created_at: UtcTimestamp;
   updated_at: UtcTimestamp;
   version: number;
+}
+
+export interface AnalysisAttempt {
+  id: ResourceId;
+  session_id: ResourceId;
+  status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
+  created_at: UtcTimestamp;
+  attempt_number: number;
+  version: number;
+  idempotency_key?: string | null;
+}
+
+export interface UpdatePracticeSessionRequest {
+  name?: string;
+  presentation_asset_version_id?: ResourceId;
+  supporting_document_version_ids?: ResourceId[];
+  rubric?: RubricSpec;
 }
 
 // ================= Q&A =================
@@ -479,4 +517,3 @@ export interface ResyncRequiredEvent extends SseSessionEvent {
   current_sequence: number;
   requested_sequence?: number;
 }
-

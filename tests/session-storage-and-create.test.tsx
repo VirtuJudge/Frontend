@@ -75,19 +75,12 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       updated_at: new Date().toISOString(),
       version: 1,
     });
-    vi.spyOn(apiClient, "startAnalysis").mockResolvedValue({
-      id: "sess-123",
-      project_id: mockProjectId,
-      team_id: "team-1",
-      state: "analyzing",
-      manifest_frozen: false,
-      presentation_asset_id: "asset-rec-1",
-      document_asset_ids: [],
-      stages: [],
-      limitations: [],
-      created_by: "user-1",
+    vi.spyOn(apiClient, "createAnalysisAttempt").mockResolvedValue({
+      id: "attempt-1",
+      session_id: "sess-123",
+      status: "queued",
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      attempt_number: 1,
       version: 1,
     });
     vi.spyOn(apiClient, "getPracticeSession").mockResolvedValue({
@@ -363,4 +356,3 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
     });
   });
 });
-

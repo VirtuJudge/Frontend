@@ -20,6 +20,7 @@ describe('API Client Boundary', () => {
     expect(API_ENDPOINTS.teamProjects('team_123')).toBe('/teams/team_123/projects');
     expect(API_ENDPOINTS.project('proj_123')).toBe('/projects/proj_123');
     expect(API_ENDPOINTS.practiceSession('sess_123')).toBe('/practice-sessions/sess_123');
+    expect(API_ENDPOINTS.analysisAttempts('sess_123')).toBe('/practice-sessions/sess_123/analysis-attempts');
     expect(API_ENDPOINTS.questions('sess_123')).toBe('/practice-sessions/sess_123/questions');
     expect(API_ENDPOINTS.report('sess_123')).toBe('/practice-sessions/sess_123/report');
     expect(API_ENDPOINTS.teamMembers('team_123')).toBe('/teams/team_123/members');
@@ -29,6 +30,52 @@ describe('API Client Boundary', () => {
     expect(API_ENDPOINTS.revokeInvitation('team_123', 'inv_789')).toBe('/teams/team_123/invitations/inv_789');
     expect(API_ENDPOINTS.invitationPreview('tok_abc')).toBe('/invitations/tok_abc');
     expect(API_ENDPOINTS.acceptInvitation('tok_abc')).toBe('/invitations/tok_abc/accept');
+  });
+
+  it('normalizes session status and sends the ready/analysis lifecycle commands', async () => {
+    const client = new ApiClient({ baseUrl: '/api/v1', getToken: () => 'token' });
+
+    fetchSpy
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        id: 'sess-1',
+        project_id: 'project-1',
+        created_by: 'user-1',
+        name: 'Pitch',
+        status: 'ready',
+        version: 2,
+        created_at: '2026-09-15T00:00:00Z',
+        updated_at: '2026-09-15T00:00:00Z',
+        manifest: null,
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        id: 'attempt-1',
+        session_id: 'sess-1',
+        status: 'queued',
+        created_at: '2026-09-15T00:00:00Z',
+        attempt_number: 1,
+        version: 1,
+      }), { status: 202, headers: { 'Content-Type': 'application/json' } }));
+
+    const session = await client.updatePracticeSession(
+      'sess-1',
+      { presentation_asset_version_id: 'version-1' },
+      1,
+    );
+    expect(session.state).toBe('ready');
+    expect(fetchSpy.mock.calls[0][0]).toBe('/api/v1/practice-sessions/sess-1');
+    expect(fetchSpy.mock.calls[0][1]).toEqual(expect.objectContaining({
+      method: 'PATCH',
+      headers: expect.objectContaining({ 'If-Match': '"1"' }),
+    }));
+
+    const attempt = await client.createAnalysisAttempt('sess-1', 'analysis-attempt-123');
+    expect(attempt.status).toBe('queued');
+    expect(fetchSpy.mock.calls[1][0]).toBe('/api/v1/practice-sessions/sess-1/analysis-attempts');
+    expect(fetchSpy.mock.calls[1][1]).toEqual(expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ consent: { accepted: true, policy_version: 1 } }),
+      headers: expect.objectContaining({ 'Idempotency-Key': 'analysis-attempt-123' }),
+    }));
   });
 
   it('dispatches requests to expected endpoints with proper HTTP methods', async () => {
