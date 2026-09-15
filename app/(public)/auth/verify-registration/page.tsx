@@ -211,7 +211,7 @@ export default function VerifyRegistrationPage() {
 
   return (
     <AuthContainer>
-      <Text size="lg">Verify your registration</Text>
+      <Text size="lg" className="text-center">Verify your registration</Text>
 
       <Text className="w-full px-8 text-center text-fg-light/80">
         Please enter the 8-digit OTP sent to your email address to verify your

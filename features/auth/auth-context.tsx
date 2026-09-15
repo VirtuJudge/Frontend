@@ -23,6 +23,8 @@ import {
   DecodedJwt,
 } from "@/lib/auth/jwt";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/auth/supabase";
+import { ensureDefaultTeamAndProject } from "./ensure-default-workspace";
+
 
 export interface SignInPasswordArgs {
   email: string;
@@ -198,6 +200,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         syncSessionToCookies(data.session.access_token);
         setToken(data.session.access_token);
         await queryClient.invalidateQueries({ queryKey: ["me"] });
+
+        try {
+          const sessionUser = data.session?.user;
+          const decoded = parseJwt(data.session.access_token);
+          const userId = sessionUser?.id || decoded?.sub;
+          if (userId) {
+            const userEmail = sessionUser?.email || decoded?.email || email;
+            const meta = (sessionUser?.user_metadata || decoded?.user_metadata) as
+              | Record<string, unknown>
+              | undefined;
+            const authUser: User = {
+              id: userId,
+              display_name:
+                (meta?.display_name as string) ||
+                userEmail?.split("@")[0] ||
+                "User",
+              email: userEmail || "",
+              created_at:
+                (typeof sessionUser?.created_at === "string"
+                  ? sessionUser.created_at
+                  : typeof decoded?.created_at === "string"
+                    ? decoded.created_at
+                    : undefined) || new Date().toISOString(),
+            };
+            await ensureDefaultTeamAndProject(authUser, queryClient);
+          }
+        } catch {
+          // Do not block sign in if workspace initialization encounters an issue
+        }
       }
     },
     [queryClient],
@@ -228,6 +259,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         syncSessionToCookies(data.session.access_token);
         setToken(data.session.access_token);
         await queryClient.invalidateQueries({ queryKey: ["me"] });
+
+        try {
+          const sessionUser = data.session?.user;
+          const decoded = parseJwt(data.session.access_token);
+          const userId = sessionUser?.id || decoded?.sub;
+          if (userId) {
+            const authUser: User = {
+              id: userId,
+              display_name: displayName || email.split("@")[0] || "User",
+              email,
+              created_at: sessionUser?.created_at || new Date().toISOString(),
+            };
+            await ensureDefaultTeamAndProject(authUser, queryClient);
+          }
+        } catch {
+          // Do not block sign up if workspace initialization encounters an issue
+        }
+
         return { needsEmailConfirmation: false };
       }
 
@@ -423,6 +472,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setClientAuthToken(jwtToken);
       setToken(jwtToken);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
+
+      try {
+        const decoded = parseJwt(jwtToken);
+        if (decoded?.sub) {
+          const meta = decoded.user_metadata as
+            | Record<string, unknown>
+            | undefined;
+          const authUser: User = {
+            id: decoded.sub,
+            display_name:
+              (meta?.display_name as string) ||
+              decoded.email?.split("@")[0] ||
+              "User",
+            email: decoded.email || "",
+            created_at:
+              (typeof decoded.created_at === "string"
+                ? decoded.created_at
+                : undefined) || new Date().toISOString(),
+          };
+          await ensureDefaultTeamAndProject(authUser, queryClient);
+        }
+      } catch {
+        // Do not block JWT sign-in
+      }
     },
     [queryClient],
   );

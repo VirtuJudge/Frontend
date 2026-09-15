@@ -71,19 +71,16 @@ export default function RegisterPage() {
       setError(null);
       setSuccessMessage(null);
 
-      // Check if the user already exists before attempting signup
       const status = await checkEmailVerificationStatus(email.trim());
 
       if (status.exists) {
         if (status.isConfirmed || !status.waitingConfirmation) {
-          // User exists and is already verified — send them to login
           router.push(
             `/auth/login?email=${encodeURIComponent(email.trim())}&message=${encodeURIComponent("An account with this email already exists. Please log in.")}`,
           );
           return;
         }
 
-        // User exists but hasn't confirmed their email — send them to verify
         router.push(
           `/auth/verify-registration?email=${encodeURIComponent(email.trim())}`,
         );
