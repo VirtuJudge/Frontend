@@ -63,7 +63,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col min-[1080px]:flex-row items-center justify-between w-full">
+    <div className="flex flex-col min-[1080px]:flex-row items-center justify-between w-full crop-to-screen">
       <div className="flex flex-col items-center justify-center gap-8 w-full min-[1080px]:w-1/2">
         <Text size="lg">Welcome Back</Text>
 

@@ -28,13 +28,13 @@ export interface ButtonProps
 }
 
 const SIZES: Record<ButtonSize, string> = {
-  sm: "h-[42px] py-[10px] px-[15px] text-[18px]",
-  default: "h-[57px] py-[15px] px-[20px] text-[24px]",
-  lg: "h-[64px] py-[18px] px-[25px] text-[26px]",
+  sm: "h-[2.625rem] py-[0.625rem] px-[0.9375rem] text-caption",
+  default: "h-[3.5rem] py-[0.9375rem] px-[1.25rem] text-body",
+  lg: "h-[4rem] py-[1.125rem] px-[1.5625rem] text-body-large",
 };
 
 const BASE_CLASSES =
-  "relative inline-flex items-center justify-center font-bold leading-none gap-[10px] rounded-[50px] select-none transition-all duration-200 cursor-pointer hover:brightness-110 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed aria-disabled:pointer-events-none aria-disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg whitespace-nowrap shrink-0";
+  "relative inline-flex items-center justify-center font-bold leading-none gap-[0.625rem] rounded-full select-none transition-all duration-200 cursor-pointer hover:brightness-110 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed aria-disabled:pointer-events-none aria-disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg whitespace-nowrap shrink-0";
 
 export const Button = React.forwardRef<HTMLElement, ButtonProps>(function Button(
   {

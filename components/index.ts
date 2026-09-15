@@ -9,3 +9,7 @@ export * from "./toggle-switch";
 export * from "./duration-picker";
 export * from "./uploaded-files-dropdown";
 export * from "./file-dropzone";
+export * from "./if";
+export * from "./pricing-card";
+export * from "./faq-card";
+export * from "./footer";

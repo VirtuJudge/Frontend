@@ -26,7 +26,7 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       className={`h-full antialiased ${inconsolata.variable}`}
     >
-      <body className="flex flex-col max-w-5xl mx-auto px-4 pt-30">
+      <body className="">
         <QueryClientBoundary>
           <AuthProvider>
             {children}
