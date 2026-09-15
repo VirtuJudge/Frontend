@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ApiClient, API_ENDPOINTS } from '@/lib/api/client';
+import {
+  ApiClient,
+  API_ENDPOINTS,
+  deleteProject,
+  deleteAsset,
+  deletePracticeSession,
+  deleteSession,
+} from '@/lib/api/client';
 
 describe('API Client Boundary', () => {
   let fetchSpy: ReturnType<typeof vi.spyOn>;
@@ -19,7 +26,9 @@ describe('API Client Boundary', () => {
     expect(API_ENDPOINTS.team('team_123')).toBe('/teams/team_123');
     expect(API_ENDPOINTS.teamProjects('team_123')).toBe('/teams/team_123/projects');
     expect(API_ENDPOINTS.project('proj_123')).toBe('/projects/proj_123');
+    expect(API_ENDPOINTS.asset('asset_123')).toBe('/assets/asset_123');
     expect(API_ENDPOINTS.practiceSession('sess_123')).toBe('/practice-sessions/sess_123');
+    expect(API_ENDPOINTS.session('sess_123')).toBe('/practice-sessions/sess_123');
     expect(API_ENDPOINTS.questions('sess_123')).toBe('/practice-sessions/sess_123/questions');
     expect(API_ENDPOINTS.report('sess_123')).toBe('/practice-sessions/sess_123/report');
     expect(API_ENDPOINTS.teamMembers('team_123')).toBe('/teams/team_123/members');
@@ -112,5 +121,70 @@ describe('API Client Boundary', () => {
     const user = await client.getMe();
     expect(user.id).toBe('u1');
     expect(capturedHeaders['Authorization']).toBe('Bearer test_local_token_xyz');
+  });
+
+  it('correctly executes delete operations for session, asset, and project', async () => {
+    const client = new ApiClient({ baseUrl: '/api/v1' });
+    const requests: { url: string; method: string }[] = [];
+
+    fetchSpy.mockImplementation(
+      async (url: RequestInfo | URL, init?: RequestInit) => {
+        requests.push({
+          url: String(url),
+          method: init?.method || 'GET',
+        });
+        return new Response(null, { status: 204 });
+      },
+    );
+
+    // Test client methods
+    await client.deleteProject('proj-123');
+    expect(requests).toContainEqual({
+      url: '/api/v1/projects/proj-123',
+      method: 'DELETE',
+    });
+
+    await client.deleteAsset('asset-456');
+    expect(requests).toContainEqual({
+      url: '/api/v1/assets/asset-456',
+      method: 'DELETE',
+    });
+
+    await client.deletePracticeSession('sess-789');
+    expect(requests).toContainEqual({
+      url: '/api/v1/practice-sessions/sess-789',
+      method: 'DELETE',
+    });
+
+    await client.deleteSession('sess-alias-1');
+    expect(requests).toContainEqual({
+      url: '/api/v1/practice-sessions/sess-alias-1',
+      method: 'DELETE',
+    });
+
+    // Test standalone exported functions
+    await deleteProject('proj-standalone');
+    expect(requests).toContainEqual({
+      url: expect.stringContaining('/projects/proj-standalone'),
+      method: 'DELETE',
+    });
+
+    await deleteAsset('asset-standalone');
+    expect(requests).toContainEqual({
+      url: expect.stringContaining('/assets/asset-standalone'),
+      method: 'DELETE',
+    });
+
+    await deletePracticeSession('sess-standalone');
+    expect(requests).toContainEqual({
+      url: expect.stringContaining('/practice-sessions/sess-standalone'),
+      method: 'DELETE',
+    });
+
+    await deleteSession('sess-standalone-alias');
+    expect(requests).toContainEqual({
+      url: expect.stringContaining('/practice-sessions/sess-standalone-alias'),
+      method: 'DELETE',
+    });
   });
 });

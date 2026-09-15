@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components";
 import { WorkspaceNavBar } from "@/components/Nav-Bar";
 import { useAuth } from "@/features/auth";
@@ -10,8 +10,9 @@ import { Text } from "@/components/text";
 
 export default function RootPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const { data: teamsPage } = useQuery({
+  const { data: teamsPage, isLoading: isTeamsLoading } = useQuery({
     queryKey: ["teams"],
     queryFn: () => apiClient.getTeams(),
   });
@@ -36,6 +37,73 @@ export default function RootPage() {
     selectedProjectId && teamProjects.some((p) => p.id === selectedProjectId)
       ? selectedProjectId
       : teamProjects[0]?.id;
+
+  const isInitializingRef = useRef(false);
+
+  useEffect(() => {
+    if (!user || isTeamsLoading || isInitializingRef.current) return;
+
+    const setupKey = `default_setup_done_${user.id}`;
+    const alreadySetup =
+      typeof window !== "undefined" &&
+      localStorage.getItem(setupKey) === "true";
+
+    if (alreadySetup) return;
+
+    const isNewRegistered =
+      typeof window !== "undefined" &&
+      (localStorage.getItem("is_new_registration") === "true" ||
+        localStorage.getItem("virtujudge_new_user") === "true");
+
+    // Automatically create default team and project if newly registered user visits / for the first time
+    if (isNewRegistered || teams.length === 0) {
+      isInitializingRef.current = true;
+
+      const initDefaultTeamAndProject = async () => {
+        try {
+          const userDisplayName =
+            user.display_name?.trim() ||
+            (user.email ? user.email.split("@")[0] : "") ||
+            "User";
+          const teamName = `${userDisplayName}'s Team`;
+          const idempotencyKeyTeam = `team-default-${user.id}-${Date.now()}`;
+          const newTeam = await apiClient.createTeam(
+            teamName,
+            idempotencyKeyTeam,
+          );
+
+          const idempotencyKeyProj = `proj-default-${user.id}-${Date.now()}`;
+          const newProject = await apiClient.createProject(
+            newTeam.id,
+            { name: "Project 1" },
+            idempotencyKeyProj,
+          );
+
+          setSelectedTeamId(newTeam.id);
+          setSelectedProjectId(newProject.id);
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem(setupKey, "true");
+            localStorage.removeItem("is_new_registration");
+            localStorage.removeItem("virtujudge_new_user");
+          }
+
+          await queryClient.invalidateQueries({ queryKey: ["teams"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["teamProjects", newTeam.id],
+          });
+        } catch (error) {
+          console.error(
+            "Failed to initialize default team and project:",
+            error,
+          );
+          isInitializingRef.current = false;
+        }
+      };
+
+      initDefaultTeamAndProject();
+    }
+  }, [user, isTeamsLoading, teams.length, queryClient]);
 
   const startHref = activeProjectId
     ? `/projects/${activeProjectId}/session/prepare`

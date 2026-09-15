@@ -79,7 +79,7 @@ export default function FullNav() {
       </div>
 
       {isAuthenticated ? (
-        <Button href="/dashboard">My Account</Button>
+        <Button href="/me">My Account</Button>
       ) : (
         <Button variant="primary" href={CTA_NAV_ITEM.href}>
           {CTA_NAV_ITEM.label}
