@@ -234,4 +234,28 @@ describe("SessionQAPage integration", () => {
     expect(screen.getByRole("button", { name: /Start recording answer/i })).toBeDefined();
     expect(screen.getByRole("button", { name: /Restart \/ Re-record answer/i })).toBeDefined();
   });
+
+  it("keeps the final answer in analysis until the backend completes the round", async () => {
+    vi.spyOn(apiClient, "getQARound").mockResolvedValue({
+      ...mockRound,
+      current_question_id: null,
+      questions: [1, 2, 3].map((position) => ({
+        ...mockPrimaryQuestion,
+        id: `q-${position}`,
+        position,
+        state: "answered",
+      })),
+    });
+    vi.spyOn(apiClient, "getPracticeSession").mockResolvedValue({
+      ...mockSession,
+      state: "questions_in_progress",
+    });
+
+    await renderWithQuery(
+      <SessionQAPage params={Promise.resolve({ sessionId: "sess-123" })} />
+    );
+
+    expect(await screen.findByText("Analyzing Your Answer")).toBeDefined();
+    expect(screen.queryByText("Q&A Round Completed!")).toBeNull();
+  });
 });
