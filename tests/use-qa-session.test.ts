@@ -122,6 +122,19 @@ describe("useQASession hook", () => {
 
     vi.spyOn(directUploader, "uploadFileDirectly").mockResolvedValue(undefined);
     vi.spyOn(checksumUtil, "computeFileChecksum").mockResolvedValue("sha256:dummyhash");
+    vi.spyOn(apiClient, "completeUpload").mockResolvedValue({
+      id: "asset-ans-1",
+      project_id: "proj-1",
+      kind: "answer_audio",
+      file_name: "answer-q-1.webm",
+      media_type: "audio/webm",
+      size_bytes: 1024,
+      state: "verified",
+      checksum: "sha256:dummyhash",
+      duration_ms: 45000,
+      created_at: new Date().toISOString(),
+      version_id: "ver-ans-1",
+    });
     vi.spyOn(apiClient, "submitAnswer").mockResolvedValue({
       id: "ans-1",
       question_id: "q-1",
@@ -187,6 +200,15 @@ describe("useQASession hook", () => {
       expect.stringContaining("answer-intent")
     );
     expect(directUploader.uploadFileDirectly).toHaveBeenCalled();
+    expect(apiClient.completeUpload).toHaveBeenCalledWith(
+      "asset-ans-1",
+      "ver-ans-1",
+      {
+        checksum: "sha256:dummyhash",
+        size_bytes: 1024,
+      },
+      expect.stringContaining("answer-complete"),
+    );
     expect(apiClient.submitAnswer).toHaveBeenCalledWith(
       "ans-1",
       expect.objectContaining({
@@ -194,6 +216,9 @@ describe("useQASession hook", () => {
         size_bytes: 1024,
       }),
       expect.stringContaining("answer-submit")
+    );
+    expect(vi.mocked(apiClient.completeUpload).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(apiClient.submitAnswer).mock.invocationCallOrder[0],
     );
     expect(result.current.isAnalyzing).toBe(true);
   });
