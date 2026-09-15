@@ -150,7 +150,7 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
     : 1;
 
   return (
-    <div className="flex flex-col items-center justify-center w-full pb-20 gap-10">
+    <div className="flex flex-col items-center justify-center w-full pb-20 gap-10 pt-20 sm:pt-0">
       {/* Top Header Navbar containing team and project name */}
       <WorkspaceNavBar
         selectedProjectId={projectId}

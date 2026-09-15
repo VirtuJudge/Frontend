@@ -110,7 +110,7 @@ export function WorkspaceNavBar({
 
   return (
     <>
-      <header className="w-full">
+      <header className="w-full absolute top-24 left-0">
         <div className={cn(NAV_CONTAINER_CLASS, className)}>
           <NavBrand />
 

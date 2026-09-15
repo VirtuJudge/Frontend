@@ -391,11 +391,11 @@ export default function PrepareSessionPage({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-220px)] px-4 py-6 gap-10">
+    <div className="flex flex-col items-center justify-center w-full px-4 gap-10">
       <WorkspaceNavBar />
       <Text
         size="lg"
-        className="font-bold tracking-tight text-fg text-center sm:mb-2"
+        className="font-bold tracking-tight text-fg text-center sm:mb-2 mt-16"
       >
         Configure Session Settings
       </Text>

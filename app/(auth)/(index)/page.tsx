@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components";
 import { WorkspaceNavBar } from "@/components/Nav-Bar";
-import { useAuth } from "@/features/auth";
+import { useAuth, ensureDefaultTeamAndProject } from "@/features/auth";
 import { apiClient } from "@/lib/api/client";
 import { Text } from "@/components/text";
 
 export default function RootPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: teamsPage } = useQuery({
     queryKey: ["teams"],
@@ -33,9 +34,24 @@ export default function RootPage() {
     string | undefined
   >(undefined);
   const activeProjectId =
-    selectedProjectId && teamProjects.some((p) => p.id === selectedProjectId)
-      ? selectedProjectId
-      : teamProjects[0]?.id;
+    selectedProjectId || teamProjects[0]?.id;
+
+  useEffect(() => {
+    if (!user) return;
+
+    ensureDefaultTeamAndProject(user, queryClient)
+      .then((res) => {
+        if (res.team && !selectedTeamId) {
+          setSelectedTeamId(res.team.id);
+        }
+        if (res.project && !selectedProjectId) {
+          setSelectedProjectId(res.project.id);
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to ensure default workspace on RootPage:", err);
+      });
+  }, [user, queryClient, selectedTeamId, selectedProjectId]);
 
   const startHref = activeProjectId
     ? `/projects/${activeProjectId}/session/prepare`
@@ -45,10 +61,13 @@ export default function RootPage() {
     ? `/projects/${activeProjectId}#sessions`
     : "/projects";
 
-  const displayName = user?.display_name;
+  const displayName =
+    user?.display_name?.trim() ||
+    (user?.email ? user.email.split("@")[0] : "") ||
+    "Presenter";
 
   return (
-    <div className="flex flex-col items-center justify-center sm:items-start md:h-[calc(100vh-200px)] w-full relative">
+    <div className="flex flex-col justify-center items-center h-[calc(100vh-200px)] pt-60 w-full relative">
       <WorkspaceNavBar
         selectedTeamId={activeTeamId}
         selectedProjectId={activeProjectId}

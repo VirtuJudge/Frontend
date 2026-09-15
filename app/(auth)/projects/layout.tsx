@@ -8,7 +8,7 @@ export default function ProjectLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col pt-44">
       {children}
     </div>
   );
