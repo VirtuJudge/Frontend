@@ -12,15 +12,22 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const { signInWithPassword, isAuthenticated } = useAuth();
 
-  const redirectUrl = searchParams.get("redirect") || "/me";
-  const initialError = searchParams.get("error");
   const isVerified = searchParams.get("verified") === "true";
+  const defaultRedirect = "/";
+  const redirectUrl = searchParams.get("redirect") || defaultRedirect;
+  const initialError = searchParams.get("error");
   const initialMessage =
     searchParams.get("message") ||
     (isVerified
       ? "Registration verified successfully! Please log in with your credentials."
       : null);
   const initialEmail = searchParams.get("email") || "";
+
+  useEffect(() => {
+    if (isVerified && typeof window !== "undefined") {
+      localStorage.setItem("is_new_registration", "true");
+    }
+  }, [isVerified]);
 
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -119,7 +126,7 @@ export default function LoginPage() {
           type="submit"
           variant="primary"
           className="w-full mt-4"
-          disabled={loading}
+          disabled={loading || !email.trim() || !password}
         >
           {loading ? "Signing in..." : "Login"}
         </Button>
