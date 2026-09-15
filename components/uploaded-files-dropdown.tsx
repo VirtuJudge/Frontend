@@ -240,7 +240,7 @@ export function UploadedFilesDropdown({
           ) : (
             <>
               {hasProjectDocs && (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5 max-h-80 overflow-y-auto">
                   {projectDocuments.map((doc) => {
                     const isSelected = selectedAssetIds.includes(doc.id);
                     const canToggle =

@@ -12,6 +12,7 @@ import type {
   CompleteUploadRequest,
   PracticeSession,
   SpeakerMapping,
+  SpeakerMappingRequestItem,
   QARound,
   Question,
   Answer,
@@ -23,6 +24,7 @@ import type {
   TeamMembership,
   TeamInvitation,
   TeamRole,
+  UserInvitation,
   ProblemDetails,
 } from "./types";
 import { getClientAuthToken } from "@/lib/auth/cookies";
@@ -569,15 +571,41 @@ export class ApiClient {
 
   public async saveSpeakerMappings(
     sessionId: string,
-    mappings: SpeakerMapping[],
-    idempotencyKey: string,
-  ): Promise<PracticeSession> {
-    return this.request<PracticeSession>(
+    mappings: Array<SpeakerMappingRequestItem | SpeakerMapping>,
+    ifMatchOrIdempotency?: number | string,
+    idempotencyKey?: string,
+  ): Promise<unknown> {
+    const formattedMappings = mappings
+      .map((m) => {
+        const item = m as unknown as Record<string, unknown>;
+        const label = String(item.speaker_label ?? item.label ?? item.speaker_id ?? "");
+        const userId = (item.user_id ?? item.assigned_user_id) as string | undefined;
+        return { speaker_label: label, user_id: userId };
+      })
+      .filter((m): m is { speaker_label: string; user_id: string } => Boolean(m.speaker_label && m.user_id));
+
+    let ifMatchHeader: string | undefined;
+    let idemKey: string | undefined = idempotencyKey;
+
+    if (typeof ifMatchOrIdempotency === "number") {
+      ifMatchHeader = `"${ifMatchOrIdempotency}"`;
+    } else if (typeof ifMatchOrIdempotency === "string") {
+      if (ifMatchOrIdempotency.startsWith('"') || /^\d+$/.test(ifMatchOrIdempotency)) {
+        ifMatchHeader = ifMatchOrIdempotency.startsWith('"')
+          ? ifMatchOrIdempotency
+          : `"${ifMatchOrIdempotency}"`;
+      } else {
+        idemKey = ifMatchOrIdempotency;
+      }
+    }
+
+    return this.request(
       API_ENDPOINTS.speakerMappings(sessionId),
       {
-        method: "POST",
-        body: JSON.stringify({ mappings }),
-        idempotencyKey,
+        method: "PUT",
+        ifMatch: ifMatchHeader,
+        idempotencyKey: idemKey,
+        body: JSON.stringify({ mappings: formattedMappings }),
       },
     );
   }

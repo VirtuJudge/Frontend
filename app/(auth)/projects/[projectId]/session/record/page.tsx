@@ -181,7 +181,9 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
             }
 
             if (mediaStreamRef.current) {
-              mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+              mediaStreamRef.current
+                .getTracks()
+                .forEach((track) => track.stop());
               mediaStreamRef.current = null;
             }
             mediaRecorderRef.current = null;
@@ -480,7 +482,10 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
     try {
       setIsSubmitting(true);
       setSubmitError(null);
-      setUploadProgress({ stage: "Preparing presentation video...", percent: 5 });
+      setUploadProgress({
+        stage: "Preparing presentation video...",
+        percent: 5,
+      });
 
       // 1. Get stored session configuration from localStorage
       const config = getSessionConfig(projectId);
@@ -488,10 +493,7 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
 
       // 2. Prepare the recorded video file to upload
       let fileToUpload: File;
-      if (
-        recordedChunksRef.current &&
-        recordedChunksRef.current.length > 0
-      ) {
+      if (recordedChunksRef.current && recordedChunksRef.current.length > 0) {
         const mime = recordedChunksRef.current[0].type || "video/webm";
         const ext = mime.includes("mp4") ? ".mp4" : ".webm";
         fileToUpload = new File(
@@ -530,7 +532,10 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
       const fileName = fileToUpload.name;
 
       // 3. Compute SHA256 checksum
-      setUploadProgress({ stage: "Calculating video checksum...", percent: 15 });
+      setUploadProgress({
+        stage: "Calculating video checksum...",
+        percent: 15,
+      });
       let checksum =
         "sha256:0000000000000000000000000000000000000000000000000000000000000000";
       try {
@@ -723,11 +728,7 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
                 disabled={isSubmitting}
               >
                 <Icon icon="tabler:upload" />
-                <span>
-                  {isSubmitting
-                    ? uploadProgress?.stage || "Submitting..."
-                    : "Submit"}
-                </span>
+                <span>Submit</span>
               </Button>
 
               <Button className="flex-1" disabled={isSubmitting}>

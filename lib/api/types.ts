@@ -85,6 +85,19 @@ export interface InvitationPreview {
   status: InvitationStatus;
 }
 
+export interface UserInvitation {
+  id: ResourceId;
+  team_id: ResourceId;
+  team_name: string;
+  inviter_name: string;
+  email: EmailAddress;
+  role: string;
+  status: InvitationStatus;
+  expires_at: UtcTimestamp;
+  created_at: UtcTimestamp;
+  token: string;
+}
+
 // ================= Projects and Assets =================
 
 export interface Project {
@@ -233,11 +246,31 @@ export interface StageProgress {
   limitation_code?: string;
 }
 
+export interface SpeakerPreviewInterval {
+  start_ms: number;
+  end_ms: number;
+  quote_text: string;
+}
+
 export interface SpeakerMapping {
   speaker_id: string;
   label: string;
+  speaker_label?: string;
   assigned_user_id?: ResourceId;
-  confidence: number;
+  user_id?: ResourceId;
+  confidence?: number;
+  preview?: SpeakerPreviewInterval;
+}
+
+export interface DetectedSpeaker {
+  speaker_label: string;
+  preview?: SpeakerPreviewInterval;
+  assigned_user_id?: string;
+}
+
+export interface SpeakerMappingRequestItem {
+  speaker_label: string;
+  user_id: string;
 }
 
 export interface ConsentRecord {
@@ -265,6 +298,7 @@ export interface PracticeSession {
   id: ResourceId;
   project_id: ResourceId;
   team_id: ResourceId;
+  name?: string;
   state: SessionState;
   manifest_frozen: boolean;
   presentation_asset_id: ResourceId;
