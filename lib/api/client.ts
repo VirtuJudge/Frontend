@@ -665,7 +665,7 @@ export class ApiClient {
     },
     idempotencyKey: string,
   ): Promise<AnswerUploadIntentResponse> {
-    return this.request<AnswerUploadIntentResponse>(
+    const raw = await this.request<AnswerUploadIntentResponse>(
       API_ENDPOINTS.answerUploadIntents(questionId),
       {
         method: "POST",
@@ -673,6 +673,16 @@ export class ApiClient {
         idempotencyKey,
       },
     );
+    return {
+      ...raw,
+      upload_intent: {
+        ...raw.upload_intent,
+        version_id:
+          raw.upload_intent.version_id ||
+          raw.upload_intent.asset_version_id ||
+          "",
+      },
+    };
   }
 
   public async submitAnswer(

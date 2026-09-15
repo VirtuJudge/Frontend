@@ -178,6 +178,40 @@ describe('API Client Boundary', () => {
     }));
   });
 
+  it('normalizes the nested answer upload asset version id', async () => {
+    const client = new ApiClient({ baseUrl: '/api/v1', getToken: () => 'token' });
+    fetchSpy.mockResolvedValue(new Response(JSON.stringify({
+      answer: {
+        id: 'answer-1',
+        question_id: 'question-1',
+        answered_by: 'user-1',
+        status: 'draft',
+      },
+      upload_intent: {
+        asset_id: 'asset-1',
+        asset_version_id: 'version-1',
+        upload_url: 'https://storage.example.com/upload',
+        method: 'PUT',
+        required_headers: {},
+        expires_at: '2026-09-15T00:00:00Z',
+        maximum_size_bytes: 1024,
+      },
+    }), { status: 201, headers: { 'Content-Type': 'application/json' } }));
+
+    const result = await client.createAnswerUploadIntent(
+      'question-1',
+      {
+        file_name: 'answer.webm',
+        declared_media_type: 'audio/webm',
+        declared_size_bytes: 1024,
+      },
+      'answer-intent-key',
+    );
+
+    expect(result.upload_intent.version_id).toBe('version-1');
+    expect(result.upload_intent.asset_version_id).toBe('version-1');
+  });
+
   it('retries upload completion after a transient browser network failure', async () => {
     vi.useFakeTimers();
     const client = new ApiClient({ baseUrl: '/api/v1', getToken: () => 'token' });
