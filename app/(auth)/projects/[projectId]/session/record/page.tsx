@@ -679,7 +679,15 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
         percent: 98,
       });
       const analysisKey = generateIdempotencyKey("analysis");
-      await apiClient.createAnalysisAttempt(session.id, analysisKey);
+      try {
+        await apiClient.createAnalysisAttempt(session.id, analysisKey);
+      } catch {
+        // The recording, upload, and ready session are already durable. Open
+        // the coordinator so the user can retry analysis without uploading a
+        // duplicate presentation asset.
+        router.push(`/sessions/${session.id}?analysis=start-failed`);
+        return;
+      }
 
       setUploadProgress({
         stage: "Analysis started! Opening session...",

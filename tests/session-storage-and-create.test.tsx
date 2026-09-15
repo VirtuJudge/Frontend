@@ -349,6 +349,34 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       expect(finalConfig?.sessionId).toBeDefined();
       expect(finalConfig?.presentationVideo?.videoUrl).toBeDefined();
     });
+
+    it("opens the recoverable ready session when starting analysis fails", async () => {
+      saveSessionConfig(mockProjectId, {
+        projectId: mockProjectId,
+        selectedAssets: [],
+      });
+      vi.spyOn(apiClient, "createAnalysisAttempt").mockRejectedValue(
+        new Error("An unexpected error occurred."),
+      );
+
+      await renderWithProviders(<SessionRecordContent projectId={mockProjectId} />);
+      fireEvent.click(
+        await screen.findByRole("button", { name: /start recording/i }),
+      );
+      await waitFor(() => {
+        expect(screen.queryByLabelText(/recording starts in/i)).toBeNull();
+      });
+      fireEvent.click(screen.getByRole("button", { name: /end session/i }));
+      await screen.findByText("Recorded Preview");
+      fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+      await waitFor(() => {
+        expect(pushMock).toHaveBeenCalledWith(
+          "/sessions/sess-123?analysis=start-failed",
+        );
+      });
+      expect(getSessionConfig(mockProjectId)?.sessionId).toBe("sess-123");
+    });
   });
 
   describe("Session config lookup by sessionId", () => {
