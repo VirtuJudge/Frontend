@@ -16,6 +16,8 @@ export interface ProblemDetails {
   status: number;
   detail?: string;
   instance?: string;
+  code?: string;
+  trace_id?: string;
   invalid_params?: Array<{
     name: string;
     reason: string;
@@ -83,6 +85,19 @@ export interface InvitationPreview {
   role?: string;
   expires_at: UtcTimestamp;
   status: InvitationStatus;
+}
+
+export interface UserInvitation {
+  id: ResourceId;
+  team_id: ResourceId;
+  team_name: string;
+  inviter_name: string;
+  email: EmailAddress;
+  role: string;
+  status: InvitationStatus;
+  expires_at: UtcTimestamp;
+  created_at: UtcTimestamp;
+  token: string;
 }
 
 // ================= Projects and Assets =================
@@ -196,7 +211,7 @@ export type SessionState =
   | 'ready'
   | 'analyzing'
   | 'questions_ready'
-  | 'qa_in_progress'
+  | 'questions_in_progress'
   | 'report_generating'
   | 'completed'
   | 'failed'
@@ -233,17 +248,53 @@ export interface StageProgress {
   limitation_code?: string;
 }
 
+export interface SpeakerPreviewInterval {
+  start_ms: number;
+  end_ms: number;
+  quote_text: string;
+}
+
 export interface SpeakerMapping {
-  speaker_id: string;
-  label: string;
-  assigned_user_id?: ResourceId;
-  confidence: number;
+  id: ResourceId;
+  attempt_id: ResourceId;
+  speaker_label: string;
+  user_id?: ResourceId | null;
+  member_id?: ResourceId | null;
+  mapped_by: ResourceId;
+  mapped_at: UtcTimestamp;
+}
+
+export interface DetectedSpeaker {
+  speaker_label: string;
+  preview?: SpeakerPreviewInterval;
+  assigned_user_id?: string;
+}
+
+export interface SpeakerMappingRequestItem {
+  speaker_label: string;
+  user_id: string;
 }
 
 export interface ConsentRecord {
   policy_version: string;
   affirmed_at: UtcTimestamp;
   affirmed_by: ResourceId;
+}
+
+export interface RubricSpec {
+  rubric_id: string;
+  version: number;
+}
+
+export interface SessionManifest {
+  id: ResourceId;
+  session_id: ResourceId;
+  presentation_version_id: ResourceId;
+  supporting_document_version_ids: ResourceId[];
+  rubric_id: string;
+  rubric_version: number;
+  snapshot?: Record<string, unknown> | null;
+  frozen_at?: UtcTimestamp | null;
 }
 
 export interface SafeFailure {
@@ -264,22 +315,43 @@ export interface Limitation {
 export interface PracticeSession {
   id: ResourceId;
   project_id: ResourceId;
-  team_id: ResourceId;
+  team_id?: ResourceId;
+  name?: string;
   state: SessionState;
-  manifest_frozen: boolean;
-  presentation_asset_id: ResourceId;
-  document_asset_ids: ResourceId[];
-  stages: StageProgress[];
+  status?: SessionState;
+  manifest?: SessionManifest | null;
+  rubric?: RubricSpec;
+  manifest_frozen?: boolean;
+  presentation_asset_id?: ResourceId;
+  document_asset_ids?: ResourceId[];
+  stages?: StageProgress[];
   speaker_mappings?: SpeakerMapping[];
   consent?: ConsentRecord;
   current_attempt?: number;
   current_question_id?: ResourceId;
   failure?: SafeFailure;
-  limitations: Limitation[];
+  limitations?: Limitation[];
   created_by: ResourceId;
   created_at: UtcTimestamp;
   updated_at: UtcTimestamp;
   version: number;
+}
+
+export interface AnalysisAttempt {
+  id: ResourceId;
+  session_id: ResourceId;
+  status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
+  created_at: UtcTimestamp;
+  attempt_number: number;
+  version: number;
+  idempotency_key?: string | null;
+}
+
+export interface UpdatePracticeSessionRequest {
+  name?: string;
+  presentation_asset_version_id?: ResourceId;
+  supporting_document_version_ids?: ResourceId[];
+  rubric?: RubricSpec;
 }
 
 // ================= Q&A =================
@@ -332,33 +404,79 @@ export interface AnswerUploadIntentResponse {
 
 // ================= Reports =================
 
-export interface EvidenceReference {
-  asset_id: ResourceId;
-  source_type: 'video' | 'document' | 'audio';
-  start_ms?: number;
-  end_ms?: number;
-  page_number?: number;
-  excerpt: string;
+export interface ScoreComponent {
+  dimension: string;
+  status: 'scored' | 'not_evaluated';
+  configured_weight: number;
+  normalized_score?: NormalizedScore | null;
+  display_score?: number | null;
+  label?: 'needs_work' | 'developing' | 'good' | 'strong' | null;
+  effective_weight?: number | null;
+  evidence_ids: string[];
+  rationale?: string | null;
+  limitation_code?: string | null;
+}
+
+export interface Finding {
+  id: string;
+  kind: 'strength' | 'improvement' | 'alignment' | 'contradiction' | 'omission' | 'observation';
+  title: string;
+  detail: string;
+  recommendation?: string | null;
+  evidence_ids: string[];
+  rubric_dimension?: string | null;
+  speaker_labels: string[];
+}
+
+export interface FeedbackSection {
+  summary: string;
+  strengths: Finding[];
+  improvements: Finding[];
+  score_components: ScoreComponent[];
+  limitations: Array<Record<string, unknown>>;
 }
 
 export interface MemberFeedback {
-  user_id?: ResourceId;
-  speaker_id: string;
-  score: NormalizedScore;
-  strengths: string[];
-  areas_for_improvement: string[];
-  transcript_citations: string[];
+  user_id: ResourceId;
+  display_name: string;
+  speaker_labels: string[];
+  summary: string;
+  strengths: Finding[];
+  improvements: Finding[];
+  delivery_components: ScoreComponent[];
+  qa_feedback?: FeedbackSection | null;
 }
 
 export interface Report {
-  id: ResourceId;
-  session_id: ResourceId;
-  status: 'pending' | 'ready';
-  team_score: NormalizedScore;
-  team_feedback: string;
+  schema_version: number;
+  report_id: ResourceId;
+  practice_session_id: ResourceId;
+  evaluation_id: ResourceId;
+  title: string;
+  executive_summary: string;
+  overall_score: NormalizedScore;
+  score_components: ScoreComponent[];
+  team_feedback: FeedbackSection;
   member_feedback: MemberFeedback[];
+  transcript_timeline: Array<Record<string, unknown>>;
+  document_alignment: Array<Record<string, unknown>>;
+  qa_review: Array<Record<string, unknown>>;
+  recommendations: string[];
+  limitations: Array<Record<string, unknown>>;
+  reproducibility: Record<string, unknown>;
+  generated_at: UtcTimestamp;
+}
+
+export interface ReportExport {
+  id: ResourceId;
+  report_id: ResourceId;
+  practice_session_id: ResourceId;
+  format: 'pdf';
+  status: 'queued' | 'rendering' | 'ready' | 'failed';
+  asset_version_id?: ResourceId | null;
+  failure?: SafeFailure | null;
   created_at: UtcTimestamp;
-  pdf_download_url?: string;
+  completed_at?: UtcTimestamp | null;
 }
 
 // ================= Erasure =================
@@ -445,4 +563,3 @@ export interface ResyncRequiredEvent extends SseSessionEvent {
   current_sequence: number;
   requested_sequence?: number;
 }
-

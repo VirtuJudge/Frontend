@@ -174,7 +174,7 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
                 return (
                   <ListRowCard key={asset.id}>
                     {/* Left: Asset name */}
-                    <div className="flex items-center gap-3 pl-3 min-w-0">
+                    <div className="flex items-center gap-3 pl-3 min-w-0 max-w-[calc(100%-10rem)]">
                       <Text className="font-bold truncate" title={asset.file_name}>
                         {displayName}
                       </Text>
@@ -242,7 +242,7 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
                         Session {index + 1}
                       </Text>
                       <Link
-                        href={`/projects/${projectId}/session/${session.id}`}
+                        href={`/sessions/${session.id}`}
                         className="text-foreground/70 hover:text-primary transition-colors flex items-center p-1 shrink-0"
                         aria-label={`Open Session ${index + 1}`}
                       >

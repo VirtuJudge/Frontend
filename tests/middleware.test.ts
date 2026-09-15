@@ -31,20 +31,20 @@ function createMockRequest(
 describe("Route Protection Middleware", () => {
   describe("isRouteMatched helper", () => {
     it("matches exact paths", () => {
-      expect(isRouteMatched("/dashboard", ["/dashboard", "/projects"])).toBe(true);
+      expect(isRouteMatched("/me", ["/me", "/projects"])).toBe(true);
       expect(isRouteMatched("/auth/login", ["/auth/login", "/auth/register"])).toBe(true);
     });
 
     it("matches sub-paths correctly", () => {
-      expect(isRouteMatched("/dashboard/settings", ["/dashboard"])).toBe(true);
+      expect(isRouteMatched("/me/settings", ["/me"])).toBe(true);
       expect(isRouteMatched("/projects/team-1/pitch", ["/projects"])).toBe(true);
       expect(isRouteMatched("/teams/team-1/members", ["/teams"])).toBe(true);
       expect(isRouteMatched("/sessions/session-99/qa", ["/sessions"])).toBe(true);
     });
 
     it("does not match unrelated paths", () => {
-      expect(isRouteMatched("/about", ["/dashboard", "/projects"])).toBe(false);
-      expect(isRouteMatched("/dashboard-extended", ["/dashboard"])).toBe(false);
+      expect(isRouteMatched("/about", ["/me", "/projects"])).toBe(false);
+      expect(isRouteMatched("/me-extended", ["/me"])).toBe(false);
       expect(isRouteMatched("/team", ["/teams"])).toBe(false);
     });
   });
@@ -78,12 +78,12 @@ describe("Route Protection Middleware", () => {
     );
 
     it("preserves search query parameters in the redirect url", () => {
-      const request = createMockRequest("/dashboard?section=analysis&tab=overview");
+      const request = createMockRequest("/me?section=analysis&tab=overview");
       const response = handleRouteProtection(request);
 
       expect(response.status).toBe(307);
       const location = response.headers.get("location");
-      expect(location).toContain("/login?redirect=%2Fdashboard%3Fsection%3Danalysis%26tab%3Doverview");
+      expect(location).toContain("/login?redirect=%2Fme%3Fsection%3Danalysis%26tab%3Doverview");
     });
 
     it("redirects unauthenticated users from workflow sub-paths", () => {
@@ -109,7 +109,7 @@ describe("Route Protection Middleware", () => {
     });
 
     it("allows authenticated users with auth_token cookie to access protected routes", () => {
-      const request = createMockRequest("/dashboard", {
+      const request = createMockRequest("/me", {
         [AUTH_COOKIE_NAME]: "valid_jwt_token_value",
       });
       const response = handleRouteProtection(request);
@@ -218,7 +218,7 @@ describe("Route Protection Middleware", () => {
 
   describe("Root proxy and middleware entrypoints", () => {
     it("proxy entrypoint invokes handleRouteProtection", () => {
-      const request = createMockRequest("/dashboard");
+      const request = createMockRequest("/me");
       const response = proxy(request);
 
       expect(response.status).toBe(307);
@@ -226,7 +226,7 @@ describe("Route Protection Middleware", () => {
     });
 
     it("backwards-compatible middleware export functions identically", () => {
-      const request = createMockRequest("/dashboard");
+      const request = createMockRequest("/me");
       const response = middleware(request);
 
       expect(response.status).toBe(307);

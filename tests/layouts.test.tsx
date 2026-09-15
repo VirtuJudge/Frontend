@@ -20,12 +20,12 @@ describe('Application Layouts & Boundaries', () => {
   it('renders authenticated layout with children', () => {
     render(
       <AuthenticatedLayout>
-        <div data-testid="auth-content">Authenticated Dashboard Screen</div>
+        <div data-testid="auth-content">Authenticated Screen</div>
       </AuthenticatedLayout>
     );
 
     expect(screen.getByTestId('auth-content')).toBeDefined();
-    expect(screen.getByText('Authenticated Dashboard Screen')).toBeDefined();
+    expect(screen.getByText('Authenticated Screen')).toBeDefined();
   });
 
   it('proves public and authenticated pages render their respective layout structures', () => {

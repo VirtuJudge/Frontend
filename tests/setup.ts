@@ -19,7 +19,7 @@ vi.mock('@iconify/react', () => ({
 
 // Mock Next.js navigation hooks
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/dashboard',
+  usePathname: () => '/me',
   useRouter: () => ({
     push: vi.fn(),
     replace: vi.fn(),

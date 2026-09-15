@@ -181,7 +181,9 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
             }
 
             if (mediaStreamRef.current) {
-              mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+              mediaStreamRef.current
+                .getTracks()
+                .forEach((track) => track.stop());
               mediaStreamRef.current = null;
             }
             mediaRecorderRef.current = null;
@@ -480,7 +482,10 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
     try {
       setIsSubmitting(true);
       setSubmitError(null);
-      setUploadProgress({ stage: "Preparing presentation video...", percent: 5 });
+      setUploadProgress({
+        stage: "Preparing presentation video...",
+        percent: 5,
+      });
 
       // 1. Get stored session configuration from localStorage
       const config = getSessionConfig(projectId);
@@ -488,10 +493,7 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
 
       // 2. Prepare the recorded video file to upload
       let fileToUpload: File;
-      if (
-        recordedChunksRef.current &&
-        recordedChunksRef.current.length > 0
-      ) {
+      if (recordedChunksRef.current && recordedChunksRef.current.length > 0) {
         const mime = recordedChunksRef.current[0].type || "video/webm";
         const ext = mime.includes("mp4") ? ".mp4" : ".webm";
         fileToUpload = new File(
@@ -530,7 +532,10 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
       const fileName = fileToUpload.name;
 
       // 3. Compute SHA256 checksum
-      setUploadProgress({ stage: "Calculating video checksum...", percent: 15 });
+      setUploadProgress({
+        stage: "Calculating video checksum...",
+        percent: 15,
+      });
       let checksum =
         "sha256:0000000000000000000000000000000000000000000000000000000000000000";
       try {
@@ -638,18 +643,58 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
         sessionKey,
       );
 
-      // 9. Save created sessionId in localStorage
+      // Preserve the created session immediately so a failed readiness/analysis
+      // command can be resumed without creating a duplicate session.
       saveSessionConfig(projectId, {
         sessionId: session.id,
       });
 
       setUploadProgress({
-        stage: "Session created! Redirecting to Q&A...",
+        stage: "Preparing session for analysis...",
+        percent: 95,
+      });
+
+      const readySession = await apiClient.updatePracticeSession(
+        session.id,
+        {
+          name: session.name || `Practice Session ${new Date().toLocaleDateString()}`,
+          presentation_asset_version_id: presentationVersionId,
+          supporting_document_version_ids: docVersionIds,
+          rubric: {
+            rubric_id: "startup_pitch",
+            version: 1,
+          },
+        },
+        session.version,
+      );
+
+      if (readySession.state !== "ready") {
+        throw new Error(
+          `The practice session could not be prepared for analysis (state: ${readySession.state}).`,
+        );
+      }
+
+      setUploadProgress({
+        stage: "Starting AI analysis...",
+        percent: 98,
+      });
+      const analysisKey = generateIdempotencyKey("analysis");
+      try {
+        await apiClient.createAnalysisAttempt(session.id, analysisKey);
+      } catch {
+        // The recording, upload, and ready session are already durable. Open
+        // the coordinator so the user can retry analysis without uploading a
+        // duplicate presentation asset.
+        router.push(`/sessions/${session.id}?analysis=start-failed`);
+        return;
+      }
+
+      setUploadProgress({
+        stage: "Analysis started! Opening session...",
         percent: 100,
       });
 
-      // 10. Successfully navigate to sessions/:id/qa route
-      router.push(`/sessions/${session.id}/qa`);
+      router.push(`/sessions/${session.id}`);
     } catch (err: unknown) {
       console.error("Failed to submit session:", err);
       setSubmitError(
@@ -723,11 +768,7 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
                 disabled={isSubmitting}
               >
                 <Icon icon="tabler:upload" />
-                <span>
-                  {isSubmitting
-                    ? uploadProgress?.stage || "Submitting..."
-                    : "Submit"}
-                </span>
+                <span>Submit</span>
               </Button>
 
               <Button className="flex-1" disabled={isSubmitting}>

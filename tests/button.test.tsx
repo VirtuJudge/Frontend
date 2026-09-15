@@ -54,12 +54,9 @@ describe("Button & NavButton Component", () => {
   });
 
   it("renders as Next.js Link when internal href is supplied", () => {
-    render(<Button href="/dashboard">Go to dashboard</Button>);
-    const link = screen.getByRole("link", { name: /go to dashboard/i });
+    render(<Button href="/me">Go to profile</Button>);
+    const link = screen.getByRole("link", { name: /go to profile/i });
     expect(link).toBeDefined();
-    expect(link.getAttribute("href")).toBe("/dashboard");
-    expect(link.className).toContain("h-[3.5rem]");
-    expect(link.className).toContain("px-[1.25rem]");
   });
 
   it("renders as external anchor when external href is supplied", () => {

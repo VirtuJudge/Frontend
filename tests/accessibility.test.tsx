@@ -31,7 +31,7 @@ describe('Automated Accessibility Checks', () => {
   it('authenticated layout has no critical accessibility violations', async () => {
     const { container } = render(
       <AuthenticatedLayout>
-        <h1>Dashboard</h1>
+        <h1>My Account</h1>
         <p>Accessible workspace content</p>
       </AuthenticatedLayout>
     );

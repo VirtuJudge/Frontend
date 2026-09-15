@@ -8,7 +8,7 @@ export const FALLBACK_SESSION_COOKIE_NAME = "session";
 export const PROTECTED_ROUTES = [
   '/',
   'profile',
-  "/dashboard",
+  "/me",
   "/projects",
   "/sessions",
   "/teams",
