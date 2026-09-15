@@ -3,10 +3,10 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/features/auth";
-import RightSection from "@/components/auth/right-section";
 import { Button, Input, Text } from "@/components";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import AuthContainer from "@/components/auth/container";
 
 const OTP_LENGTH = 8;
 
@@ -210,129 +210,126 @@ export default function VerifyRegistrationPage() {
   };
 
   return (
-    <div className="flex flex-col min-[1080px]:flex-row items-center justify-between w-full">
-      <div className="flex flex-col items-center justify-center gap-8 w-full min-[1080px]:w-1/2">
-        <Text size="lg">Verify your registration</Text>
+    <AuthContainer>
+      <Text size="lg">Verify your registration</Text>
 
-        <Text className="w-full px-8 text-center text-fg-light/80">
-          Please enter the 8-digit OTP sent to your email address to verify your
-          registration. If you did not receive the OTP, please check your spam
-          folder or request a new one.
-        </Text>
+      <Text className="w-full px-8 text-center text-fg-light/80">
+        Please enter the 8-digit OTP sent to your email address to verify your
+        registration. If you did not receive the OTP, please check your spam
+        folder or request a new one.
+      </Text>
 
-        {error && (
-          <Text
-            role="alert"
-            className="w-full p-3 rounded-2xl bg-danger/20 border border-danger/40 text-danger-lighter text-center"
-          >
-            {error}
-          </Text>
-        )}
-
-        {successMessage && (
-          <Text
-            role="status"
-            className="w-full p-3 rounded-2xl bg-success/20 border border-success/40 text-success-lighter text-center"
-          >
-            {successMessage}
-          </Text>
-        )}
-
-        <form
-          onSubmit={handleVerify}
-          className="flex flex-col items-center gap-6 w-full max-w-120"
+      {error && (
+        <Text
+          role="alert"
+          className="w-full p-3 rounded-2xl bg-danger/20 border border-danger/40 text-danger-lighter text-center"
         >
-          <Input
-            label="Email"
-            type="email"
-            placeholder="Enter your email address"
-            className="w-full"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setSuccessMessage(null);
-            }}
-            onBlur={() => validateEmailStatus(email)}
-            disabled={loading}
-            required
-          />
-
-          <div className="flex flex-col items-center gap-4 w-full">
-            <Text as="label">Verification Code</Text>
-
-            <div
-              className="flex items-center justify-center gap-2 w-full"
-              role="group"
-              aria-label="8-digit verification code"
-            >
-              {otp.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => {
-                    inputRefs.current[index] = el;
-                  }}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete={index === 0 ? "one-time-code" : "off"}
-                  pattern="[0-9]*"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  onPaste={handlePaste}
-                  onFocus={(e) => e.target.select()}
-                  disabled={loading}
-                  aria-label={`Digit ${index + 1}`}
-                  className={cn(
-                    "w-9 h-9 sm:w-12 sm:h-12 align-middle text-center font-bold ",
-                    "rounded-full bg-glass border transition-all duration-150",
-                    "outline-none focus:outline-none focus:border-primary text-md sm:text-lg",
-                    error
-                      ? "border-danger/60"
-                      : digit
-                        ? "border-primary/80 shadow-[0_0_8px_rgba(6,249,228,0.2)]"
-                        : "border-white/10 hover:border-white/30",
-                    loading && "opacity-50 cursor-not-allowed",
-                  )}
-                />
-              ))}
-            </div>
-          </div>
-
-          <Button
-            type="submit"
-            variant="primary"
-            className="w-full mt-2"
-            disabled={loading || otp.join("").length !== OTP_LENGTH}
-            loading={loading}
-          >
-            {loading ? "Verifying..." : "Verify Registration"}
-          </Button>
-
-          <div className="flex flex-col items-center justify-between w-full text-xs">
-            <Button
-              type="button"
-              onClick={handleResend}
-              disabled={loading || resending || resendCooldown > 0}
-              className="text-primary disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-opacity w-full"
-            >
-              {resendCooldown > 0
-                ? `Resend code in ${resendCooldown}s`
-                : resending
-                  ? "Sending code..."
-                  : "Resend verification code"}
-            </Button>
-          </div>
-        </form>
-
-        <Text size="xs">
-          Already verified?{" "}
-          <Link href="/auth/login" className="underline">
-            Log in here!
-          </Link>
+          {error}
         </Text>
-      </div>
-      <RightSection />
-    </div>
+      )}
+
+      {successMessage && (
+        <Text
+          role="status"
+          className="w-full p-3 rounded-2xl bg-success/20 border border-success/40 text-success-lighter text-center"
+        >
+          {successMessage}
+        </Text>
+      )}
+
+      <form
+        onSubmit={handleVerify}
+        className="flex flex-col items-center gap-6 w-full max-w-120"
+      >
+        <Input
+          label="Email"
+          type="email"
+          placeholder="Enter your email address"
+          className="w-full"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setSuccessMessage(null);
+          }}
+          onBlur={() => validateEmailStatus(email)}
+          disabled={loading}
+          required
+        />
+
+        <div className="flex flex-col items-center gap-4 w-full">
+          <Text as="label">Verification Code</Text>
+
+          <div
+            className="flex items-center justify-center gap-2 w-full"
+            role="group"
+            aria-label="8-digit verification code"
+          >
+            {otp.map((digit, index) => (
+              <input
+                key={index}
+                ref={(el) => {
+                  inputRefs.current[index] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                autoComplete={index === 0 ? "one-time-code" : "off"}
+                pattern="[0-9]*"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleOtpChange(index, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(index, e)}
+                onPaste={handlePaste}
+                onFocus={(e) => e.target.select()}
+                disabled={loading}
+                aria-label={`Digit ${index + 1}`}
+                className={cn(
+                  "w-9 h-9 sm:w-12 sm:h-12 align-middle text-center font-bold ",
+                  "rounded-full bg-glass border transition-all duration-150",
+                  "outline-none focus:outline-none focus:border-primary text-md sm:text-lg",
+                  error
+                    ? "border-danger/60"
+                    : digit
+                      ? "border-primary/80 shadow-[0_0_8px_rgba(6,249,228,0.2)]"
+                      : "border-white/10 hover:border-white/30",
+                  loading && "opacity-50 cursor-not-allowed",
+                )}
+              />
+            ))}
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          variant="primary"
+          className="w-full mt-2"
+          disabled={loading || otp.join("").length !== OTP_LENGTH}
+          loading={loading}
+        >
+          {loading ? "Verifying..." : "Verify Registration"}
+        </Button>
+
+        <div className="flex flex-col items-center justify-between w-full text-xs">
+          <Button
+            type="button"
+            onClick={handleResend}
+            disabled={loading || resending || resendCooldown > 0}
+            className="text-primary disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-opacity w-full"
+          >
+            {resendCooldown > 0
+              ? `Resend code in ${resendCooldown}s`
+              : resending
+                ? "Sending code..."
+                : "Resend verification code"}
+          </Button>
+        </div>
+      </form>
+
+      <Text size="xs">
+        Already verified?{" "}
+        <Link href="/auth/login" className="underline">
+          Log in here!
+        </Link>
+      </Text>
+    </AuthContainer>
   );
 }

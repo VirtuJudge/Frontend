@@ -6,6 +6,7 @@ import RightSection from "@/components/auth/right-section";
 import { Button, Input, Text } from "@/components";
 import Link from "next/link";
 import { useAuth } from "@/features/auth";
+import AuthContainer from "@/components/auth/container";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -77,106 +78,103 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex flex-col min-[1080px]:flex-row items-center justify-between w-full">
-      <div className="flex flex-col items-center justify-center gap-8 w-full min-[1080px]:w-1/2">
-        <Text size="lg">Be the next one!</Text>
+    <AuthContainer>
+      <Text size="lg">Be the next one!</Text>
 
-        <Text className="w-full px-8">
-          Enrich your presentation skills with our most advanced tools, and
-          become the next one on stage!
-        </Text>
+      <Text className="w-full px-8">
+        Enrich your presentation skills with our most advanced tools, and become
+        the next one on stage!
+      </Text>
 
-        {error && (
-          <Text
-            role="alert"
-            className="w-full p-3 rounded-2xl bg-danger/20 border border-danger/40 text-danger-lighter text-center"
-          >
-            {error}
-          </Text>
-        )}
-
-        {successMessage && (
-          <Text
-            role="status"
-            className="w-full p-3 rounded-2xl bg-primary/20 border border-primary/40 text-primary-lighter text-center"
-          >
-            {successMessage}
-          </Text>
-        )}
-
-        <form
-          onSubmit={handleRegister}
-          className="flex flex-col items-center gap-6 w-full"
+      {error && (
+        <Text
+          role="alert"
+          className="w-full p-3 rounded-2xl bg-danger/20 border border-danger/40 text-danger-lighter text-center"
         >
-          <Input
-            label="Email"
-            type="email"
-            placeholder="Enter your email"
-            className="w-full"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-            required
-          />
-
-          <Input
-            label="Display Name"
-            type="text"
-            placeholder="Enter your display name"
-            className="w-full"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            disabled={loading}
-          />
-
-          <Input
-            label="Password"
-            type="password"
-            placeholder="Enter your password"
-            className="w-full"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-            required
-          />
-
-          <Input
-            label="Confirm Password"
-            type="password"
-            placeholder="Confirm your password"
-            className="w-full"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            disabled={loading}
-            required
-          />
-
-          <Button
-            type="submit"
-            variant="primary"
-            className="w-full mt-2"
-            disabled={loading}
-          >
-            {loading ? "Registering..." : "Register"}
-          </Button>
-        </form>
-
-        <Text size="xs">
-          Already have an account?{" "}
-          <Link href="/auth/login" className="underline">
-            Log in here!
-          </Link>
-          {" • "}
-          <Link href="/terms-and-conditions" className="underline">
-            Terms and conditions
-          </Link>
-          {" • "}
-          <Link href="/data-privacy" className="underline">
-            Data privacy
-          </Link>
+          {error}
         </Text>
-      </div>
-      <RightSection />
-    </div>
+      )}
+
+      {successMessage && (
+        <Text
+          role="status"
+          className="w-full p-3 rounded-2xl bg-primary/20 border border-primary/40 text-primary-lighter text-center"
+        >
+          {successMessage}
+        </Text>
+      )}
+
+      <form
+        onSubmit={handleRegister}
+        className="flex flex-col items-center gap-6 w-full"
+      >
+        <Input
+          label="Email"
+          type="email"
+          placeholder="Enter your email"
+          className="w-full"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={loading}
+          required
+        />
+
+        <Input
+          label="Display Name"
+          type="text"
+          placeholder="Enter your display name"
+          className="w-full"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          disabled={loading}
+        />
+
+        <Input
+          label="Password"
+          type="password"
+          placeholder="Enter your password"
+          className="w-full"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={loading}
+          required
+        />
+
+        <Input
+          label="Confirm Password"
+          type="password"
+          placeholder="Confirm your password"
+          className="w-full"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          disabled={loading}
+          required
+        />
+
+        <Button
+          type="submit"
+          variant="primary"
+          className="w-full mt-2"
+          disabled={loading}
+        >
+          {loading ? "Registering..." : "Register"}
+        </Button>
+      </form>
+
+      <Text size="xs">
+        Already have an account?{" "}
+        <Link href="/auth/login" className="underline">
+          Log in here!
+        </Link>
+        {" • "}
+        <Link href="/terms-and-conditions" className="underline">
+          Terms and conditions
+        </Link>
+        {" • "}
+        <Link href="/data-privacy" className="underline">
+          Data privacy
+        </Link>
+      </Text>
+    </AuthContainer>
   );
 }
