@@ -1,5 +1,4 @@
-import { Text } from "@/components";
-import Image from "next/image";
+import { Button, Text } from "@/components";
 import PricingPage from "../pricing/page";
 import ContactsPage from "../company/contact-us/page";
 
