@@ -5,15 +5,13 @@ export interface NavItem {
 
 export const MAIN_NAV_ITEMS: NavItem[] = [
   { label: "Home", href: "/home" },
-  { label: "About", href: "/about" },
   { label: "Pricing", href: "/pricing" },
 ];
 
 export const COMPANY_NAV_ITEMS: NavItem[] = [
-  { label: "Our team", href: "/team" },
-  { label: "Data privacy", href: "/data-privacy" },
-  { label: "Terms and conditions", href: "/terms-and-conditions" },
-  { label: "Contacts", href: "/contacts" },
+  { label: "Data privacy", href: "/company/data-privacy" },
+  { label: "Terms and conditions", href: "/company/terms" },
+  { label: "Contact us", href: "/company/contact-us" },
 ];
 
 export const CTA_NAV_ITEM: NavItem = {
