@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import RightSection from "@/components/auth/right-section";
 import { Button, Input, Text } from "@/components";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/features/auth";
+import AuthContainer from "@/components/auth/container";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -29,7 +29,9 @@ export default function ForgotPasswordPage() {
       await resetPassword(email.trim());
       setSubmitted(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to send reset link");
+      setError(
+        err instanceof Error ? err.message : "Failed to send reset link",
+      );
     } finally {
       setLoading(false);
     }
@@ -56,23 +58,13 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="flex flex-col min-[1080px]:flex-row items-center justify-between w-full">
-      <div className="flex flex-col items-center justify-center gap-8 w-full min-[1080px]:w-1/2">
-        <Text size="lg">Reset Password</Text>
+    <AuthContainer>
+      <Text size="lg">Reset Password</Text>
 
         <Text className="w-full px-8">
           Enter the email address associated with your account to receive a
           password reset code.
         </Text>
-
-        {error && (
-          <Text
-            role="alert"
-            className="w-full p-3 rounded-2xl bg-danger/20 border border-danger/40 text-danger-lighter text-center"
-          >
-            {error}
-          </Text>
-        )}
 
         {submitted ? (
           <div className="flex flex-col items-center gap-6 w-full px-8 text-center">
@@ -133,25 +125,23 @@ export default function ForgotPasswordPage() {
               required
             />
 
-            <Button
-              type="submit"
-              variant="primary"
-              className="w-full mt-2"
-              disabled={loading}
-            >
-              {loading ? "Sending reset link..." : "Send Reset Link"}
-            </Button>
-          </form>
-        )}
+          <Button
+            type="submit"
+            variant="primary"
+            className="w-full mt-2"
+            disabled={loading}
+          >
+            {loading ? "Sending reset link..." : "Send Reset Link"}
+          </Button>
+        </form>
+      )}
 
-        <Text size="xs">
-          Remembered your password?{" "}
-          <Link href="/auth/login" className="underline">
-            Back to Login
-          </Link>
-        </Text>
-      </div>
-      <RightSection />
-    </div>
+      <Text size="xs">
+        Remembered your password?{" "}
+        <Link href="/auth/login" className="underline">
+          Back to Login
+        </Link>
+      </Text>
+    </AuthContainer>
   );
 }

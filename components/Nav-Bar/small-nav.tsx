@@ -26,7 +26,7 @@ export default function SmallNav() {
 
   return (
     <div className={NAV_CONTAINER_CLASS}>
-      <NavBrand />
+      <NavBrand href="/" />
 
       <DropdownMenu
         isOpen={isMenuOpen}

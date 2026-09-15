@@ -136,7 +136,6 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
     it("saves and retrieves full session configurations keyed by projectId", () => {
       const config = saveSessionConfig(mockProjectId, {
         projectId: mockProjectId,
-        discussionPanel: false,
         showTimer: true,
         allowPauses: false,
         presentationDuration: 400,
@@ -157,7 +156,6 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
         ],
       });
 
-      expect(config.discussionPanel).toBe(false);
       expect(config.showTimer).toBe(true);
       expect(config.allowPauses).toBe(false);
       expect(config.presentationDuration).toBe(400);
@@ -166,7 +164,6 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       // Verify retrieval directly via getSessionConfig
       const retrieved = getSessionConfig(mockProjectId);
       expect(retrieved).not.toBeNull();
-      expect(retrieved?.discussionPanel).toBe(false);
       expect(retrieved?.showTimer).toBe(true);
       expect(retrieved?.allowPauses).toBe(false);
       expect(retrieved?.presentationDuration).toBe(400);
@@ -176,14 +173,12 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       const raw = window.localStorage.getItem(mockProjectId);
       expect(raw).not.toBeNull();
       const parsed = JSON.parse(raw!);
-      expect(parsed.discussionPanel).toBe(false);
       expect(parsed.selectedAssets[0].name).toBe("pitch.pdf");
     });
 
     it("saves presentation video link and asset details to localStorage", () => {
       saveSessionConfig(mockProjectId, {
         projectId: mockProjectId,
-        discussionPanel: true,
       });
 
       const updated = savePresentationVideo(mockProjectId, {
@@ -226,7 +221,6 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       const saved = getSessionConfig(mockProjectId);
       expect(saved).not.toBeNull();
       expect(saved?.projectId).toBe(mockProjectId);
-      expect(typeof saved?.discussionPanel).toBe("boolean");
       expect(typeof saved?.showTimer).toBe("boolean");
       expect(typeof saved?.allowPauses).toBe("boolean");
       expect(typeof saved?.presentationDuration).toBe("number");
@@ -244,17 +238,11 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       await waitFor(() => {
         const initial = getSessionConfig(mockProjectId);
         expect(initial).not.toBeNull();
-        expect(initial?.discussionPanel).toBe(true);
       });
-
-      // Toggle Discussion panel switch
-      const discussionToggle = screen.getByRole("switch", { name: /discussion panel/i });
-      fireEvent.click(discussionToggle);
 
       // Verify localStorage is updated immediately without clicking Start!
       await waitFor(() => {
         const updated = getSessionConfig(mockProjectId);
-        expect(updated?.discussionPanel).toBe(false);
       });
     });
   });
@@ -264,7 +252,6 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       // 1. Pre-seed localStorage configuration for mockProjectId
       saveSessionConfig(mockProjectId, {
         projectId: mockProjectId,
-        discussionPanel: true,
         showTimer: true,
         allowPauses: true,
         presentationDuration: 300,
@@ -439,7 +426,6 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       saveSessionConfig(mockProjectId, {
         projectId: mockProjectId,
         sessionId: mockSessionId,
-        discussionPanel: true,
         showTimer: true,
         allowPauses: true,
         presentationDuration: 390,
@@ -461,7 +447,6 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       const config = getSessionConfigBySessionId(mockSessionId);
       expect(config).toBeDefined();
       expect(config?.selectedAssets[0].name).toBe("PitchDeck.pdf");
-      expect(config?.discussionPanel).toBe(true);
       expect(config?.showTimer).toBe(true);
       expect(config?.allowPauses).toBe(true);
       expect(config?.presentationDuration).toBe(390);

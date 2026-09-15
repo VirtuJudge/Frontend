@@ -16,17 +16,14 @@ export function Footer() {
 				<Text as="b" size="body" className="opacity-80">Quick access</Text>
 				<Text as="a" size="body" href="/home">Home</Text>
 				<Text as="a" size="body" href="/pricing">Pricing</Text>
-				<Text as="a" size="body" href="/auth/register">Register</Text>
-				<Text as="a" size="body" href="/auth/login">Login</Text>
-				<Text as="a" size="body" href="/auth/logout">Logout</Text>
 			</div>
 			<div className="flex flex-col gap-2">
 				<Text as="b" size="body" className="opacity-60">Company</Text>
 				<Text as="a" size="body" href="/company/data-privacy">Data privacy</Text>
 				<Text as="a" size="body" href="/company/terms">Terms and conditions</Text>
-				<Text as="a" size="body" href="/company/contacts">Contacts</Text>
+				<Text as="a" size="body" href="/company/contact-us">Contact us</Text>
 			</div>
-			<Button variant="primary" href="/home" className="w-full lg:w-auto">  
+			<Button variant="primary" href="/" className="w-full lg:w-auto">  
 				Try now!
 			</Button>
 		</Wrapper>

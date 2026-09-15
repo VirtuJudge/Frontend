@@ -47,7 +47,7 @@ export const Text = React.forwardRef(function Text(
   return (
     <Component
       ref={ref}
-      className={cn("text-fg", sizeClass, className)}
+      className={cn("text-fg text-center", sizeClass, className)}
       {...rest}
     >
       {children}
