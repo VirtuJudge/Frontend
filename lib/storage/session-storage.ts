@@ -19,14 +19,12 @@ export interface StoredSessionPresentationVideo {
 
 export interface StoredSessionConfig {
   projectId: string;
-  discussionPanel: boolean;
   showTimer: boolean;
   allowPauses: boolean;
-  // Times set by user (for frontend logic)
-  presentationDuration: number; // total in seconds
+  presentationDuration: number;
   presentationMinutes: number;
   presentationSeconds: number;
-  questionsDuration: number; // total in seconds
+  questionsDuration: number;
   questionsMinutes: number;
   questionsSeconds: number;
   // Selected assets from session/prepare
@@ -89,7 +87,6 @@ export function saveSessionConfig(
 
   const merged: StoredSessionConfig = {
     projectId,
-    discussionPanel: updates.discussionPanel ?? existing?.discussionPanel ?? true,
     showTimer: updates.showTimer ?? existing?.showTimer ?? true,
     allowPauses: updates.allowPauses ?? existing?.allowPauses ?? true,
     presentationDuration:
