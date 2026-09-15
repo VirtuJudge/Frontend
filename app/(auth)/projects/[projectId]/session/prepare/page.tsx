@@ -34,9 +34,6 @@ export default function PrepareSessionPage({
 
   const savedConfig = useMemo(() => getSessionConfig(projectId), [projectId]);
 
-  const [discussionPanel, setDiscussionPanel] = useState(
-    () => savedConfig?.discussionPanel ?? true,
-  );
   const [showTimer, setShowTimer] = useState(
     () => savedConfig?.showTimer ?? true,
   );
@@ -89,7 +86,9 @@ export default function PrepareSessionPage({
     onUploadSuccess: (asset) => {
       refetchAssets();
       setSelectedAssetIds((prev) =>
-        prev.length < 5 && !prev.includes(asset.id) ? [...prev, asset.id] : prev,
+        prev.length < 5 && !prev.includes(asset.id)
+          ? [...prev, asset.id]
+          : prev,
       );
       if (asset.version_id) {
         setSelectedVersionIds((prev) => ({
@@ -183,7 +182,6 @@ export default function PrepareSessionPage({
 
     saveSessionConfig(projectId, {
       projectId,
-      discussionPanel,
       showTimer,
       allowPauses,
       presentationDuration: totalPresentationSec,
@@ -198,7 +196,6 @@ export default function PrepareSessionPage({
     });
   }, [
     projectId,
-    discussionPanel,
     showTimer,
     allowPauses,
     presentationTime.minutes,
@@ -354,7 +351,6 @@ export default function PrepareSessionPage({
       // Save complete session configuration to localStorage under projectId
       saveSessionConfig(projectId, {
         projectId,
-        discussionPanel,
         showTimer,
         allowPauses,
         presentationDuration: totalPresentationSec,
@@ -375,7 +371,6 @@ export default function PrepareSessionPage({
             projectId,
             timer: showTimer,
             pause: allowPauses,
-            panel: discussionPanel,
             presentationDuration: totalPresentationSec,
             questionsDuration: totalQuestionsSec,
             documentAssetIds,
@@ -392,20 +387,16 @@ export default function PrepareSessionPage({
 
   return (
     <div className="flex flex-col items-center justify-center w-full px-4 gap-10">
+      {" "}
       <WorkspaceNavBar />
       <Text
         size="lg"
-        className="font-bold tracking-tight text-fg text-center sm:mb-2 mt-16"
+        className="font-bold tracking-tight text-fg text-center sm:mb-2 sm:mt-20 md:mt-36 mt-40"
       >
         Configure Session Settings
       </Text>
       <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-start justify-items-center gap-10 md:gap-14 lg:gap-20 w-full max-w-5xl mx-auto">
         <div className="flex flex-col gap-7 justify-center w-full max-w-60">
-          <ToggleSwitch
-            checked={discussionPanel}
-            onChange={setDiscussionPanel}
-            label="Discussion panel"
-          />
           <ToggleSwitch
             checked={showTimer}
             onChange={setShowTimer}
