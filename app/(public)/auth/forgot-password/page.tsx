@@ -65,18 +65,6 @@ export default function ForgotPasswordPage() {
           Enter the email address associated with your account to receive a
           password reset code.
         </Text>
-      )}
-
-      {submitted ? (
-        <div className="flex flex-col items-center gap-6 w-full px-8 text-center">
-          <Text
-            role="status"
-            className="w-full p-4 rounded-2xl bg-primary/20 border border-primary/40 text-primary-lighter"
-          >
-            If an account with {email} exists, a password reset email has been
-            sent. Please check your inbox.
-          </Text>
-        )}
 
         {submitted ? (
           <div className="flex flex-col items-center gap-6 w-full px-8 text-center">
