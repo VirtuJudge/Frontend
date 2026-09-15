@@ -20,6 +20,7 @@ describe('API Client Boundary', () => {
     expect(API_ENDPOINTS.teamProjects('team_123')).toBe('/teams/team_123/projects');
     expect(API_ENDPOINTS.project('proj_123')).toBe('/projects/proj_123');
     expect(API_ENDPOINTS.practiceSession('sess_123')).toBe('/practice-sessions/sess_123');
+    expect(API_ENDPOINTS.cancelPracticeSession('sess_123')).toBe('/practice-sessions/sess_123/cancel');
     expect(API_ENDPOINTS.analysisAttempts('sess_123')).toBe('/practice-sessions/sess_123/analysis-attempts');
     expect(API_ENDPOINTS.questions('sess_123')).toBe('/practice-sessions/sess_123/questions');
     expect(API_ENDPOINTS.report('sess_123')).toBe('/practice-sessions/sess_123/report');
@@ -76,6 +77,38 @@ describe('API Client Boundary', () => {
       body: JSON.stringify({ consent: { accepted: true, policy_version: 1 } }),
       headers: expect.objectContaining({ 'Idempotency-Key': 'analysis-attempt-123' }),
     }));
+  });
+
+  it('cancels a practice session through the production cancellation endpoint', async () => {
+    const client = new ApiClient({ baseUrl: '/api/v1', getToken: () => 'token' });
+    fetchSpy.mockResolvedValue(new Response(JSON.stringify({
+      id: 'sess-1',
+      project_id: 'project-1',
+      created_by: 'user-1',
+      name: 'Pitch',
+      status: 'cancelled',
+      version: 3,
+      created_at: '2026-09-15T00:00:00Z',
+      updated_at: '2026-09-15T00:00:00Z',
+      manifest: null,
+    }), { status: 202, headers: { 'Content-Type': 'application/json' } }));
+
+    const session = await client.cancelPracticeSession(
+      'sess-1',
+      'cancel-session-key-123456',
+    );
+
+    expect(session.state).toBe('cancelled');
+    expect(fetchSpy).toHaveBeenCalledWith(
+      '/api/v1/practice-sessions/sess-1/cancel',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ reason: null }),
+        headers: expect.objectContaining({
+          'Idempotency-Key': 'cancel-session-key-123456',
+        }),
+      }),
+    );
   });
 
   it('dispatches requests to expected endpoints with proper HTTP methods', async () => {

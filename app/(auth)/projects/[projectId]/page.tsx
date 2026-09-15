@@ -17,7 +17,7 @@ import { WorkspaceNavBar } from "@/components/Nav-Bar";
 import {
   UploadAssetModal,
   DeleteAssetModal,
-  DeleteSessionModal,
+  CancelSessionModal,
 } from "@/features/projects";
 import { apiClient } from "@/lib/api/client";
 import { Asset, PracticeSession } from "@/lib/api/types";
@@ -63,7 +63,7 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
 
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
-  const [sessionToDelete, setSessionToDelete] = useState<PracticeSession | null>(
+  const [sessionToCancel, setSessionToCancel] = useState<PracticeSession | null>(
     null,
   );
 
@@ -145,8 +145,8 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
     queryClient.invalidateQueries({ queryKey: ["projectSessions", projectId] });
   };
 
-  const sessionDeleteIndex = sessionToDelete
-    ? sessions.findIndex((s) => s.id === sessionToDelete.id) + 1 || 1
+  const sessionCancelIndex = sessionToCancel
+    ? sessions.findIndex((s) => s.id === sessionToCancel.id) + 1 || 1
     : 1;
 
   return (
@@ -258,9 +258,9 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
                       <ActionIconButton
                         icon="solar:trash-bin-trash-linear"
                         variant="danger"
-                        onClick={() => setSessionToDelete(session)}
-                        ariaLabel={`Delete Session ${index + 1}`}
-                        title="Delete session"
+                        onClick={() => setSessionToCancel(session)}
+                        ariaLabel={`Cancel Session ${index + 1}`}
+                        title="Cancel session"
                       />
 
                       <PillBadge
@@ -309,14 +309,14 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
         }}
       />
 
-      <DeleteSessionModal
-        session={sessionToDelete}
-        sessionIndex={sessionDeleteIndex}
-        isOpen={!!sessionToDelete}
-        onClose={() => setSessionToDelete(null)}
-        onSessionDeleted={() => {
+      <CancelSessionModal
+        session={sessionToCancel}
+        sessionIndex={sessionCancelIndex}
+        isOpen={!!sessionToCancel}
+        onClose={() => setSessionToCancel(null)}
+        onSessionCancelled={() => {
           handleSessionUpdated();
-          setSessionToDelete(null);
+          setSessionToCancel(null);
         }}
       />
     </div>

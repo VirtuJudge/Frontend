@@ -123,9 +123,11 @@ function TestAuthConsumer() {
 
 describe("AuthProvider and useAuth", () => {
   let queryClient: QueryClient;
+  let resetPasswordForEmail: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    resetPasswordForEmail = vi.fn().mockResolvedValue({ error: null });
     removeClientAuthToken();
     queryClient = new QueryClient({
       defaultOptions: {
@@ -155,7 +157,7 @@ describe("AuthProvider and useAuth", () => {
         }),
         verifyOtp: vi.fn().mockResolvedValue({ error: null }),
         resend: vi.fn().mockResolvedValue({ error: null }),
-        resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }),
+        resetPasswordForEmail,
         signOut: vi.fn().mockResolvedValue({ error: null }),
       },
       rpc: vi.fn().mockImplementation(async (name: string, args: { user_email?: string }) => {
@@ -321,6 +323,37 @@ describe("AuthProvider and useAuth", () => {
     });
 
     expect(getClientAuthToken()).not.toBeNull();
+  });
+
+  it("sends recovery emails to the callback that completes password changes", async () => {
+    let resetPassword: ((email: string) => Promise<void>) | null = null;
+
+    function PasswordRecoveryConsumer() {
+      const { resetPassword: requestPasswordReset } = useAuth();
+      React.useEffect(() => {
+        resetPassword = requestPasswordReset;
+      }, [requestPasswordReset]);
+      return null;
+    }
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <PasswordRecoveryConsumer />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+
+    await act(async () => {
+      await resetPassword!("recover@example.com");
+    });
+
+    expect(resetPasswordForEmail).toHaveBeenCalledWith(
+      "recover@example.com",
+      {
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      },
+    );
   });
 
   it("handles verifyRegistration enforcing 8 numbers and clearing tokens", async () => {
