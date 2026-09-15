@@ -269,6 +269,7 @@ export function useQASession(sessionId: string): UseQASessionReturn {
 
         const fileName = `answer-${activeQuestion.id}.${fileExt}`;
         const file = new File([draft.blob], fileName, { type: draft.mimeType });
+        const audioSize = draft.sizeBytes || draft.blob.size;
 
         // 1. Calculate SHA-256 checksum
         setSubmitProgress({ stage: "Calculating audio checksum...", percent: 25 });
@@ -287,7 +288,7 @@ export function useQASession(sessionId: string): UseQASessionReturn {
           {
             file_name: fileName,
             declared_media_type: draft.mimeType || "audio/webm",
-            declared_size_bytes: draft.sizeBytes || draft.blob.size,
+            declared_size_bytes: audioSize,
           },
           intentKey
         );
@@ -311,14 +312,32 @@ export function useQASession(sessionId: string): UseQASessionReturn {
           });
         }
 
-        // 4. Complete / Submit answer
+        // 4. Complete the asset so the backend verifies its checksum, media,
+        // size, and duration before the Answer may reference it.
+        const assetVersionId = intentRes.upload_intent.version_id;
+        if (!assetVersionId) {
+          throw new Error("The answer upload did not return an asset version.");
+        }
+        setSubmitProgress({ stage: "Verifying answer audio...", percent: 87 });
+        const completeKey = generateIdempotencyKey("answer-complete");
+        await apiClient.completeUpload(
+          intentRes.upload_intent.asset_id,
+          assetVersionId,
+          {
+            checksum,
+            size_bytes: audioSize,
+          },
+          completeKey,
+        );
+
+        // 5. Submit the verified answer
         setSubmitProgress({ stage: "Submitting verified answer...", percent: 90 });
         const submitKey = generateIdempotencyKey("answer-submit");
         await apiClient.submitAnswer(
           answerId,
           {
             checksum,
-            size_bytes: draft.sizeBytes || draft.blob.size,
+            size_bytes: audioSize,
           },
           submitKey
         );
