@@ -74,6 +74,8 @@ export const API_ENDPOINTS = {
   projectSessions: (projectId: string) =>
     `/projects/${projectId}/practice-sessions`,
   practiceSession: (sessionId: string) => `/practice-sessions/${sessionId}`,
+  cancelPracticeSession: (sessionId: string) =>
+    `/practice-sessions/${sessionId}/cancel`,
   analysisAttempts: (sessionId: string) =>
     `/practice-sessions/${sessionId}/analysis-attempts`,
   speakerMappings: (sessionId: string) =>
@@ -582,10 +584,20 @@ export class ApiClient {
     };
   }
 
-  public async deletePracticeSession(sessionId: string): Promise<void> {
-    return this.request<void>(API_ENDPOINTS.practiceSession(sessionId), {
-      method: "DELETE",
-    });
+  public async cancelPracticeSession(
+    sessionId: string,
+    idempotencyKey: string,
+    reason: string | null = null,
+  ): Promise<PracticeSession> {
+    const session = await this.request<PracticeSession & { status?: PracticeSession["state"] }>(
+      API_ENDPOINTS.cancelPracticeSession(sessionId),
+      {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+        idempotencyKey,
+      },
+    );
+    return this.normalizePracticeSession(session);
   }
 
   public async updatePracticeSession(

@@ -25,6 +25,7 @@ function CallbackHandler() {
       }
 
       const redirectUrl = searchParams.get("redirect") || "/me";
+      const isPasswordRecovery = searchParams.get("type") === "recovery";
       let token = searchParams.get("token") || searchParams.get("access_token");
       const code = searchParams.get("code");
 
@@ -71,7 +72,7 @@ function CallbackHandler() {
           return;
         }
 
-        router.replace(redirectUrl);
+        router.replace(isPasswordRecovery ? "/auth/reset-password" : redirectUrl);
       } catch (e: unknown) {
         const msg =
           e instanceof Error ? e.message : "Failed to process authentication";

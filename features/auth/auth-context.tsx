@@ -365,14 +365,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = useCallback(async (email: string) => {
     const client = getSupabaseClient();
-    if (client) {
-      const redirectTo = `${window.location.origin}/auth/callback?type=recovery`;
-      const { error } = await client.auth.resetPasswordForEmail(email, {
-        redirectTo,
-      });
-      if (error) {
-        throw new Error(error.message);
-      }
+    if (!client) {
+      throw new Error("Authentication service is unavailable");
+    }
+
+    const redirectTo = `${window.location.origin}/auth/callback?type=recovery`;
+    const { error } = await client.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
+    if (error) {
+      throw new Error(error.message);
     }
   }, []);
 
