@@ -65,6 +65,7 @@ export interface AuthContextValue {
   resendVerificationOtp: (email: string) => Promise<void>;
   checkEmailVerificationStatus: (email: string) => Promise<VerificationStatus>;
   resetPassword: (email: string) => Promise<void>;
+  verifyPasswordRecoveryOtp: (email: string, otp: string) => Promise<void>;
   signInWithJwt: (jwtToken: string) => Promise<void>;
   signOut: (options?: SignOutOptions) => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -378,6 +379,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const verifyPasswordRecoveryOtp = useCallback(
+    async (email: string, otp: string) => {
+      const trimmedEmail = email.trim();
+      const sanitizedOtp = otp.trim();
+
+      if (!trimmedEmail) {
+        throw new Error("Email is required to verify the reset code");
+      }
+      if (!/^\d{6,8}$/.test(sanitizedOtp)) {
+        throw new Error("Reset code must contain 6 to 8 numbers");
+      }
+
+      const client = getSupabaseClient();
+      if (!client) {
+        throw new Error("Authentication service is unavailable");
+      }
+
+      const { data, error } = await client.auth.verifyOtp({
+        email: trimmedEmail,
+        token: sanitizedOtp,
+        type: "recovery",
+      });
+      if (error) {
+        throw new Error(error.message);
+      }
+      if (!data.session?.access_token) {
+        throw new Error("The reset code did not create a recovery session");
+      }
+
+      syncSessionToCookies(data.session.access_token);
+      setToken(data.session.access_token);
+      await queryClient.invalidateQueries({ queryKey: ["me"] });
+    },
+    [queryClient],
+  );
+
   const signInWithJwt = useCallback(
     async (jwtToken: string) => {
       if (isJwtExpired(jwtToken)) {
@@ -443,6 +480,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resendVerificationOtp,
         checkEmailVerificationStatus,
         resetPassword,
+        verifyPasswordRecoveryOtp,
         signInWithJwt,
         signOut,
         refreshUser,

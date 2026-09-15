@@ -124,10 +124,24 @@ function TestAuthConsumer() {
 describe("AuthProvider and useAuth", () => {
   let queryClient: QueryClient;
   let resetPasswordForEmail: ReturnType<typeof vi.fn>;
+  let verifyOtp: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     resetPasswordForEmail = vi.fn().mockResolvedValue({ error: null });
+    verifyOtp = vi.fn().mockImplementation(({ type }: { type: string }) => {
+      if (type === "recovery") {
+        return Promise.resolve({
+          data: {
+            session: {
+              access_token: createSyntheticJwt({ sub: "recovery-user" }),
+            },
+          },
+          error: null,
+        });
+      }
+      return Promise.resolve({ error: null });
+    });
     removeClientAuthToken();
     queryClient = new QueryClient({
       defaultOptions: {
@@ -155,7 +169,7 @@ describe("AuthProvider and useAuth", () => {
           },
           error: null,
         }),
-        verifyOtp: vi.fn().mockResolvedValue({ error: null }),
+        verifyOtp,
         resend: vi.fn().mockResolvedValue({ error: null }),
         resetPasswordForEmail,
         signOut: vi.fn().mockResolvedValue({ error: null }),
@@ -354,6 +368,38 @@ describe("AuthProvider and useAuth", () => {
         redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
       },
     );
+  });
+
+  it("verifies reset codes as Supabase recovery OTPs", async () => {
+    let verifyPasswordRecoveryOtp:
+      | ((email: string, otp: string) => Promise<void>)
+      | null = null;
+
+    function PasswordRecoveryConsumer() {
+      const { verifyPasswordRecoveryOtp: verifyRecoveryOtp } = useAuth();
+      React.useEffect(() => {
+        verifyPasswordRecoveryOtp = verifyRecoveryOtp;
+      }, [verifyRecoveryOtp]);
+      return null;
+    }
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <PasswordRecoveryConsumer />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+
+    await act(async () => {
+      await verifyPasswordRecoveryOtp!("recover@example.com", "123456");
+    });
+
+    expect(verifyOtp).toHaveBeenCalledWith({
+      email: "recover@example.com",
+      token: "123456",
+      type: "recovery",
+    });
   });
 
   it("handles verifyRegistration enforcing 8 numbers and clearing tokens", async () => {
