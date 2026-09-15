@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
 import { Button, Text } from "@/components";
 import { useAuth } from "@/features/auth";
 import { apiClient } from "@/lib/api/client";
@@ -17,7 +16,13 @@ export interface PendingInvitation {
 
 export default function MePage() {
   const { user } = useAuth();
-  const searchParams = useSearchParams();
+  const [greeting] = useState(
+    new Date().getHours() < 12
+      ? "morning"
+      : new Date().getHours() < 18
+        ? "afternoon"
+        : "evening",
+  );
 
   // Query teams & projects to construct quick session start link
   const { data: teamsPage } = useQuery({
@@ -39,7 +44,7 @@ export default function MePage() {
     ? `/projects/${defaultProjectId}/session/prepare`
     : "/teams";
 
-  const displayName = user?.display_name || "Omar Salama";
+  const displayName = user?.display_name;
 
   // Pending invitations list matching me.png
   const [invitations, setInvitations] = useState<PendingInvitation[]>([
@@ -57,44 +62,6 @@ export default function MePage() {
   } | null>(null);
 
   // Check if an invitation token was provided in URL query parameters
-  useEffect(() => {
-    const inviteToken = searchParams.get("invitation") || searchParams.get("token");
-    if (!inviteToken) return;
-
-    let isMounted = true;
-    apiClient
-      .getInvitationPreview(inviteToken)
-      .then((preview) => {
-        if (!isMounted) return;
-        const diffMs = new Date(preview.expires_at).getTime() - Date.now();
-        const diffDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-        const item: PendingInvitation = {
-          id: `token-${inviteToken.slice(0, 8)}`,
-          inviterName:
-            preview.inviter_display_name ||
-            preview.invited_by_name ||
-            preview.team_name ||
-            "Team Invitation",
-          email:
-            preview.invited_email ||
-            preview.email_masked ||
-            "example@mail.com",
-          expiresIn: `expires in ${diffDays} days`,
-          token: inviteToken,
-        };
-        setInvitations((prev) => {
-          if (prev.some((p) => p.token === inviteToken)) return prev;
-          return [item, ...prev];
-        });
-      })
-      .catch(() => {
-        // Preview token invalid or expired - ignore gracefully
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [searchParams]);
 
   // Dismiss feedback automatically after 4 seconds
   useEffect(() => {
@@ -137,24 +104,23 @@ export default function MePage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] w-full py-8 sm:py-12 select-none">
-      {/* Hero: Bonjour & User Name */}
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] w-full py-8 sm:py-12">
       <div className="flex flex-col items-center text-center mb-8 sm:mb-10">
-        <Text>Bonjour</Text>
+        <Text>Good {greeting},</Text>
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mt-1">
           {displayName}
         </h1>
       </div>
 
       {/* Main Action Buttons */}
-      <div className="flex flex-col gap-3.5 w-full max-w-110 mx-auto mb-14 sm:mb-16">
+      <div className="flex flex-col gap-6 w-full max-w-110 mx-auto mb-14 sm:mb-16">
         <Button
           variant="glass"
           borderGradient="default"
           href="/teams"
           className="w-full"
         >
-          Manage teams and members
+          My Teams
         </Button>
 
         <Button variant="primary" href={startSessionHref} className="w-full">
