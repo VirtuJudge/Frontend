@@ -44,12 +44,12 @@ export function PricingCard({ isAnnual, type }: PricingCardProps) {
 		w-88 h-100 flex flex-col justify-between hocus:-translate-y-2 transition-transform duration-500
 		${type === "professional" && "border border-primary"}`}
     >
-      <Text as="b" size="body-large" className="text-center">
+      <Text as="b" size="body-large">
         {plans[type].name}
       </Text>
       <ul className="list-disc list-inside text-left">
         {plans[type].features.map((feature, index) => (
-          <Text as="li" size="body" key={index}>
+          <Text as="li" size="body" key={index} className="text-left">
             {feature}
           </Text>
         ))}

@@ -16,7 +16,7 @@ export default function PublicLayout({
   return (
     <div className="flex flex-col">
       <NavBar />
-      <main className="flex flex-col w-full max-w-7xl mx-auto pt-40 p-10 page-animation">{children}</main>
+      <main className="flex flex-col w-full max-w-7xl mx-auto pt-40 p-5 page-animation">{children}</main>
       <If condition={!pathname.startsWith("/auth")}>
         <Footer />
       </If>
