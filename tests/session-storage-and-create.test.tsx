@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as nextNavigation from "next/navigation";
-import { apiClient } from "@/lib/api/client";
+import { ApiClientError, apiClient } from "@/lib/api/client";
 import {
   saveSessionConfig,
   getSessionConfig,
@@ -376,6 +376,61 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
         );
       });
       expect(getSessionConfig(mockProjectId)?.sessionId).toBe("sess-123");
+    });
+
+    it("recovers from a stale session version before starting analysis", async () => {
+      saveSessionConfig(mockProjectId, {
+        projectId: mockProjectId,
+        selectedAssets: [],
+      });
+      const updateSessionSpy = vi
+        .spyOn(apiClient, "updatePracticeSession")
+        .mockRejectedValueOnce(new ApiClientError(412))
+        .mockResolvedValueOnce({
+          id: "sess-123",
+          project_id: mockProjectId,
+          state: "ready",
+          created_by: "user-1",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          version: 3,
+        });
+      vi.spyOn(apiClient, "getPracticeSession").mockResolvedValue({
+        id: "sess-123",
+        project_id: mockProjectId,
+        state: "draft",
+        created_by: "user-1",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        version: 2,
+      });
+
+      await renderWithProviders(<SessionRecordContent projectId={mockProjectId} />);
+      fireEvent.click(
+        await screen.findByRole("button", { name: /start recording/i }),
+      );
+      await waitFor(() => {
+        expect(screen.queryByLabelText(/recording starts in/i)).toBeNull();
+      });
+      fireEvent.click(screen.getByRole("button", { name: /end session/i }));
+      await screen.findByText("Recorded Preview");
+      fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+      await waitFor(() => {
+        expect(pushMock).toHaveBeenCalledWith("/sessions/sess-123");
+      });
+      expect(updateSessionSpy).toHaveBeenNthCalledWith(
+        1,
+        "sess-123",
+        expect.any(Object),
+        1,
+      );
+      expect(updateSessionSpy).toHaveBeenNthCalledWith(
+        2,
+        "sess-123",
+        expect.any(Object),
+        2,
+      );
     });
   });
 

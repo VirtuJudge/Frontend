@@ -17,7 +17,7 @@ import {
   savePresentationVideo,
   getSessionConfig,
 } from "@/lib/storage";
-import { apiClient } from "@/lib/api/client";
+import { ApiClientError, apiClient } from "@/lib/api/client";
 import {
   uploadFileDirectly,
   validateFile,
@@ -654,19 +654,42 @@ export function SessionRecordContent({ projectId }: { projectId: string }) {
         percent: 95,
       });
 
-      const readySession = await apiClient.updatePracticeSession(
-        session.id,
-        {
-          name: session.name || `Practice Session ${new Date().toLocaleDateString()}`,
-          presentation_asset_version_id: presentationVersionId,
-          supporting_document_version_ids: docVersionIds,
-          rubric: {
-            rubric_id: "startup_pitch",
-            version: 1,
-          },
+      const sessionUpdate = {
+        name:
+          session.name ||
+          `Practice Session ${new Date().toLocaleDateString()}`,
+        presentation_asset_version_id: presentationVersionId,
+        supporting_document_version_ids: docVersionIds,
+        rubric: {
+          rubric_id: "startup_pitch",
+          version: 1,
         },
-        session.version,
-      );
+      };
+      let readySession;
+      try {
+        readySession = await apiClient.updatePracticeSession(
+          session.id,
+          sessionUpdate,
+          session.version,
+        );
+      } catch (error) {
+        if (!(error instanceof ApiClientError) || error.status !== 412) {
+          throw error;
+        }
+
+        // Production can advance the entity version immediately after create.
+        // Reconcile with backend-owned state before retrying the idempotent
+        // readiness update instead of making the user upload the video again.
+        const latestSession = await apiClient.getPracticeSession(session.id);
+        readySession =
+          latestSession.state === "ready"
+            ? latestSession
+            : await apiClient.updatePracticeSession(
+                session.id,
+                sessionUpdate,
+                latestSession.version,
+              );
+      }
 
       if (readySession.state !== "ready") {
         throw new Error(
