@@ -178,6 +178,46 @@ describe('API Client Boundary', () => {
     }));
   });
 
+  it('retries upload completion after a transient browser network failure', async () => {
+    vi.useFakeTimers();
+    const client = new ApiClient({ baseUrl: '/api/v1', getToken: () => 'token' });
+    fetchSpy
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        id: 'asset-1',
+        project_id: 'project-1',
+        kind: 'presentation_video',
+        state: 'verified',
+        file_name: 'presentation.webm',
+        created_by: 'user-1',
+        created_at: '2026-09-15T00:00:00Z',
+      }), { status: 202, headers: { 'Content-Type': 'application/json' } }));
+
+    try {
+      const completion = client.completeUpload(
+        'asset-1',
+        'version-1',
+        {
+          checksum: `sha256:${'a'.repeat(64)}`,
+          size_bytes: 1024,
+        },
+        'complete-key-1',
+      );
+      await vi.advanceTimersByTimeAsync(1000);
+
+      await expect(completion).resolves.toEqual(
+        expect.objectContaining({ id: 'asset-1', state: 'verified' }),
+      );
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy.mock.calls[1][1]).toEqual(expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({ 'Idempotency-Key': 'complete-key-1' }),
+      }));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('updates speaker mappings with strict optimistic concurrency', async () => {
     const client = new ApiClient({ baseUrl: '/api/v1', getToken: () => 'token' });
     fetchSpy.mockResolvedValue(new Response(JSON.stringify([]), {

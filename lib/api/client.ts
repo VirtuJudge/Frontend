@@ -482,14 +482,30 @@ export class ApiClient {
     idempotencyKey?: string,
   ): Promise<Asset> {
     const key = idempotencyKey || generateIdempotencyKey("complete");
-    return this.request<Asset>(
-      API_ENDPOINTS.completeUpload(assetId, versionId),
-      {
-        method: "POST",
-        body: JSON.stringify(req),
-        idempotencyKey: key,
-      },
-    );
+    const retryDelaysMs = [1000, 2500];
+
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        return await this.request<Asset>(
+          API_ENDPOINTS.completeUpload(assetId, versionId),
+          {
+            method: "POST",
+            body: JSON.stringify(req),
+            idempotencyKey: key,
+          },
+        );
+      } catch (error) {
+        const retryDelay = retryDelaysMs[attempt];
+        if (!(error instanceof TypeError) || retryDelay === undefined) {
+          throw error;
+        }
+
+        // Completion is idempotent. A browser may lose the response while the
+        // backend is verifying media, so retry the exact command with the same
+        // key instead of forcing the user to create and upload another asset.
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
+    }
   }
 
   public async createDownloadIntent(
