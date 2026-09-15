@@ -150,14 +150,14 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
     : 1;
 
   return (
-    <div className="flex flex-col items-center justify-center w-full pb-20 gap-10 pt-20 sm:pt-0">
+    <div className="flex flex-col items-center justify-center w-full gap-10 pt-20 lg:pt-0">
       {/* Top Header Navbar containing team and project name */}
       <WorkspaceNavBar
         selectedProjectId={projectId}
         selectedTeamId={teamId}
       />
 
-      <div className="w-full max-w-4xl flex flex-col gap-24 px-4 sm:px-6">
+      <div className="w-full max-w-4xl flex flex-col gap-24">
         {/* ================= Assets Section ================= */}
         <div className="flex flex-col items-center w-full gap-8">
           <Text className="text-3xl font-bold text-fg-light">Assets</Text>
