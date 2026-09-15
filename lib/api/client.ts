@@ -74,9 +74,8 @@ export const API_ENDPOINTS = {
   projectSessions: (projectId: string) =>
     `/projects/${projectId}/practice-sessions`,
   practiceSession: (sessionId: string) => `/practice-sessions/${sessionId}`,
-  session: (sessionId: string) => `/practice-sessions/${sessionId}`,
-  startAnalysis: (sessionId: string) =>
-    `/practice-sessions/${sessionId}/start-analysis`,
+  cancelPracticeSession: (sessionId: string) =>
+    `/practice-sessions/${sessionId}/cancel`,
   analysisAttempts: (sessionId: string) =>
     `/practice-sessions/${sessionId}/analysis-attempts`,
   speakerMappings: (sessionId: string) =>
@@ -389,12 +388,6 @@ export class ApiClient {
     return this.request<Project>(API_ENDPOINTS.project(projectId));
   }
 
-  public async deleteProject(projectId: string): Promise<void> {
-    return this.request<void>(API_ENDPOINTS.project(projectId), {
-      method: "DELETE",
-    });
-  }
-
   public async getAssets(
     projectId: string,
     filters?: AssetFilterParams,
@@ -591,17 +584,23 @@ export class ApiClient {
     };
   }
 
-  public async deletePracticeSession(sessionId: string): Promise<void> {
-    return this.request<void>(API_ENDPOINTS.practiceSession(sessionId), {
-      method: "DELETE",
-    });
+  public async cancelPracticeSession(
+    sessionId: string,
+    idempotencyKey: string,
+    reason: string | null = null,
+  ): Promise<PracticeSession> {
+    const session = await this.request<PracticeSession & { status?: PracticeSession["state"] }>(
+      API_ENDPOINTS.cancelPracticeSession(sessionId),
+      {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+        idempotencyKey,
+      },
+    );
+    return this.normalizePracticeSession(session);
   }
 
-  public async deleteSession(sessionId: string): Promise<void> {
-    return this.deletePracticeSession(sessionId);
-  }
-
-  public async startAnalysis(
+  public async updatePracticeSession(
     sessionId: string,
     data: UpdatePracticeSessionRequest,
     version: number,
@@ -751,15 +750,3 @@ export class ApiClient {
 }
 
 export const apiClient = new ApiClient();
-
-export const deleteProject = (projectId: string): Promise<void> =>
-  apiClient.deleteProject(projectId);
-
-export const deleteAsset = (assetId: string): Promise<void> =>
-  apiClient.deleteAsset(assetId);
-
-export const deletePracticeSession = (sessionId: string): Promise<void> =>
-  apiClient.deletePracticeSession(sessionId);
-
-export const deleteSession = (sessionId: string): Promise<void> =>
-  apiClient.deleteSession(sessionId);
