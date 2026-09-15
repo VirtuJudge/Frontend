@@ -24,7 +24,7 @@ import {
   ManageMemberModal,
   ManageInvitationModal,
 } from "@/features/teams";
-import { CreateProjectModal } from "@/features/projects";
+import { CreateProjectModal, DeleteProjectModal } from "@/features/projects";
 import { Project, TeamMembership, TeamInvitation } from "@/lib/api/types";
 
 export function TeamDetailsContent({ teamId }: { teamId: string }) {
@@ -33,6 +33,7 @@ export function TeamDetailsContent({ teamId }: { teamId: string }) {
 
   // Modals state
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [isInviteMemberOpen, setIsInviteMemberOpen] = useState(false);
   const [manageMember, setManageMember] = useState<TeamMembership | null>(null);
   const [memberManageView, setMemberManageView] = useState<
@@ -91,6 +92,10 @@ export function TeamDetailsContent({ teamId }: { teamId: string }) {
     queryClient.invalidateQueries({ queryKey: ["teamProjects", teamId] });
   };
 
+  const handleProjectDeleted = () => {
+    queryClient.invalidateQueries({ queryKey: ["teamProjects", teamId] });
+  };
+
   if (isTeamLoading || isMembersLoading || isProjectsLoading) {
     return <LoadingPage />;
   }
@@ -141,6 +146,7 @@ export function TeamDetailsContent({ teamId }: { teamId: string }) {
                     <ActionIconButton
                       icon="solar:trash-bin-trash-linear"
                       variant="danger"
+                      onClick={() => setProjectToDelete(project)}
                       ariaLabel={`Delete project ${project.name}`}
                       title="Delete project"
                     />
@@ -327,6 +333,16 @@ export function TeamDetailsContent({ teamId }: { teamId: string }) {
         isOpen={isCreateProjectOpen}
         onClose={() => setIsCreateProjectOpen(false)}
         onProjectCreated={handleProjectCreated}
+      />
+
+      <DeleteProjectModal
+        project={projectToDelete}
+        isOpen={!!projectToDelete}
+        onClose={() => setProjectToDelete(null)}
+        onProjectDeleted={() => {
+          handleProjectDeleted();
+          setProjectToDelete(null);
+        }}
       />
 
       <InviteMemberModal

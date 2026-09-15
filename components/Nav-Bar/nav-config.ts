@@ -16,7 +16,7 @@ export const COMPANY_NAV_ITEMS: NavItem[] = [
 
 export const CTA_NAV_ITEM: NavItem = {
   label: "Try Now!",
-  href: "/auth/login",
+  href: "/",
 };
 
 export const NAV_CONTAINER_CLASS =

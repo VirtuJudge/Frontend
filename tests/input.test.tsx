@@ -172,4 +172,72 @@ describe("Input Component", () => {
     expect(ref.current).toBeInstanceOf(HTMLInputElement);
     expect(ref.current?.placeholder).toBe("Ref test");
   });
+
+  describe("Password Reveal Toggle", () => {
+    it("renders password toggle button by default when type is password", () => {
+      render(<Input type="password" placeholder="Enter password" />);
+      const input = screen.getByPlaceholderText("Enter password") as HTMLInputElement;
+      const toggleBtn = screen.getByTestId("password-toggle");
+
+      expect(input.type).toBe("password");
+      expect(toggleBtn).toBeDefined();
+      expect(toggleBtn.getAttribute("aria-label")).toBe("Show password");
+      expect(toggleBtn.getAttribute("aria-pressed")).toBe("false");
+    });
+
+    it("toggles input type between password and text when clicked", () => {
+      render(<Input type="password" placeholder="Enter password" />);
+      const input = screen.getByPlaceholderText("Enter password") as HTMLInputElement;
+      const toggleBtn = screen.getByTestId("password-toggle");
+
+      expect(input.type).toBe("password");
+
+      // Click to reveal password
+      fireEvent.click(toggleBtn);
+      expect(input.type).toBe("text");
+      expect(toggleBtn.getAttribute("aria-label")).toBe("Hide password");
+      expect(toggleBtn.getAttribute("aria-pressed")).toBe("true");
+
+      // Click to hide password again
+      fireEvent.click(toggleBtn);
+      expect(input.type).toBe("password");
+      expect(toggleBtn.getAttribute("aria-label")).toBe("Show password");
+      expect(toggleBtn.getAttribute("aria-pressed")).toBe("false");
+    });
+
+    it("does not render password toggle button when type is not password", () => {
+      render(<Input type="text" placeholder="Text input" />);
+      expect(screen.queryByTestId("password-toggle")).toBeNull();
+    });
+
+    it("allows disabling password toggle via showPasswordToggle={false}", () => {
+      render(
+        <Input
+          type="password"
+          placeholder="No toggle"
+          showPasswordToggle={false}
+        />,
+      );
+      expect(screen.queryByTestId("password-toggle")).toBeNull();
+    });
+
+    it("prevents default on mousedown to preserve input focus", () => {
+      render(<Input type="password" placeholder="Focus test" />);
+      const toggleBtn = screen.getByTestId("password-toggle");
+      const mousedownEvent = new MouseEvent("mousedown", {
+        bubbles: true,
+        cancelable: true,
+      });
+
+      toggleBtn.dispatchEvent(mousedownEvent);
+      expect(mousedownEvent.defaultPrevented).toBe(true);
+    });
+
+    it("disables the toggle button when input is disabled", () => {
+      render(<Input type="password" placeholder="Disabled pwd" disabled />);
+      const toggleBtn = screen.getByTestId("password-toggle");
+      expect(toggleBtn.hasAttribute("disabled")).toBe(true);
+    });
+  });
 });
+

@@ -123,6 +123,14 @@ export function useProjectAssets({
     [],
   );
 
+  const deleteAsset = useCallback(
+    async (assetId: string) => {
+      await apiClient.deleteAsset(assetId);
+      await refetch();
+    },
+    [refetch],
+  );
+
   return {
     assets,
     presentationAsset,
@@ -137,5 +145,6 @@ export function useProjectAssets({
     selectVersionForAsset,
     getActiveVersionId,
     downloadAsset,
+    deleteAsset,
   };
 }
