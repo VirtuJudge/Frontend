@@ -5,12 +5,15 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { Button, Text, Wrapper } from "@/components";
+import { AnalysisProgress } from "@/features/session";
+import { useSessionEvents } from "@/hooks/use-session-events";
 import { apiClient } from "@/lib/api/client";
 import { generateIdempotencyKey } from "@/lib/upload/idempotency";
 
 export default function SessionWorkflowPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = use(params);
   const router = useRouter();
+  const { analysisProgress } = useSessionEvents(sessionId);
   const sessionQuery = useQuery({
     queryKey: ["practice-session", sessionId],
     queryFn: () => apiClient.getPracticeSession(sessionId),
@@ -70,9 +73,17 @@ export default function SessionWorkflowPage({ params }: { params: Promise<{ sess
     return <WorkflowCard icon="tabler:circle-x" title="Session cancelled" detail="This practice session is no longer active." />;
   }
   if (state === "report_generating") {
-    return <WorkflowCard icon="tabler:file-analytics" spinning title="Creating your report" detail="Your answers are complete. VirtuJudge is calculating scores, citations, and recommendations." />;
+    return (
+      <WorkflowCard icon="tabler:file-analytics" spinning title="Creating your report" detail="Your answers are complete. VirtuJudge is calculating scores, citations, and recommendations.">
+        <AnalysisProgress progress={analysisProgress} />
+      </WorkflowCard>
+    );
   }
-  return <WorkflowCard icon="tabler:brain" spinning title="Analyzing your presentation" detail="VirtuJudge is processing the presentation and supporting documents. This page updates automatically and is safe to refresh." />;
+  return (
+    <WorkflowCard icon="tabler:brain" spinning title="Analyzing your presentation" detail="VirtuJudge is processing the presentation and supporting documents. This page updates automatically and is safe to refresh.">
+      <AnalysisProgress progress={analysisProgress} />
+    </WorkflowCard>
+  );
 }
 
 function WorkflowCard({ icon, spinning = false, title, detail, children }: { icon: string; spinning?: boolean; title: string; detail: string; children?: React.ReactNode }) {

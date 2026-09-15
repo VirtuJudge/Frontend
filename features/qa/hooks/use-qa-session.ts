@@ -2,13 +2,14 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient, API_ENDPOINTS } from "@/lib/api/client";
-import { SseHelper } from "@/lib/api/sse";
+import { apiClient } from "@/lib/api/client";
+import { useSessionEvents } from "@/hooks/use-session-events";
 import {
   QARound,
   Question,
   Answer,
   PracticeSession,
+  AnalysisProgressedEvent,
 } from "@/lib/api/types";
 import { generateIdempotencyKey } from "@/lib/upload/idempotency";
 import { uploadFileDirectly } from "@/lib/upload/direct-uploader";
@@ -43,6 +44,7 @@ export interface UseQASessionReturn {
   isSkipping: boolean;
   isRoundCompleted: boolean;
   submitProgress: SubmitAnswerProgress | null;
+  analysisProgress: AnalysisProgressedEvent | null;
   actionError: string | null;
 
   // Actions
@@ -57,6 +59,7 @@ const MAX_FOLLOW_UP_QUESTIONS = 2;
 
 export function useQASession(sessionId: string): UseQASessionReturn {
   const queryClient = useQueryClient();
+  const { analysisProgress } = useSessionEvents(sessionId);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
@@ -182,42 +185,7 @@ export function useQASession(sessionId: string): UseQASessionReturn {
         (qaRound?.state === "in_progress" && !qaRound.current_question_id))
   );
 
-  // 6. Connect SSE for real-time notifications
-  useEffect(() => {
-    if (!sessionId || typeof window === "undefined") return;
-
-    let sse: SseHelper | null = null;
-    try {
-      const streamUrl = apiClient.resolveUrl(API_ENDPOINTS.sessionEvents(sessionId));
-      sse = new SseHelper({
-        url: streamUrl,
-        getToken: () => apiClient.getAuthToken(),
-        onMessage: (event) => {
-          if (
-            event.event === "qa.question_available.v1" ||
-            event.event === "qa.answer_updated.v1" ||
-            event.event === "practice_session.updated.v1" ||
-            event.event === "practice_session.resync_required.v1" ||
-            event.event === "report.ready.v1"
-          ) {
-            queryClient.invalidateQueries({ queryKey: ["qa-round", sessionId] });
-            queryClient.invalidateQueries({ queryKey: ["practice-session", sessionId] });
-          }
-        },
-      });
-      sse.connect();
-    } catch {
-      // Ignore SSE init errors
-    }
-
-    return () => {
-      if (sse) {
-        sse.disconnect();
-      }
-    };
-  }, [sessionId, queryClient]);
-
-  // 7. Polling fallback when analyzing answer or waiting for next question
+  // 6. Polling fallback when analyzing answer or waiting for next question
   useEffect(() => {
     if (!analyzingQuestionId) return;
 
@@ -238,7 +206,7 @@ export function useQASession(sessionId: string): UseQASessionReturn {
     return () => clearInterval(interval);
   }, [analyzingQuestionId, sessionId, queryClient]);
 
-  // 8. Submit answer flow
+  // 7. Submit answer flow
   const submitAnswer = useCallback(
     async (draft: AudioRecordingDraft): Promise<boolean> => {
       if (!activeQuestion) {
@@ -359,7 +327,7 @@ export function useQASession(sessionId: string): UseQASessionReturn {
     [activeQuestion, isSubmitting, sessionId, queryClient]
   );
 
-  // 9. Skip question flow
+  // 8. Skip question flow
   const skipQuestion = useCallback(
     async (reason?: string): Promise<boolean> => {
       if (!activeQuestion) {
@@ -421,6 +389,7 @@ export function useQASession(sessionId: string): UseQASessionReturn {
     isSkipping,
     isRoundCompleted,
     submitProgress,
+    analysisProgress,
     actionError,
 
     submitAnswer,

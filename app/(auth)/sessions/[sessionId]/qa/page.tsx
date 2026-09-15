@@ -34,6 +34,7 @@ export default function SessionQAPage({
     isSubmitting,
     isRoundCompleted,
     submitProgress,
+    analysisProgress,
     actionError,
     submitAnswer,
     skipQuestion,
@@ -147,7 +148,7 @@ export default function SessionQAPage({
         <SessionHeader onNavigate={handleNavigateBack} />
 
         <div className="w-full max-w-xl z-10">
-          <QAAnalyzingCard />
+          <QAAnalyzingCard progress={analysisProgress} />
         </div>
       </div>
     );

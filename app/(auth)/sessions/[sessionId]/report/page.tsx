@@ -7,10 +7,13 @@ import { Icon } from "@iconify/react";
 import { Button, Text, Wrapper } from "@/components";
 import { apiClient } from "@/lib/api/client";
 import { SessionReportView } from "@/features/reports";
+import { AnalysisProgress } from "@/features/session";
+import { useSessionEvents } from "@/hooks/use-session-events";
 
 export default function SessionReportPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = use(params);
   const queryClient = useQueryClient();
+  const { analysisProgress } = useSessionEvents(sessionId);
   const reportQuery = useQuery({
     queryKey: ["report", sessionId],
     queryFn: () => apiClient.getReport(sessionId),
@@ -45,6 +48,7 @@ export default function SessionReportPage({ params }: { params: Promise<{ sessio
           <Icon icon={pending ? "tabler:hourglass-high" : "tabler:alert-circle"} className="text-4xl text-primary" />
           <Text as="h1" size="md" className="font-bold">{pending ? "Report Preparation in Progress" : "Report Unavailable"}</Text>
           <Text size="xs" className="text-fg/70">{pending ? "VirtuJudge is finishing answer analysis and preparing the final evaluation." : reportQuery.error instanceof Error ? reportQuery.error.message : "The report could not be loaded."}</Text>
+          {pending && <AnalysisProgress progress={analysisProgress} />}
           <Button onClick={handleRefresh}>Try Again</Button>
           <Link href={`/sessions/${sessionId}`} className="text-xs text-primary hover:underline">Return to session status</Link>
         </Wrapper>

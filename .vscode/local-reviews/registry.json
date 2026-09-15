@@ -32,7 +32,15 @@
       "sourceCommit": "f875a674f17bd149009128b507521b5ef25aec11",
       "targetCommit": "f875a674f17bd149009128b507521b5ef25aec11",
       "createdAt": "2026-09-15T14:27:14.513Z"
+    },
+    {
+      "id": "227420b4-4647-4c87-8a26-7568f1ab4e6c",
+      "sourceBranch": "main",
+      "targetBranch": "finalize",
+      "sourceCommit": "f875a674f17bd149009128b507521b5ef25aec11",
+      "targetCommit": "abbd2725b373f2bd4b2140e36640723e787d87e8",
+      "createdAt": "2026-09-15T18:39:30.352Z"
     }
   ],
-  "activeReviewId": "ccf86325-b0ca-40af-9055-5ceeba404dfa"
+  "activeReviewId": "227420b4-4647-4c87-8a26-7568f1ab4e6c"
 }
