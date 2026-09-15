@@ -9,11 +9,11 @@ describe("Button & NavButton Component", () => {
     const button = screen.getByRole("button", { name: /click me/i });
 
     expect(button).toBeDefined();
-    expect(button.className).toContain("rounded-[50px]");
-    expect(button.className).toContain("h-[57px]");
-    expect(button.className).toContain("py-[15px]");
-    expect(button.className).toContain("px-[20px]");
-    expect(button.className).toContain("gap-[10px]");
+    expect(button.className).toContain("rounded-full");
+    expect(button.className).toContain("h-[3.5rem]");
+    expect(button.className).toContain("py-[0.9375rem]");
+    expect(button.className).toContain("px-[1.25rem]");
+    expect(button.className).toContain("gap-[0.625rem]");
     expect(button.className).toContain("font-bold");
     expect(button.className).toContain("backdrop-blur-[20px]");
     expect(container.innerHTML).toContain("Click Me");
@@ -58,8 +58,8 @@ describe("Button & NavButton Component", () => {
     const link = screen.getByRole("link", { name: /go to dashboard/i });
     expect(link).toBeDefined();
     expect(link.getAttribute("href")).toBe("/dashboard");
-    expect(link.className).toContain("h-[57px]");
-    expect(link.className).toContain("px-[20px]");
+    expect(link.className).toContain("h-[3.5rem]");
+    expect(link.className).toContain("px-[1.25rem]");
   });
 
   it("renders as external anchor when external href is supplied", () => {
@@ -116,9 +116,9 @@ describe("Button & NavButton Component", () => {
     expect(btn.className).toContain("px-4");
     expect(btn.className).toContain("py-4");
     expect(btn.className).toContain("rounded-[50px]");
-    expect(btn.className).not.toContain("px-[20px]");
-    expect(btn.className).not.toContain("py-[15px]");
-    expect(btn.className).not.toContain("rounded-[100px]");
+    expect(btn.className).not.toContain("px-[1.25rem]");
+    expect(btn.className).not.toContain("py-[0.9375rem]");
+    expect(btn.className).not.toContain("rounded-[2.5rem]");
   });
 
   it("renders icons and loading indicator", () => {
