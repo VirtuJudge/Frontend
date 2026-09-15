@@ -182,7 +182,7 @@ export function UploadAssetModal({
 
         {/* Formats Note */}
         <span className="text-xs sm:text-sm text-foreground/50 font-mono tracking-wider mt-4">
-          pdf, pptx
+          pdf & pptx files only
         </span>
 
         {errorMessage && (

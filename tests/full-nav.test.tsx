@@ -8,11 +8,10 @@ describe("FullNav Component", () => {
     render(<FullNav />);
 
     expect(screen.getByRole("link", { name: /home/i })).toBeDefined();
-    expect(screen.getByRole("link", { name: /about/i })).toBeDefined();
     expect(screen.getByRole("link", { name: /pricing/i })).toBeDefined();
     expect(screen.getByRole("button", { name: /company/i })).toBeDefined();
 
-    expect(screen.queryByText("Our team")).toBeNull();
+    expect(screen.queryByText("Data privacy")).toBeNull();
   });
 
   it("opens company dropdown menu on click", () => {
@@ -21,10 +20,9 @@ describe("FullNav Component", () => {
 
     fireEvent.click(companyBtn);
 
-    expect(screen.getByText("Our team")).toBeDefined();
     expect(screen.getByText("Data privacy")).toBeDefined();
     expect(screen.getByText("Terms and conditions")).toBeDefined();
-    expect(screen.getByText("Contacts")).toBeDefined();
+    expect(screen.getByText("Contact us")).toBeDefined();
   });
 
   it("closes company dropdown when clicking outside", async () => {
@@ -37,12 +35,12 @@ describe("FullNav Component", () => {
 
     const companyBtn = screen.getByRole("button", { name: /company/i });
     fireEvent.click(companyBtn);
-    expect(screen.getByText("Our team")).toBeDefined();
+    expect(screen.getByText("Data privacy")).toBeDefined();
 
     fireEvent.mouseDown(screen.getByTestId("outside-area"));
 
     await waitFor(() => {
-      expect(screen.queryByText("Our team")).toBeNull();
+      expect(screen.queryByText("Data privacy")).toBeNull();
     });
   });
 
@@ -51,11 +49,11 @@ describe("FullNav Component", () => {
     const companyBtn = screen.getByRole("button", { name: /company/i });
     fireEvent.click(companyBtn);
 
-    const teamLink = screen.getByText("Our team");
-    fireEvent.click(teamLink);
+    const privacyLink = screen.getByText("Data privacy");
+    fireEvent.click(privacyLink);
 
     await waitFor(() => {
-      expect(screen.queryByText("Our team")).toBeNull();
+      expect(screen.queryByText("Data privacy")).toBeNull();
     });
   });
 });

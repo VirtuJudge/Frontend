@@ -1,4 +1,7 @@
-import { Text, Button } from "@/components";
+import { Text } from "@/components";
+import Image from "next/image";
+import PricingPage from "../pricing/page";
+import ContactsPage from "../company/contact-us/page";
 
 export default function HomePage() {
   return (
@@ -18,6 +21,9 @@ export default function HomePage() {
           About Us
         </Button>
       </div>
+
+      <PricingPage />
+      <ContactsPage />
     </div>
   );
 }

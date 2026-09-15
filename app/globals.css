@@ -84,15 +84,19 @@
     --background-image-gradient-border
   );
 
-  --text-h1: 3rem;
-  --text-h2: 2.5rem;
-  --text-h3: 2.25rem;
-  --text-h4: 1.5rem;
-  --text-body: 0.75rem;
-  --text-body-larger: 0.875rem;
-  --text-body-largest: 1rem;
-  --text-smaller: 0.625rem;
-  --text-smallest: 0.5rem;
+  --text-hero: 3.5rem;
+  --text-hero--line-height: 4rem;
+  --text-headline: 2.5rem;
+  --text-headline--line-height: 2.75rem;
+  --text-subheadline: 2.25rem;
+  --text-subheadline--line-height: 2.5rem;
+  --text-body-large: 1.5rem;
+  --text-body-large--line-height: 2rem;
+  --text-body: 1.25rem;
+  --text-body--line-height: 1.5rem;
+  --text-caption: 1rem;
+  --text-caption--line-height: 1.25rem;
+  --text-inherit: inherit;
 
   --font-inconsolata: "Inconsolata", monospace;
   --animate-pop-in: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
@@ -109,10 +113,17 @@
     scrollbar-color: hsla(175, 95%, 50%, 0.3) var(--color-bg);
   }
 
+  @media (max-width: 1024px) {
+    html {
+      font-size: 14px;
+    }
+  }
+
   body {
     background-color: var(--color-bg);
     color: var(--color-fg);
     overflow-x: hidden;
+    scroll-behavior: smooth;
   }
 
   /* Autofill styling overrides: maintain transparent background and theme text color */
@@ -287,7 +298,7 @@
   }
 }
 
-.pop-in-element {
+@utility pop-in-element {
   /* natural spring/bounce effect */
   animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   will-change: transform, opacity;
@@ -364,5 +375,16 @@
       linear-gradient(#fff 0 0);
     mask-composite: exclude;
     pointer-events: none;
+  }
+}
+
+@utility crop-to-screen {
+  overflow: hidden;
+  width: 100dvw;
+  height: 100dvh;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }

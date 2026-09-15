@@ -24,7 +24,7 @@ function CallbackHandler() {
         return;
       }
 
-      const redirectUrl = searchParams.get("redirect") || "/dashboard";
+      const redirectUrl = searchParams.get("redirect") || "/me";
       let token = searchParams.get("token") || searchParams.get("access_token");
       const code = searchParams.get("code");
 

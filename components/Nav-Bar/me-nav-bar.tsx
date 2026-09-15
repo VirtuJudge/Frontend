@@ -5,7 +5,7 @@ import { NavBrand } from "./nav-brand";
 import { NAV_CONTAINER_CLASS } from "./nav-config";
 import { useAuth } from "@/features/auth/auth-context";
 
-export default function DashboardNavBar() {
+export default function MeNavBar() {
   const { signOut } = useAuth();
 
   return (
@@ -18,7 +18,7 @@ export default function DashboardNavBar() {
             variant="glass"
             borderGradient="nav"
             onClick={() => signOut()}
-            aria-label="Go to My Account"
+            aria-label="Logout"
           >
             Logout
           </Button>

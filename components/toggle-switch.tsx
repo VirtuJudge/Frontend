@@ -1,13 +1,12 @@
 "use client";
 
-import { Text } from "@/components/text";
-import { Wrapper } from "@/components/wrapper";
+import { Text, If, Wrapper } from "@/components";
 import { cn } from "@/lib/utils";
 
 export interface ToggleSwitchProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
-  label: string;
+  label?: string;
   className?: string;
 }
 
@@ -42,13 +41,15 @@ export function ToggleSwitch({
           )}
         />
       </Wrapper>
-      <Text
-        as="span"
-        size="sm"
-        className="font-medium text-foreground/85 group-hover:text-foreground transition-colors"
-      >
-        {label}
-      </Text>
+      <If condition={label}>
+        <Text
+          as="span"
+          size="sm"
+          className="font-medium text-foreground/85 group-hover:text-foreground transition-colors"
+        >
+          {label}
+        </Text>
+      </If>
     </div>
   );
 }

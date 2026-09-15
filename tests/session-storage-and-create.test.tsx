@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as nextNavigation from "next/navigation";
-import { apiClient } from "@/lib/api/client";
+import { ApiClientError, apiClient } from "@/lib/api/client";
 import {
   saveSessionConfig,
   getSessionConfig,
@@ -64,7 +64,7 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       id: "sess-123",
       project_id: mockProjectId,
       team_id: "team-1",
-      state: "ready",
+      state: "draft",
       manifest_frozen: false,
       presentation_asset_id: "asset-rec-1",
       document_asset_ids: [],
@@ -75,19 +75,21 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       updated_at: new Date().toISOString(),
       version: 1,
     });
-    vi.spyOn(apiClient, "startAnalysis").mockResolvedValue({
+    vi.spyOn(apiClient, "updatePracticeSession").mockResolvedValue({
       id: "sess-123",
       project_id: mockProjectId,
-      team_id: "team-1",
-      state: "analyzing",
-      manifest_frozen: false,
-      presentation_asset_id: "asset-rec-1",
-      document_asset_ids: [],
-      stages: [],
-      limitations: [],
+      state: "ready",
       created_by: "user-1",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      version: 2,
+    });
+    vi.spyOn(apiClient, "createAnalysisAttempt").mockResolvedValue({
+      id: "attempt-1",
+      session_id: "sess-123",
+      status: "queued",
+      created_at: new Date().toISOString(),
+      attempt_number: 1,
       version: 1,
     });
     vi.spyOn(apiClient, "getPracticeSession").mockResolvedValue({
@@ -278,6 +280,8 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       });
 
       const createSessionSpy = vi.spyOn(apiClient, "createPracticeSession");
+      const updateSessionSpy = vi.spyOn(apiClient, "updatePracticeSession");
+      const createAttemptSpy = vi.spyOn(apiClient, "createAnalysisAttempt");
 
       await renderWithProviders(<SessionRecordContent projectId={mockProjectId} />);
 
@@ -316,15 +320,117 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
         );
       });
 
-      // Verify router navigated to sessions/:id/qa
+      expect(updateSessionSpy).toHaveBeenCalledWith(
+        "sess-123",
+        expect.objectContaining({
+          presentation_asset_version_id: "ver-rec-1",
+          supporting_document_version_ids: ["ver-deck-1"],
+        }),
+        1,
+      );
+      expect(createAttemptSpy).toHaveBeenCalledWith(
+        "sess-123",
+        expect.stringContaining("analysis"),
+      );
+      expect(createSessionSpy.mock.invocationCallOrder[0]).toBeLessThan(
+        updateSessionSpy.mock.invocationCallOrder[0],
+      );
+      expect(updateSessionSpy.mock.invocationCallOrder[0]).toBeLessThan(
+        createAttemptSpy.mock.invocationCallOrder[0],
+      );
+
+      // The coordinator owns waiting, Q&A, and report routing.
       await waitFor(() => {
-        expect(pushMock).toHaveBeenCalledWith("/sessions/sess-123/qa");
+        expect(pushMock).toHaveBeenCalledWith("/sessions/sess-123");
       });
 
       // Verify localStorage now holds sessionId and presentationVideo
       const finalConfig = getSessionConfig(mockProjectId);
       expect(finalConfig?.sessionId).toBeDefined();
       expect(finalConfig?.presentationVideo?.videoUrl).toBeDefined();
+    });
+
+    it("opens the recoverable ready session when starting analysis fails", async () => {
+      saveSessionConfig(mockProjectId, {
+        projectId: mockProjectId,
+        selectedAssets: [],
+      });
+      vi.spyOn(apiClient, "createAnalysisAttempt").mockRejectedValue(
+        new Error("An unexpected error occurred."),
+      );
+
+      await renderWithProviders(<SessionRecordContent projectId={mockProjectId} />);
+      fireEvent.click(
+        await screen.findByRole("button", { name: /start recording/i }),
+      );
+      await waitFor(() => {
+        expect(screen.queryByLabelText(/recording starts in/i)).toBeNull();
+      });
+      fireEvent.click(screen.getByRole("button", { name: /end session/i }));
+      await screen.findByText("Recorded Preview");
+      fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+      await waitFor(() => {
+        expect(pushMock).toHaveBeenCalledWith(
+          "/sessions/sess-123?analysis=start-failed",
+        );
+      });
+      expect(getSessionConfig(mockProjectId)?.sessionId).toBe("sess-123");
+    });
+
+    it("recovers from a stale session version before starting analysis", async () => {
+      saveSessionConfig(mockProjectId, {
+        projectId: mockProjectId,
+        selectedAssets: [],
+      });
+      const updateSessionSpy = vi
+        .spyOn(apiClient, "updatePracticeSession")
+        .mockRejectedValueOnce(new ApiClientError(412))
+        .mockResolvedValueOnce({
+          id: "sess-123",
+          project_id: mockProjectId,
+          state: "ready",
+          created_by: "user-1",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          version: 3,
+        });
+      vi.spyOn(apiClient, "getPracticeSession").mockResolvedValue({
+        id: "sess-123",
+        project_id: mockProjectId,
+        state: "draft",
+        created_by: "user-1",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        version: 2,
+      });
+
+      await renderWithProviders(<SessionRecordContent projectId={mockProjectId} />);
+      fireEvent.click(
+        await screen.findByRole("button", { name: /start recording/i }),
+      );
+      await waitFor(() => {
+        expect(screen.queryByLabelText(/recording starts in/i)).toBeNull();
+      });
+      fireEvent.click(screen.getByRole("button", { name: /end session/i }));
+      await screen.findByText("Recorded Preview");
+      fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+      await waitFor(() => {
+        expect(pushMock).toHaveBeenCalledWith("/sessions/sess-123");
+      });
+      expect(updateSessionSpy).toHaveBeenNthCalledWith(
+        1,
+        "sess-123",
+        expect.any(Object),
+        1,
+      );
+      expect(updateSessionSpy).toHaveBeenNthCalledWith(
+        2,
+        "sess-123",
+        expect.any(Object),
+        2,
+      );
     });
   });
 
@@ -363,4 +469,3 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
     });
   });
 });
-

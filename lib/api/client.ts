@@ -11,12 +11,16 @@ import type {
   CreateVersionUploadIntentRequest,
   CompleteUploadRequest,
   PracticeSession,
+  AnalysisAttempt,
+  UpdatePracticeSessionRequest,
   SpeakerMapping,
+  SpeakerMappingRequestItem,
   QARound,
   Question,
   Answer,
   AnswerUploadIntentResponse,
   Report,
+  ReportExport,
   Page,
   InvitationPreview,
   InvitationStatus,
@@ -73,6 +77,8 @@ export const API_ENDPOINTS = {
   session: (sessionId: string) => `/practice-sessions/${sessionId}`,
   startAnalysis: (sessionId: string) =>
     `/practice-sessions/${sessionId}/start-analysis`,
+  analysisAttempts: (sessionId: string) =>
+    `/practice-sessions/${sessionId}/analysis-attempts`,
   speakerMappings: (sessionId: string) =>
     `/practice-sessions/${sessionId}/speaker-mappings`,
   questions: (sessionId: string) => `/practice-sessions/${sessionId}/questions`,
@@ -81,6 +87,10 @@ export const API_ENDPOINTS = {
   submitAnswer: (answerId: string) => `/answers/${answerId}/submit`,
   skipAnswer: (questionId: string) => `/questions/${questionId}/skip`,
   report: (sessionId: string) => `/practice-sessions/${sessionId}/report`,
+  reportPdf: (sessionId: string) => `/practice-sessions/${sessionId}/report/pdf`,
+  reportExport: (exportId: string) => `/report-exports/${exportId}`,
+  reportExportDownloadIntent: (exportId: string) =>
+    `/report-exports/${exportId}/download-intents`,
   evaluation: (sessionId: string) => `/practice-sessions/${sessionId}/evaluation`,
   sessionEvents: (sessionId: string) => `/practice-sessions/${sessionId}/events`,
   teamMembers: (teamId: string) => `/teams/${teamId}/members`,
@@ -111,7 +121,7 @@ export class ApiClient {
     this.getToken = config?.getToken ?? getClientAuthToken;
   }
 
-  private async getAuthToken(): Promise<string | null> {
+  public async getAuthToken(): Promise<string | null> {
     if (typeof window !== "undefined" && window.localStorage) {
       try {
         const stored = window.localStorage.getItem(AUTH_COOKIE_NAME);
@@ -140,11 +150,15 @@ export class ApiClient {
     return null;
   }
 
+  public resolveUrl(endpoint: string): string {
+    return `${this.baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit & { idempotencyKey?: string; ifMatch?: string } = {},
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+    const url = this.resolveUrl(endpoint);
     const headers: Record<string, string> = {
       Accept: "application/json",
       ...(options.headers as Record<string, string>),
@@ -477,14 +491,30 @@ export class ApiClient {
     idempotencyKey?: string,
   ): Promise<Asset> {
     const key = idempotencyKey || generateIdempotencyKey("complete");
-    return this.request<Asset>(
-      API_ENDPOINTS.completeUpload(assetId, versionId),
-      {
-        method: "POST",
-        body: JSON.stringify(req),
-        idempotencyKey: key,
-      },
-    );
+    const retryDelaysMs = [1000, 2500];
+
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        return await this.request<Asset>(
+          API_ENDPOINTS.completeUpload(assetId, versionId),
+          {
+            method: "POST",
+            body: JSON.stringify(req),
+            idempotencyKey: key,
+          },
+        );
+      } catch (error) {
+        const retryDelay = retryDelaysMs[attempt];
+        if (!(error instanceof TypeError) || retryDelay === undefined) {
+          throw error;
+        }
+
+        // Completion is idempotent. A browser may lose the response while the
+        // backend is verifying media, so retry the exact command with the same
+        // key instead of forcing the user to create and upload another asset.
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
+    }
   }
 
   public async createDownloadIntent(
@@ -529,7 +559,7 @@ export class ApiClient {
       rubric: data.rubric || { rubric_id: "startup_pitch", version: 1 },
     };
 
-    return this.request<PracticeSession>(
+    const session = await this.request<PracticeSession & { status?: PracticeSession["state"] }>(
       API_ENDPOINTS.projectSessions(projectId),
       {
         method: "POST",
@@ -537,12 +567,14 @@ export class ApiClient {
         idempotencyKey,
       },
     );
+    return this.normalizePracticeSession(session);
   }
 
   public async getPracticeSession(sessionId: string): Promise<PracticeSession> {
-    return this.request<PracticeSession>(
+    const session = await this.request<PracticeSession & { status?: PracticeSession["state"] }>(
       API_ENDPOINTS.practiceSession(sessionId),
     );
+    return this.normalizePracticeSession(session);
   }
 
   public async getPracticeSessions(
@@ -550,9 +582,13 @@ export class ApiClient {
     cursor?: string,
   ): Promise<Page<PracticeSession>> {
     const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
-    return this.request<Page<PracticeSession>>(
+    const page = await this.request<Page<PracticeSession & { status?: PracticeSession["state"] }>>(
       `${API_ENDPOINTS.projectSessions(projectId)}${query}`,
     );
+    return {
+      ...page,
+      items: page.items.map((session) => this.normalizePracticeSession(session)),
+    };
   }
 
   public async deletePracticeSession(sessionId: string): Promise<void> {
@@ -567,28 +603,56 @@ export class ApiClient {
 
   public async startAnalysis(
     sessionId: string,
-    idempotencyKey: string,
+    data: UpdatePracticeSessionRequest,
+    version: number,
   ): Promise<PracticeSession> {
-    return this.request<PracticeSession>(
-      API_ENDPOINTS.startAnalysis(sessionId),
+    const session = await this.request<PracticeSession & { status?: PracticeSession["state"] }>(
+      API_ENDPOINTS.practiceSession(sessionId),
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+        ifMatch: `"${version}"`,
+      },
+    );
+    return this.normalizePracticeSession(session);
+  }
+
+  public async createAnalysisAttempt(
+    sessionId: string,
+    idempotencyKey: string,
+  ): Promise<AnalysisAttempt> {
+    return this.request<AnalysisAttempt>(
+      API_ENDPOINTS.analysisAttempts(sessionId),
       {
         method: "POST",
+        body: JSON.stringify({
+          consent: { accepted: true, policy_version: 1 },
+        }),
         idempotencyKey,
       },
     );
   }
 
+  private normalizePracticeSession(
+    session: PracticeSession & { status?: PracticeSession["state"] },
+  ): PracticeSession {
+    return {
+      ...session,
+      state: session.status ?? session.state,
+    };
+  }
+
   public async saveSpeakerMappings(
     sessionId: string,
-    mappings: SpeakerMapping[],
-    idempotencyKey: string,
-  ): Promise<PracticeSession> {
-    return this.request<PracticeSession>(
+    mappings: SpeakerMappingRequestItem[],
+    version: number,
+  ): Promise<SpeakerMapping[]> {
+    return this.request<SpeakerMapping[]>(
       API_ENDPOINTS.speakerMappings(sessionId),
       {
-        method: "POST",
+        method: "PUT",
+        ifMatch: `"${version}"`,
         body: JSON.stringify({ mappings }),
-        idempotencyKey,
       },
     );
   }
@@ -614,7 +678,7 @@ export class ApiClient {
     },
     idempotencyKey: string,
   ): Promise<AnswerUploadIntentResponse> {
-    return this.request<AnswerUploadIntentResponse>(
+    const raw = await this.request<AnswerUploadIntentResponse>(
       API_ENDPOINTS.answerUploadIntents(questionId),
       {
         method: "POST",
@@ -622,6 +686,16 @@ export class ApiClient {
         idempotencyKey,
       },
     );
+    return {
+      ...raw,
+      upload_intent: {
+        ...raw.upload_intent,
+        version_id:
+          raw.upload_intent.version_id ||
+          raw.upload_intent.asset_version_id ||
+          "",
+      },
+    };
   }
 
   public async submitAnswer(
@@ -643,13 +717,36 @@ export class ApiClient {
   ): Promise<Answer> {
     return this.request<Answer>(API_ENDPOINTS.skipAnswer(questionId), {
       method: "POST",
-      body: reason ? JSON.stringify({ reason }) : undefined,
+      body: JSON.stringify({ reason: reason ?? null }),
       idempotencyKey,
     });
   }
 
   public async getReport(sessionId: string): Promise<Report> {
     return this.request<Report>(API_ENDPOINTS.report(sessionId));
+  }
+
+  public async createReportPdf(
+    sessionId: string,
+    idempotencyKey: string,
+  ): Promise<ReportExport> {
+    return this.request<ReportExport>(API_ENDPOINTS.reportPdf(sessionId), {
+      method: "POST",
+      idempotencyKey,
+    });
+  }
+
+  public async getReportExport(exportId: string): Promise<ReportExport> {
+    return this.request<ReportExport>(API_ENDPOINTS.reportExport(exportId));
+  }
+
+  public async createReportExportDownloadIntent(
+    exportId: string,
+  ): Promise<DownloadIntent> {
+    return this.request<DownloadIntent>(
+      API_ENDPOINTS.reportExportDownloadIntent(exportId),
+      { method: "POST" },
+    );
   }
 }
 

@@ -162,7 +162,7 @@ export const Wrapper = React.forwardRef(function Wrapper(
   const mergedClassName = cn(
     config.className,
     borderGradientClass,
-    "rounded-2xl py-[15px] px-[20px] outline-none focus:outline-none focus-visible:outline-none",
+    "rounded-[2.5rem] py-[0.9375rem] px-[1.25rem] outline-none focus:outline-none focus-visible:outline-none",
     className,
   );
 

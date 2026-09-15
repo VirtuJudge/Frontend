@@ -5,3 +5,4 @@ export * from "./nav-brand";
 export * from "./nav-config";
 export * from "./workspace-nav-bar";
 export * from "./base-nav-bar";
+export { default as MeNavBar } from "./me-nav-bar";

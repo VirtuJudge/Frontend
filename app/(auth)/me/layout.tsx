@@ -1,14 +1,14 @@
 import React from "react";
-import DashboardNavBar from "@/components/Nav-Bar/dashboard-nav-bar";
+import MeNavBar from "@/components/Nav-Bar/me-nav-bar";
 
-export default function DashboardLayout({
+export default function MeLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col">
-      <DashboardNavBar />
+      <MeNavBar />
       {children}
     </div>
   );
