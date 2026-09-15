@@ -1,5 +1,5 @@
 import React from "react";
-import NavBar from "@/components/Nav-Bar/nav-bar";
+import { BaseNavBar } from "@/components/Nav-Bar/base-nav-bar";
 
 export default function TeamsLayout({
   children,
@@ -7,8 +7,8 @@ export default function TeamsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col">
-      <NavBar />
+    <div className="flex flex-col min-h-screen">
+      <BaseNavBar />
       {children}
     </div>
   );

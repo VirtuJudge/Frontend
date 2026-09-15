@@ -33,7 +33,40 @@ describe("Prepare Session Page (/projects/[projectId]/session/prepare)", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    apiClient.setUseMock(true);
+    vi.spyOn(apiClient, "getAssets").mockResolvedValue({
+      items: [
+        {
+          id: "01J6GZ6F000000000000000006",
+          project_id: "proj-123",
+          kind: "supporting_document",
+          file_name: "investor_deck.pdf",
+          media_type: "application/pdf",
+          size_bytes: 12500000,
+          state: "verified",
+          checksum:
+            "sha256:f4c8996fb92427ae41e4649b934ca495991b7852b855e3b0c44298fc1c149afb",
+          created_at: "2026-09-01T11:45:00Z",
+          version_id: "01J6GZVER00000000000000002",
+          versions: [
+            {
+              id: "01J6GZVER00000000000000002",
+              asset_id: "01J6GZ6F000000000000000006",
+              version_number: 1,
+              checksum:
+                "sha256:f4c8996fb92427ae41e4649b934ca495991b7852b855e3b0c44298fc1c149afb",
+              size_bytes: 12500000,
+              media_type: "application/pdf",
+              created_at: "2026-09-01T11:45:00Z",
+            },
+          ],
+        },
+      ],
+      has_more: false,
+    });
+    vi.spyOn(apiClient, "getAssetVersions").mockResolvedValue({
+      items: [],
+      has_more: false,
+    });
     vi.spyOn(nextNavigation, "useRouter").mockReturnValue({
       push: pushMock,
       replace: vi.fn(),
@@ -144,10 +177,11 @@ describe("Prepare Session Page (/projects/[projectId]/session/prepare)", () => {
     expect(screen.getByText("1/5")).toBeDefined();
   });
 
-  it("enforces max 5 files limit and disables uploading when limit is reached", async () => {
+  it("allows any number of files to be uploaded while selecting max 5 files for the session", async () => {
     await renderPage();
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput).not.toBeNull();
 
     const files = Array.from({ length: 6 }, (_, i) =>
       new File([`data${i}`], `file-${i}.pdf`, { type: "application/pdf" })
@@ -155,16 +189,17 @@ describe("Prepare Session Page (/projects/[projectId]/session/prepare)", () => {
 
     fireEvent.change(fileInput, { target: { files } });
 
-    expect(await screen.findByText(/maximum 5 files allowed/i)).toBeDefined();
     expect(screen.getByText("5/5")).toBeDefined();
-    expect(await screen.findByText("Limit reached (5/5 files)")).toBeDefined();
-    expect(fileInput.disabled).toBe(true);
+    expect(
+      await screen.findByText(/maximum 5 files can be selected for a session/i),
+    ).toBeDefined();
+    expect(fileInput.disabled).toBe(false);
 
     const clickSpy = vi.spyOn(fileInput, "click");
     const dropzone = fileInput.parentElement?.querySelector("div.border-dashed");
     if (dropzone) {
       fireEvent.click(dropzone);
-      expect(clickSpy).not.toHaveBeenCalled();
+      expect(clickSpy).toHaveBeenCalled();
     }
   });
 
@@ -253,7 +288,7 @@ describe("Prepare Session Page (/projects/[projectId]/session/prepare)", () => {
     await waitFor(
       () => {
         expect(pushMock).toHaveBeenCalledWith(
-          expect.stringContaining("documentAssetIds="),
+          "/projects/proj-123/session/record",
         );
       },
       { timeout: 1000 },

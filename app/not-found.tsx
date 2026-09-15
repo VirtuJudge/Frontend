@@ -18,17 +18,16 @@ export default function NotFoundPage() {
         was dismissed. Let&apos;s guide you back to safety.
       </Text>
 
-      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-        <Button variant="primary" size="sm" href="/" className="sm:w-auto">
-          Return to Home
+      <div className="flex flex-wrap items-center justify-center gap-3 pt-2 *:min-w-55">
+        <Button variant="primary" href="/home" className="sm:w-auto">
+          Go to Home
         </Button>
         <Button
           variant="glass"
-          size="sm"
           onClick={() => router.back()}
           className="sm:w-auto"
         >
-          Go Back
+          Return Back
         </Button>
       </div>
     </div>

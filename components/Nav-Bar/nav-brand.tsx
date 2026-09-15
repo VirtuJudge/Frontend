@@ -1,9 +1,9 @@
 import Image from "next/image";
 import { Button } from "../button";
 
-export function NavBrand() {
+export function NavBrand({ href = "/home" }: { href?: string }) {
   return (
-    <Button borderGradient="nav" href="/home">
+    <Button borderGradient="nav" href={href}>
       <Image
         src="/logos/logo-primary.webp"
         alt="VirtuJudge Logo"

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Input, Modal } from "@/components";
+import { Button, Input, Modal, Text } from "@/components";
 import { apiClient, ApiClientError } from "@/lib/api/client";
 import { TeamInvitation } from "@/lib/api/types";
 
@@ -80,24 +80,43 @@ export function InviteMemberModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Invite Team Member"
+      title="Invite a member"
       titleId="invite-member-title"
-      description="Invitations are sent via email and expire in 7 days."
       error={error}
       loading={loading}
-      onSubmit={handleSubmit}
-      submitText="Send Invitation"
-      loadingText="Sending..."
+      footer={null}
     >
-      <Input
-        label="Email Address"
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="colleague@example.com"
-        disabled={loading}
-        className="w-full"
-      />
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-2xl flex flex-col gap-2.5 my-4 items-center"
+      >
+        <div className="w-full flex flex-col gap-2.5">
+          <div className="flex flex-wrap justify-center items-center gap-3 w-full">
+            <Input
+              type="email"
+              label="Member email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="colleague@example.com"
+              disabled={loading}
+              autoFocus
+              wrapperClassName="!rounded-full !bg-white/5 !border-white/10"
+              className="max-w-md w-full"
+            />
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={loading}
+              className="rounded-full px-10 py-2 font-bold shrink-0 self-end"
+            >
+              {loading ? "Sending..." : "Send"}
+            </Button>
+          </div>
+        </div>
+        <Text className="text-md text-foreground/60 text-center mt-2">
+          Invitation expires in 7 days
+        </Text>
+      </form>
     </Modal>
   );
 }

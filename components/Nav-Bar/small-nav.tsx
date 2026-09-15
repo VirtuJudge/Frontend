@@ -82,7 +82,7 @@ export default function SmallNav() {
             size="sm"
             onClick={() => setIsMenuOpen(false)}
           >
-            Dashboard
+            My Account
           </Button>
         ) : (
           <Button

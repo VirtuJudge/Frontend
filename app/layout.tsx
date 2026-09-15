@@ -24,7 +24,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`h-full antialiased ${inconsolata.variable}`}
+      className={`h-full antialiased dark ${inconsolata.variable}`}
     >
       <body className="">
         <QueryClientBoundary>

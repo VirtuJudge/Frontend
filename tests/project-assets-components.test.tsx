@@ -8,9 +8,9 @@ import {
   UploadProgressList,
   ProjectAssetList,
 } from "@/features/upload";
-import { AssetVersion } from "@/lib/api/types";
+import { Asset, AssetVersion } from "@/lib/api/types";
 import { UploadItem } from "@/hooks/use-direct-upload";
-import { apiClient, MOCK_DATA } from "@/lib/api/client";
+import { apiClient } from "@/lib/api/client";
 
 function renderWithProviders(ui: React.ReactElement) {
   const queryClient = new QueryClient({
@@ -24,13 +24,84 @@ function renderWithProviders(ui: React.ReactElement) {
   );
 }
 
-const initialAssets = JSON.parse(JSON.stringify(MOCK_DATA.assets));
+const initialAssets: Asset[] = [
+  {
+    id: "01J6GZ5E000000000000000005",
+    project_id: "01J6GZ3C000000000000000003",
+    kind: "presentation_video",
+    file_name: "pitch_demo.mp4",
+    media_type: "video/mp4",
+    size_bytes: 45000000,
+    state: "verified",
+    checksum:
+      "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    duration_ms: 360000,
+    created_at: "2026-09-01T11:30:00Z",
+    version_id: "01J6GZVER00000000000000001",
+    versions: [
+      {
+        id: "01J6GZVER00000000000000001",
+        asset_id: "01J6GZ5E000000000000000005",
+        version_number: 1,
+        checksum:
+          "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        size_bytes: 45000000,
+        media_type: "video/mp4",
+        duration_ms: 360000,
+        created_at: "2026-09-01T11:30:00Z",
+      },
+    ],
+  },
+  {
+    id: "01J6GZ6F000000000000000006",
+    project_id: "01J6GZ3C000000000000000003",
+    kind: "supporting_document",
+    file_name: "investor_deck.pdf",
+    media_type: "application/pdf",
+    size_bytes: 12500000,
+    state: "verified",
+    checksum:
+      "sha256:f4c8996fb92427ae41e4649b934ca495991b7852b855e3b0c44298fc1c149afb",
+    created_at: "2026-09-01T11:45:00Z",
+    version_id: "01J6GZVER00000000000000002",
+    versions: [
+      {
+        id: "01J6GZVER00000000000000002",
+        asset_id: "01J6GZ6F000000000000000006",
+        version_number: 1,
+        checksum:
+          "sha256:f4c8996fb92427ae41e4649b934ca495991b7852b855e3b0c44298fc1c149afb",
+        size_bytes: 12500000,
+        media_type: "application/pdf",
+        created_at: "2026-09-01T11:45:00Z",
+      },
+    ],
+  },
+];
+
+let currentAssets: Asset[] = [];
 
 describe("Upload & Asset Management Components (FE-02)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiClient.setUseMock(true);
-    MOCK_DATA.assets = JSON.parse(JSON.stringify(initialAssets));
+    currentAssets = JSON.parse(JSON.stringify(initialAssets));
+    vi.spyOn(apiClient, "getAssets").mockImplementation(
+      async (projectId, filters) => {
+        let filtered = currentAssets.filter(
+          (a) => a.project_id === projectId,
+        );
+        if (filters?.kind) {
+          filtered = filtered.filter((a) => a.kind === filters.kind);
+        }
+        return { items: filtered, has_more: false };
+      },
+    );
+    vi.spyOn(apiClient, "getAssetVersions").mockImplementation(
+      async (assetId) => {
+        const a = currentAssets.find((x) => x.id === assetId);
+        return { items: a?.versions || [], has_more: false };
+      },
+    );
   });
 
   describe("DocumentVersionSelector", () => {
@@ -285,7 +356,7 @@ describe("Upload & Asset Management Components (FE-02)", () => {
     });
 
     it("does not render non-verified or incomplete assets", async () => {
-      MOCK_DATA.assets.push(
+      currentAssets.push(
         {
           id: "asset-incomplete-1",
           project_id: "01J6GZ3C000000000000000003",

@@ -65,11 +65,18 @@ export function InvitationAcceptContent({ token }: { token: string }) {
     }
   }, [executeAccept, isAuthenticated, isLoading, router, token]);
 
+  const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
+
   const handleSwitchAccount = async () => {
-    await signOut();
-    router.push(
-      `/auth/login?redirect=${encodeURIComponent(`/invitations/${token}/accept`)}`,
-    );
+    try {
+      setIsSwitchingAccount(true);
+      await signOut({ redirectTo: false });
+      router.push(
+        `/auth/login?redirect=${encodeURIComponent(`/invitations/${token}/accept`)}`,
+      );
+    } finally {
+      setIsSwitchingAccount(false);
+    }
   };
 
   if (isLoading || (isAccepting && !errorMessage)) {
@@ -133,9 +140,12 @@ export function InvitationAcceptContent({ token }: { token: string }) {
                 variant="primary"
                 size="sm"
                 onClick={handleSwitchAccount}
+                disabled={isSwitchingAccount}
                 className="w-full justify-center"
               >
-                Sign in with Invited Account
+                {isSwitchingAccount
+                  ? "Signing out..."
+                  : "Sign in with Invited Account"}
               </Button>
               <Button
                 href={`/invitations/${token}`}

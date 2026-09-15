@@ -18,7 +18,8 @@ export function formatFileSize(bytes?: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function useFileAttachments() {
+export function useFileAttachments(options?: { maxFiles?: number }) {
+  const maxFiles = options?.maxFiles;
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [selectedFileIndex, setSelectedFileIndex] = useState<number>(0);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -26,13 +27,14 @@ export function useFileAttachments() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isLimitReached = attachedFiles.length >= MAX_FILES;
+  const isLimitReached =
+    maxFiles !== undefined ? attachedFiles.length >= maxFiles : false;
   const currentSelectedFile =
     attachedFiles[selectedFileIndex] || attachedFiles[0];
 
   const handleAddFiles = (incoming: FileList | File[]) => {
-    if (isLimitReached) {
-      setFileError(`Maximum ${MAX_FILES} files allowed.`);
+    if (isLimitReached && maxFiles !== undefined) {
+      setFileError(`Maximum ${maxFiles} files allowed.`);
       return;
     }
     const filesArray = Array.from(incoming);
@@ -59,14 +61,17 @@ export function useFileAttachments() {
       validFiles.push(file);
     }
 
-    if (attachedFiles.length + validFiles.length > MAX_FILES) {
-      const allowedCount = Math.max(0, MAX_FILES - attachedFiles.length);
+    if (
+      maxFiles !== undefined &&
+      attachedFiles.length + validFiles.length > maxFiles
+    ) {
+      const allowedCount = Math.max(0, maxFiles - attachedFiles.length);
       if (allowedCount === 0) {
-        setFileError(`Maximum ${MAX_FILES} files allowed.`);
+        setFileError(`Maximum ${maxFiles} files allowed.`);
         return;
       }
       validFiles.splice(allowedCount);
-      error = `Maximum ${MAX_FILES} files allowed. Added ${allowedCount} file(s).`;
+      error = `Maximum ${maxFiles} files allowed. Added ${allowedCount} file(s).`;
     }
 
     if (validFiles.length > 0) {
