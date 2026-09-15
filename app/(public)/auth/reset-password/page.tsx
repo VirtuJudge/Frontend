@@ -7,6 +7,7 @@ import { Button, Input, Text } from "@/components";
 import RightSection from "@/components/auth/right-section";
 import { useAuth } from "@/features/auth";
 import { getSupabaseClient } from "@/lib/auth/supabase";
+import AuthContainer from "@/components/auth/container";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -34,7 +35,9 @@ export default function ResetPasswordPage() {
 
     const client = getSupabaseClient();
     if (!client) {
-      setError("Authentication service is unavailable. Please try again later.");
+      setError(
+        "Authentication service is unavailable. Please try again later.",
+      );
       return;
     }
 
@@ -48,64 +51,73 @@ export default function ResetPasswordPage() {
       await signOut({ redirectTo: false });
       router.replace("/auth/login?passwordReset=success");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to reset password.");
+      setError(
+        err instanceof Error ? err.message : "Failed to reset password.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col min-[1080px]:flex-row items-center justify-between w-full">
-      <div className="flex flex-col items-center justify-center gap-8 w-full min-[1080px]:w-1/2">
-        <Text size="lg">Choose a New Password</Text>
-        <Text className="w-full px-8">
-          Enter a new password for your VirtuJudge account.
+    <AuthContainer>
+      <Text size="lg">Choose a New Password</Text>
+      <Text className="w-full px-8">
+        Enter a new password for your VirtuJudge account.
+      </Text>
+
+      {error && (
+        <Text
+          role="alert"
+          className="w-full p-3 rounded-2xl bg-danger/20 border border-danger/40 text-danger-lighter text-center"
+        >
+          {error}
         </Text>
+      )}
 
-        {error && (
-          <Text
-            role="alert"
-            className="w-full p-3 rounded-2xl bg-danger/20 border border-danger/40 text-danger-lighter text-center"
-          >
-            {error}
-          </Text>
-        )}
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col items-center gap-6 w-full"
+      >
+        <Input
+          label="New password"
+          type="password"
+          autoComplete="new-password"
+          placeholder="At least 8 characters"
+          className="w-full"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          disabled={loading}
+          required
+          minLength={MIN_PASSWORD_LENGTH}
+        />
+        <Input
+          label="Confirm new password"
+          type="password"
+          autoComplete="new-password"
+          placeholder="Re-enter your new password"
+          className="w-full"
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
+          disabled={loading}
+          required
+          minLength={MIN_PASSWORD_LENGTH}
+        />
+        <Button
+          type="submit"
+          variant="primary"
+          className="w-full mt-2"
+          disabled={loading}
+        >
+          {loading ? "Updating password..." : "Update Password"}
+        </Button>
+      </form>
 
-        <form onSubmit={handleSubmit} className="flex flex-col items-center gap-6 w-full">
-          <Input
-            label="New password"
-            type="password"
-            autoComplete="new-password"
-            placeholder="At least 8 characters"
-            className="w-full"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            disabled={loading}
-            required
-            minLength={MIN_PASSWORD_LENGTH}
-          />
-          <Input
-            label="Confirm new password"
-            type="password"
-            autoComplete="new-password"
-            placeholder="Re-enter your new password"
-            className="w-full"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            disabled={loading}
-            required
-            minLength={MIN_PASSWORD_LENGTH}
-          />
-          <Button type="submit" variant="primary" className="w-full mt-2" disabled={loading}>
-            {loading ? "Updating password..." : "Update Password"}
-          </Button>
-        </form>
-
-        <Text size="xs">
-          <Link href="/auth/login" className="underline">Back to Login</Link>
-        </Text>
-      </div>
-      <RightSection />
-    </div>
+      <Text size="xs">
+        <Link href="/auth/login" className="underline">
+          Back to Login
+        </Link>
+      </Text>
+    </AuthContainer>
   );
 }
