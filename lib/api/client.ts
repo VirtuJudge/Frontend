@@ -20,6 +20,7 @@ import type {
   Answer,
   AnswerUploadIntentResponse,
   Report,
+  ReportExport,
   Page,
   InvitationPreview,
   InvitationStatus,
@@ -84,6 +85,10 @@ export const API_ENDPOINTS = {
   submitAnswer: (answerId: string) => `/answers/${answerId}/submit`,
   skipAnswer: (questionId: string) => `/questions/${questionId}/skip`,
   report: (sessionId: string) => `/practice-sessions/${sessionId}/report`,
+  reportPdf: (sessionId: string) => `/practice-sessions/${sessionId}/report/pdf`,
+  reportExport: (exportId: string) => `/report-exports/${exportId}`,
+  reportExportDownloadIntent: (exportId: string) =>
+    `/report-exports/${exportId}/download-intents`,
   evaluation: (sessionId: string) => `/practice-sessions/${sessionId}/evaluation`,
   sessionEvents: (sessionId: string) => `/practice-sessions/${sessionId}/events`,
   teamMembers: (teamId: string) => `/teams/${teamId}/members`,
@@ -707,6 +712,29 @@ export class ApiClient {
 
   public async getReport(sessionId: string): Promise<Report> {
     return this.request<Report>(API_ENDPOINTS.report(sessionId));
+  }
+
+  public async createReportPdf(
+    sessionId: string,
+    idempotencyKey: string,
+  ): Promise<ReportExport> {
+    return this.request<ReportExport>(API_ENDPOINTS.reportPdf(sessionId), {
+      method: "POST",
+      idempotencyKey,
+    });
+  }
+
+  public async getReportExport(exportId: string): Promise<ReportExport> {
+    return this.request<ReportExport>(API_ENDPOINTS.reportExport(exportId));
+  }
+
+  public async createReportExportDownloadIntent(
+    exportId: string,
+  ): Promise<DownloadIntent> {
+    return this.request<DownloadIntent>(
+      API_ENDPOINTS.reportExportDownloadIntent(exportId),
+      { method: "POST" },
+    );
   }
 }
 

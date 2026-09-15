@@ -114,7 +114,7 @@ describe('API Client Boundary', () => {
         }), { status: 200 });
       }
       if (urlStr.endsWith('/practice-sessions/sess-1/report')) {
-        return new Response(JSON.stringify({ id: 'rep-1', status: 'ready', team_score: 0.9 }), { status: 200 });
+        return new Response(JSON.stringify({ report_id: 'rep-1', practice_session_id: 'sess-1', overall_score: 0.9 }), { status: 200 });
       }
       return new Response(JSON.stringify({ success: true }), { status: 200 });
     });
@@ -139,7 +139,7 @@ describe('API Client Boundary', () => {
     expect(qaRound.questions[0].id).toBe('q1');
 
     const report = await client.getReport('sess-1');
-    expect(report.id).toBe('rep-1');
+    expect(report.report_id).toBe('rep-1');
   });
 
   it('retrieves token from localStorage and attaches Bearer authorization header to request', async () => {

@@ -404,33 +404,79 @@ export interface AnswerUploadIntentResponse {
 
 // ================= Reports =================
 
-export interface EvidenceReference {
-  asset_id: ResourceId;
-  source_type: 'video' | 'document' | 'audio';
-  start_ms?: number;
-  end_ms?: number;
-  page_number?: number;
-  excerpt: string;
+export interface ScoreComponent {
+  dimension: string;
+  status: 'scored' | 'not_evaluated';
+  configured_weight: number;
+  normalized_score?: NormalizedScore | null;
+  display_score?: number | null;
+  label?: 'needs_work' | 'developing' | 'good' | 'strong' | null;
+  effective_weight?: number | null;
+  evidence_ids: string[];
+  rationale?: string | null;
+  limitation_code?: string | null;
+}
+
+export interface Finding {
+  id: string;
+  kind: 'strength' | 'improvement' | 'alignment' | 'contradiction' | 'omission' | 'observation';
+  title: string;
+  detail: string;
+  recommendation?: string | null;
+  evidence_ids: string[];
+  rubric_dimension?: string | null;
+  speaker_labels: string[];
+}
+
+export interface FeedbackSection {
+  summary: string;
+  strengths: Finding[];
+  improvements: Finding[];
+  score_components: ScoreComponent[];
+  limitations: Array<Record<string, unknown>>;
 }
 
 export interface MemberFeedback {
-  user_id?: ResourceId;
-  speaker_id: string;
-  score: NormalizedScore;
-  strengths: string[];
-  areas_for_improvement: string[];
-  transcript_citations: string[];
+  user_id: ResourceId;
+  display_name: string;
+  speaker_labels: string[];
+  summary: string;
+  strengths: Finding[];
+  improvements: Finding[];
+  delivery_components: ScoreComponent[];
+  qa_feedback?: FeedbackSection | null;
 }
 
 export interface Report {
-  id: ResourceId;
-  session_id: ResourceId;
-  status: 'pending' | 'ready';
-  team_score: NormalizedScore;
-  team_feedback: string;
+  schema_version: number;
+  report_id: ResourceId;
+  practice_session_id: ResourceId;
+  evaluation_id: ResourceId;
+  title: string;
+  executive_summary: string;
+  overall_score: NormalizedScore;
+  score_components: ScoreComponent[];
+  team_feedback: FeedbackSection;
   member_feedback: MemberFeedback[];
+  transcript_timeline: Array<Record<string, unknown>>;
+  document_alignment: Array<Record<string, unknown>>;
+  qa_review: Array<Record<string, unknown>>;
+  recommendations: string[];
+  limitations: Array<Record<string, unknown>>;
+  reproducibility: Record<string, unknown>;
+  generated_at: UtcTimestamp;
+}
+
+export interface ReportExport {
+  id: ResourceId;
+  report_id: ResourceId;
+  practice_session_id: ResourceId;
+  format: 'pdf';
+  status: 'queued' | 'rendering' | 'ready' | 'failed';
+  asset_version_id?: ResourceId | null;
+  failure?: SafeFailure | null;
   created_at: UtcTimestamp;
-  pdf_download_url?: string;
+  completed_at?: UtcTimestamp | null;
 }
 
 // ================= Erasure =================
