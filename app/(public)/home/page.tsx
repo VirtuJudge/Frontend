@@ -16,10 +16,10 @@ export default function HomePage() {
       />
 
       <span className="space-y-1 mt-40">
-        <Text as="h1" size="hero">
+        <Text as="h1" size="hero" className="text-left">
           <b>Be the next one on stage!</b>
         </Text>
-        <Text as="p" size="body">
+        <Text as="p" size="body" className="text-left max-w-3xl">
           VirtuJudge is a platform that helps you to improve your presentation
           skills by providing a suite of AI-assisted tools. With our
           cutting-edge technology, we&#8217;re able to analyze your performance,
@@ -28,8 +28,8 @@ export default function HomePage() {
         </Text>
       </span>
 
-      <div className="flex justify-center items-center bg-bg-light rounded-[2.5rem] w-full p-20 mb-80">
-        <span className="flex flex-row gap-5 items-center">
+      <div className="flex justify-center items-center bg-bg-light rounded-[2.5rem] w-full p-20 mb-20">
+        <span className="flex flex-wrap justify-center gap-5 items-center">
           <Image
             src="/logos/logo-primary.webp"
             alt="VirtuJudge Logo"

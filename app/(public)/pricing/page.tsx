@@ -39,7 +39,7 @@ export default function PricingPage() {
   const [isAnnual, setIsAnnual] = useState(true);
 
   return (
-    <div className="flex flex-col gap-20">
+    <div className="flex flex-col gap-20 text-left">
       <div className="flex flex-row justify-between items-center gap-10 flex-wrap">
         <span className="">
           <Text as="h1" size="headline" className="text-left">
@@ -60,7 +60,7 @@ export default function PricingPage() {
         </span>
       </div>
 
-      <div className="flex flex-row gap-5 flex-wrap justify-center">
+      <div className="flex flex-row gap-5 flex-wrap justify-center text-left">
         <PricingCard isAnnual={isAnnual} type="personal" />
         <PricingCard isAnnual={isAnnual} type="professional" />
         <PricingCard isAnnual={isAnnual} type="enterprise" />
@@ -68,10 +68,10 @@ export default function PricingPage() {
 
       <div className="flex flex-col lg:flex-row justify-between items-center lg:items-start gap-10 flex-wrap">
         <span className="flex flex-col gap-1 flex-1">
-          <Text as="b" size="headline">
+          <Text as="b" size="headline" className="text-left">
             Frequently Asked Questions
           </Text>
-          <Text as="p" size="body">
+          <Text as="p" size="body" className="text-left">
             Here are some answers for the questions that may be in your mind.
           </Text>
         </span>

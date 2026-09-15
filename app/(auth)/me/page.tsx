@@ -67,6 +67,9 @@ export default function MePage() {
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight mt-1">
           {displayName}
         </h1>
+        <Text className="text-xl max-w-[26ch] sm:max-w-full truncate">
+          {user?.email}
+        </Text>
       </div>
 
       {/* Main Action Buttons */}
