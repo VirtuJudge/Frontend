@@ -121,7 +121,7 @@ describe("General Wrapper Component", () => {
     const wrapper = screen.getByTestId("input-wrapper");
     const input = screen.getByPlaceholderText("Type something...");
 
-    expect(wrapper.className).toContain("rounded-2xl");
+    expect(wrapper.className).toContain("bg-glass backdrop-blur-[20px] text-fg border-gradient rounded-[2.5rem] py-[0.9375rem] outline-none focus:outline-none focus-visible:outline-none w-120 h-13.75 px-6");
     expect(wrapper.className).toContain("w-120");
     expect(wrapper.className).toContain("h-13.75");
     expect(input).toBeDefined();
@@ -173,14 +173,15 @@ describe("General Wrapper Component", () => {
     expect(inp.getAttribute("placeholder")).toBe("Direct Glass Input");
   });
 
-  it("supports default rounded-2xl and custom rounding overrides via className", () => {
+  it("supports default rounded-[2.5rem] and custom rounding overrides via className", () => {
     const { rerender } = render(
       <Wrapper data-testid="box">
         Default
       </Wrapper>,
     );
     let box = screen.getByTestId("box");
-    expect(box.className).toContain("rounded-2xl");
+    expect(box.className).toContain("bg-glass");
+    expect(box.className).toContain("rounded-[2.5rem]");
 
     rerender(
       <Wrapper className="rounded-[50px]" data-testid="box">
@@ -189,7 +190,7 @@ describe("General Wrapper Component", () => {
     );
     box = screen.getByTestId("box");
     expect(box.className).toContain("rounded-[50px]");
-    expect(box.className).not.toContain("rounded-2xl");
+    expect(box.className).not.toContain("rounded-[2.5rem]");
 
     rerender(
       <Wrapper className="rounded-full" data-testid="box">
@@ -198,7 +199,7 @@ describe("General Wrapper Component", () => {
     );
     box = screen.getByTestId("box");
     expect(box.className).toContain("rounded-full");
-    expect(box.className).not.toContain("rounded-2xl");
+    expect(box.className).not.toContain("rounded-[2.5rem]");
   });
 
   it("forwards ref properly to underlying element", () => {

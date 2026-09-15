@@ -11,9 +11,9 @@ describe("Input Component", () => {
 
     expect(input).toBeDefined();
     expect(wrapper).toBeDefined();
-    expect(wrapper.className).toContain("rounded-2xl");
+    expect(wrapper.className).toContain("rounded-[2.5rem]");
     expect(wrapper.className).toContain("w-[480px]");
-    expect(wrapper.className).toContain("h-[55px]");
+    expect(wrapper.className).toContain("h-[3.4375rem]");
     expect(wrapper.className).toContain("bg-glass");
     expect(wrapper.className).toContain("backdrop-blur-[20px]");
     expect(wrapper.className).toContain("border-gradient");
@@ -40,7 +40,7 @@ describe("Input Component", () => {
 
     expect(wrapper.className).toContain("border-gradient");
     expect(wrapper.className).toContain("bg-glass");
-    expect(wrapper.className).toContain("rounded-2xl");
+    expect(wrapper.className).toContain("rounded-[2.5rem]");
   });
 
   it("renders label above the input and links htmlFor with input id", () => {
@@ -98,17 +98,17 @@ describe("Input Component", () => {
     const { rerender } = render(<Input size="sm" placeholder="Small" />);
     let input = screen.getByPlaceholderText("Small");
     let wrapper = input.closest('[data-slot="input-wrapper"]')!;
-    expect(wrapper.className).toContain("h-[42px]");
+    expect(wrapper.className).toContain("h-[2.625rem]");
 
     rerender(<Input size="default" placeholder="Default" />);
     input = screen.getByPlaceholderText("Default");
     wrapper = input.closest('[data-slot="input-wrapper"]')!;
-    expect(wrapper.className).toContain("h-[55px]");
+    expect(wrapper.className).toContain("h-[3.4375rem]");
 
     rerender(<Input size="lg" placeholder="Large" />);
     input = screen.getByPlaceholderText("Large");
     wrapper = input.closest('[data-slot="input-wrapper"]')!;
-    expect(wrapper.className).toContain("h-[64px]");
+    expect(wrapper.className).toContain("h-[4rem]");
   });
 
   it("handles user input and change events", () => {

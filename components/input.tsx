@@ -31,9 +31,9 @@ const SIZES: Record<
   InputSize,
   { height: string; text: string; padding: string }
 > = {
-  sm: { height: "h-[42px]", text: "text-[16px]", padding: "px-[16px]" },
-  default: { height: "h-[55px]", text: "text-[18px]", padding: "px-[24px]" },
-  lg: { height: "h-[64px]", text: "text-[20px]", padding: "px-[28px]" },
+  sm: { height: "h-[2.625rem]", text: "text-caption", padding: "px-[1rem]" },
+  default: { height: "h-[3.4375rem]", text: "text-body", padding: "px-[1.5rem]" },
+  lg: { height: "h-[4rem]", text: "text-body-large", padding: "px-[1.75rem]" },
 };
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -109,12 +109,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     if (label) {
       const mergedLabelWrapperClassName = cn(
-        "flex flex-col gap-[8px] w-[480px]",
+        "flex flex-col gap-2 w-[480px]",
         className,
       );
 
       const mergedLabelClassName = cn(
-        "pl-6 select-none text-left",
+        "pl-6 select-none text-left opacity-80 text-body",
         labelClassName,
       );
 

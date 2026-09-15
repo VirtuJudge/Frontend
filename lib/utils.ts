@@ -4,6 +4,15 @@ import { extendTailwindMerge } from "tailwind-merge";
 const customTwMerge = extendTailwindMerge({
   extend: {
     classGroups: {
+      "font-size": [
+        "text-hero",
+        "text-headline",
+        "text-subheadline",
+        "text-body",
+        "text-body-large",
+        "text-caption",
+        "text-inherit",
+      ],
       select: ["text-unselectable"],
     },
   },

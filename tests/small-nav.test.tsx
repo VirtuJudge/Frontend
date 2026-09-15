@@ -31,7 +31,7 @@ describe("SmallNav Component", () => {
 
   it("renders closed by default when localStorage is empty", () => {
     render(<SmallNav />);
-    expect(screen.queryByText("About")).toBeNull();
+    expect(screen.queryByText("Home")).toBeNull();
   });
 
   it("opens menu on trigger click and saves state to localStorage", async () => {
@@ -40,7 +40,7 @@ describe("SmallNav Component", () => {
 
     fireEvent.click(trigger);
 
-    expect(screen.getByText("About")).toBeDefined();
+    expect(screen.getByText("Home")).toBeDefined();
     expect(store[SMALL_NAV_STORAGE_KEY]).toBe("true");
   });
 
@@ -54,13 +54,13 @@ describe("SmallNav Component", () => {
 
     const trigger = screen.getByRole("button", { name: /open menu/i });
     fireEvent.click(trigger);
-    expect(screen.getByText("About")).toBeDefined();
+    expect(screen.getByText("Home")).toBeDefined();
 
     // Click outside
     fireEvent.mouseDown(screen.getByTestId("outside-area"));
 
     await waitFor(() => {
-      expect(screen.queryByText("About")).toBeNull();
+      expect(screen.queryByText("Home")).toBeNull();
     });
     expect(store[SMALL_NAV_STORAGE_KEY]).toBe("false");
   });
@@ -72,7 +72,7 @@ describe("SmallNav Component", () => {
     render(<SmallNav />);
 
     await waitFor(() => {
-      expect(screen.getByText("About")).toBeDefined();
+      expect(screen.getByText("Home")).toBeDefined();
     });
   });
 });
