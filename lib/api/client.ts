@@ -700,7 +700,7 @@ export class ApiClient {
   ): Promise<Answer> {
     return this.request<Answer>(API_ENDPOINTS.skipAnswer(questionId), {
       method: "POST",
-      body: reason ? JSON.stringify({ reason }) : undefined,
+      body: JSON.stringify({ reason: reason ?? null }),
       idempotencyKey,
     });
   }

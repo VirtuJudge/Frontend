@@ -220,4 +220,25 @@ describe("useQASession hook", () => {
     );
     expect(result.current.isAnalyzing).toBe(true);
   });
+
+  it("does not request Q&A while the session is still analyzing", async () => {
+    vi.mocked(apiClient.getPracticeSession).mockResolvedValue({
+      id: "sess-1",
+      project_id: "proj-1",
+      state: "analyzing",
+      version: 2,
+      created_by: "user-1",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    vi.mocked(apiClient.getQARound).mockClear();
+
+    const { result } = renderHook(() => useQASession("sess-1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.practiceSession?.state).toBe("analyzing"));
+    expect(apiClient.getQARound).not.toHaveBeenCalled();
+    expect(result.current.isError).toBe(false);
+  });
 });

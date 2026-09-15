@@ -160,4 +160,21 @@ describe('API Client Boundary', () => {
     expect(user.id).toBe('u1');
     expect(capturedHeaders['Authorization']).toBe('Bearer test_local_token_xyz');
   });
+
+  it('sends a JSON body when skipping without a reason', async () => {
+    const client = new ApiClient({ baseUrl: '/api/v1', getToken: () => 'token' });
+    fetchSpy.mockResolvedValue(new Response(JSON.stringify({
+      id: 'answer-1',
+      question_id: 'question-1',
+      answered_by: 'user-1',
+      status: 'skipped',
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+
+    await client.skipAnswer('question-1', 'skip-key-123456789');
+
+    expect(fetchSpy.mock.calls[0][1]).toEqual(expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ reason: null }),
+    }));
+  });
 });

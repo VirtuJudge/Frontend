@@ -54,6 +54,13 @@ export default function SessionQAPage({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isSubmitting]);
 
+  useEffect(() => {
+    const state = practiceSession?.state;
+    if (state && !["questions_ready", "questions_in_progress", "report_generating", "completed"].includes(state)) {
+      router.replace(`/sessions/${sessionId}`);
+    }
+  }, [practiceSession?.state, router, sessionId]);
+
   const handleNavigateBack = () => {
     if (practiceSession?.project_id) {
       router.push(`/projects/${practiceSession.project_id}`);

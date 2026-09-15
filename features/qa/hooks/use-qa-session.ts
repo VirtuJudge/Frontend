@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api/client";
+import { apiClient, API_ENDPOINTS } from "@/lib/api/client";
 import { SseHelper } from "@/lib/api/sse";
 import {
   QARound,
@@ -64,7 +64,32 @@ export function useQASession(sessionId: string): UseQASessionReturn {
   const [submitProgress, setSubmitProgress] = useState<SubmitAnswerProgress | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // 1. Fetch canonical QARound
+  // 1. Fetch canonical Practice Session. It gates the Q&A request so a normal
+  // analysis wait never becomes a terminal `questions_not_ready` screen.
+  const {
+    data: practiceSession = null,
+    isLoading: isSessionLoading,
+    isError: isSessionError,
+    error: sessionError,
+  } = useQuery<PracticeSession>({
+    queryKey: ["practice-session", sessionId],
+    queryFn: () => apiClient.getPracticeSession(sessionId),
+    enabled: !!sessionId,
+    refetchInterval: (query) => {
+      const state = query.state.data?.state;
+      return state && ["completed", "failed", "cancelled"].includes(state)
+        ? false
+        : 3500;
+    },
+    refetchOnWindowFocus: true,
+  });
+  const qaReady =
+    practiceSession?.state === "questions_ready" ||
+    practiceSession?.state === "questions_in_progress" ||
+    practiceSession?.state === "report_generating" ||
+    practiceSession?.state === "completed";
+
+  // 2. Fetch canonical QARound only once the backend says it exists.
   const {
     data: qaRound = null,
     isLoading: isQALoading,
@@ -74,18 +99,9 @@ export function useQASession(sessionId: string): UseQASessionReturn {
   } = useQuery<QARound>({
     queryKey: ["qa-round", sessionId],
     queryFn: () => apiClient.getQARound(sessionId),
-    enabled: !!sessionId,
+    enabled: !!sessionId && qaReady,
+    refetchInterval: analyzingQuestionId ? 3500 : false,
     refetchOnWindowFocus: true,
-  });
-
-  // 2. Fetch canonical Practice Session
-  const {
-    data: practiceSession = null,
-    isLoading: isSessionLoading,
-  } = useQuery<PracticeSession>({
-    queryKey: ["practice-session", sessionId],
-    queryFn: () => apiClient.getPracticeSession(sessionId),
-    enabled: !!sessionId,
   });
 
   // 3. Enforce 3 primary & 2 follow-up invariants
@@ -176,9 +192,10 @@ export function useQASession(sessionId: string): UseQASessionReturn {
 
     let sse: SseHelper | null = null;
     try {
-      const streamUrl = `/api/v1/practice-sessions/${sessionId}/events`;
+      const streamUrl = apiClient.resolveUrl(API_ENDPOINTS.sessionEvents(sessionId));
       sse = new SseHelper({
         url: streamUrl,
+        getToken: () => apiClient.getAuthToken(),
         onMessage: (event) => {
           if (
             event.event === "qa.question_available.v1" ||
@@ -206,7 +223,7 @@ export function useQASession(sessionId: string): UseQASessionReturn {
 
   // 7. Polling fallback when analyzing answer or waiting for next question
   useEffect(() => {
-    if (!isAnalyzing) return;
+    if (!analyzingQuestionId) return;
 
     const interval = setInterval(async () => {
       const res = await queryClient.fetchQuery({
@@ -223,7 +240,7 @@ export function useQASession(sessionId: string): UseQASessionReturn {
     }, 3500);
 
     return () => clearInterval(interval);
-  }, [isAnalyzing, analyzingQuestionId, sessionId, queryClient]);
+  }, [analyzingQuestionId, sessionId, queryClient]);
 
   // 8. Submit answer flow
   const submitAnswer = useCallback(
@@ -255,17 +272,12 @@ export function useQASession(sessionId: string): UseQASessionReturn {
 
         // 1. Calculate SHA-256 checksum
         setSubmitProgress({ stage: "Calculating audio checksum...", percent: 25 });
-        let checksum: string;
-        try {
-          checksum = await computeFileChecksum(file, (pct) => {
-            setSubmitProgress({
-              stage: "Calculating audio checksum...",
-              percent: Math.min(40, 25 + Math.round(pct * 0.15)),
-            });
+        const checksum = await computeFileChecksum(file, (pct) => {
+          setSubmitProgress({
+            stage: "Calculating audio checksum...",
+            percent: Math.min(40, 25 + Math.round(pct * 0.15)),
           });
-        } catch {
-          checksum = "sha256:0000000000000000000000000000000000000000000000000000000000000000";
-        }
+        });
 
         // 2. Create answer upload intent
         setSubmitProgress({ stage: "Requesting upload slot...", percent: 45 });
@@ -378,8 +390,8 @@ export function useQASession(sessionId: string): UseQASessionReturn {
     qaRound,
     practiceSession,
     isLoading: isQALoading || isSessionLoading,
-    isError: isQAError,
-    error: (qaError as Error) || null,
+    isError: isSessionError || (qaReady && isQAError),
+    error: ((sessionError || qaError) as Error) || null,
 
     activeQuestion,
     primaryQuestions,
