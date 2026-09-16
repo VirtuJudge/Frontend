@@ -37,7 +37,9 @@ export function SessionReportView({
 
       <div className="flex flex-row flex-wrap items-center gap-3">
         <Text size="lg">
-          <span>{report.title || session?.name || "Practice Session Report"}</span>
+          <span>
+            {report.title || session?.name || "Practice Session Report"}
+          </span>
           {", "}
           <span className="text-primary">Score: {displayScore}/100</span>
         </Text>
@@ -143,7 +145,7 @@ export function SessionReportView({
             </Text>
             <PrintButtoon onClick={() => handlePrint()} />
           </div>
-          <Wrapper className="w-full min-w-0 rounded-3xl p-6 sm:p-8">
+          <Wrapper className="w-full min-w-0 flex flex-col gap-5 rounded-3xl p-6 sm:p-8">
             <div
               className="report-markdown w-full flex flex-col min-w-0 overflow-auto"
               ref={reportRef}
@@ -160,8 +162,8 @@ export function SessionReportView({
               >
                 {report.markdown}
               </ReactMarkdown>
-              <PrintButtoon onClick={() => handlePrint()} />
             </div>
+            <PrintButtoon onClick={() => handlePrint()} />
           </Wrapper>
         </section>
       )}
