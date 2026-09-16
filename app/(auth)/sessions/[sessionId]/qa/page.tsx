@@ -57,7 +57,15 @@ export default function SessionQAPage({
 
   useEffect(() => {
     const state = practiceSession?.state;
-    if (state && !["questions_ready", "questions_in_progress", "report_generating", "completed"].includes(state)) {
+    if (
+      state &&
+      ![
+        "questions_ready",
+        "questions_in_progress",
+        "report_generating",
+        "completed",
+      ].includes(state)
+    ) {
       router.replace(`/sessions/${sessionId}`);
     }
   }, [practiceSession?.state, router, sessionId]);
@@ -80,8 +88,12 @@ export default function SessionQAPage({
         <div className="flex flex-col items-center gap-4 text-center z-10">
           <div className="w-12 h-12 rounded-full border-2 border-[#00e5cc] border-t-transparent animate-spin" />
           <div className="flex flex-col gap-1">
-            <h2 className="text-lg font-mono font-semibold text-white">Loading Practice Q&A</h2>
-            <p className="text-xs font-mono text-white/50">Fetching grounded questions and session state...</p>
+            <h2 className="text-lg  font-semibold text-white">
+              Loading Practice Q&A
+            </h2>
+            <p className="text-xs  text-white/50">
+              Fetching grounded questions and session state...
+            </p>
           </div>
         </div>
       </div>
@@ -103,12 +115,16 @@ export default function SessionQAPage({
           <div className="flex flex-col gap-1">
             <h2 className="text-xl font-bold text-white">Unable to Load Q&A</h2>
             <p className="text-sm text-white/60">
-              {error?.message || "Could not retrieve the Q&A round for this practice session."}
+              {error?.message ||
+                "Could not retrieve the Q&A round for this practice session."}
             </p>
           </div>
 
           <div className="flex items-center gap-3 w-full">
-            <Button onClick={() => refetchRound()} className="flex-1 h-11 rounded-full text-sm">
+            <Button
+              onClick={() => refetchRound()}
+              className="flex-1 h-11 rounded-full text-sm"
+            >
               <Icon icon="tabler:refresh" />
               <span>Try Again</span>
             </Button>

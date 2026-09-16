@@ -38,11 +38,13 @@ export function AudioPlayer({
   }
 
   const effectiveDuration =
-    loadedDuration !== null && !isNaN(loadedDuration) && isFinite(loadedDuration)
+    loadedDuration !== null &&
+    !isNaN(loadedDuration) &&
+    isFinite(loadedDuration)
       ? loadedDuration
       : durationMs
-      ? durationMs / 1000
-      : 0;
+        ? durationMs / 1000
+        : 0;
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -53,7 +55,11 @@ export function AudioPlayer({
     };
 
     const handleLoadedMetadata = () => {
-      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
+      if (
+        audio.duration &&
+        !isNaN(audio.duration) &&
+        isFinite(audio.duration)
+      ) {
         setLoadedDuration(audio.duration);
       }
     };
@@ -115,7 +121,11 @@ export function AudioPlayer({
           aria-label={isPlaying ? "Pause audio draft" : "Play audio draft"}
         >
           <Icon
-            icon={isPlaying ? "tabler:player-pause-filled" : "tabler:player-play-filled"}
+            icon={
+              isPlaying
+                ? "tabler:player-pause-filled"
+                : "tabler:player-play-filled"
+            }
             className="text-xl"
           />
         </button>
@@ -139,7 +149,7 @@ export function AudioPlayer({
             />
           </div>
 
-          <div className="flex justify-between text-xs text-white/60 font-mono">
+          <div className="flex justify-between text-xs text-white/60 ">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(effectiveDuration)}</span>
           </div>

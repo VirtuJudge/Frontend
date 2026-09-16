@@ -109,10 +109,13 @@ export function AudioRecorderPanel({
           </div>
 
           <div className="flex flex-col gap-1.5 max-w-md">
-            <h3 className="text-lg font-bold text-white">Record Your Spoken Answer</h3>
+            <h3 className="text-lg font-bold text-white">
+              Record Your Spoken Answer
+            </h3>
             <p className="text-sm text-white/60">
-              Speak naturally as you would in a live pitch session. The recommended answer
-              limit is <strong>2 minutes (120 seconds)</strong>.
+              Speak naturally as you would in a live pitch session. The
+              recommended answer limit is{" "}
+              <strong>2 minutes (120 seconds)</strong>.
             </p>
           </div>
 
@@ -144,7 +147,9 @@ export function AudioRecorderPanel({
       {state === "requesting_permission" && (
         <div className="flex flex-col items-center justify-center gap-4 py-8 text-center">
           <div className="w-12 h-12 rounded-full border-2 border-[#00e5cc] border-t-transparent animate-spin" />
-          <p className="text-sm text-white/80">Requesting microphone access...</p>
+          <p className="text-sm text-white/80">
+            Requesting microphone access...
+          </p>
         </div>
       )}
 
@@ -170,7 +175,7 @@ export function AudioRecorderPanel({
           {/* Large Live Timer */}
           <div className="flex flex-col items-center gap-1">
             <div
-              className={`text-4xl sm:text-5xl font-mono font-bold tracking-tight ${
+              className={`text-4xl sm:text-5xl  font-bold tracking-tight ${
                 isNearingLimit ? "text-amber-400 animate-pulse" : "text-white"
               }`}
               aria-live="off"
@@ -184,7 +189,8 @@ export function AudioRecorderPanel({
 
             {isNearingLimit && !isAtLimit && (
               <span className="text-xs text-amber-400 font-medium">
-                Approaching 2-minute limit ({formatDuration(remainingMs)} remaining)
+                Approaching 2-minute limit ({formatDuration(remainingMs)}{" "}
+                remaining)
               </span>
             )}
 
@@ -310,7 +316,10 @@ export function AudioRecorderPanel({
             >
               {isSubmitting ? (
                 <>
-                  <Icon icon="tabler:loader-2" className="text-xl animate-spin" />
+                  <Icon
+                    icon="tabler:loader-2"
+                    className="text-xl animate-spin"
+                  />
                   <span>Submitting...</span>
                 </>
               ) : (
