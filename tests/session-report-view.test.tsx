@@ -1,6 +1,6 @@
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionReportView } from "@/features/reports/session-report-view";
 import SessionPage from "@/app/(auth)/sessions/[sessionId]/report/page";
@@ -42,12 +42,20 @@ const mockSession: PracticeSession = {
   created_by: "user-1", created_at: "2026-09-15T11:00:00Z", updated_at: "2026-09-15T12:00:00Z", version: 2,
 };
 
+vi.mock("@/components/Nav-Bar", () => ({
+  WorkspaceNavBar: () => <div data-testid="workspace-nav-bar" />,
+}));
+
+vi.mock("react-to-print", () => ({
+  useReactToPrint: () => vi.fn(),
+}));
+
 describe("SessionReportView", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("renders the backend report shape and scales normalized score", () => {
     render(<SessionReportView report={mockReport} session={mockSession} />);
-    expect(screen.getByText("Series A Rehearsal")).toBeDefined();
+    expect(screen.getByText(/Series A Rehearsal/)).toBeDefined();
     expect(screen.getAllByText("88").length).toBeGreaterThan(0);
     expect(screen.getByText("Alice Founder")).toBeDefined();
     expect(screen.getByText("Clear problem framing")).toBeDefined();
@@ -55,20 +63,11 @@ describe("SessionReportView", () => {
     expect(screen.getByText("Clarity")).toBeDefined();
   });
 
-  it("uses the asynchronous PDF export and download-intent workflow", async () => {
-    vi.spyOn(apiClient, "createReportPdf").mockResolvedValue({
-      id: "export-1", report_id: "rep-123", practice_session_id: "sess-456", format: "pdf",
-      status: "ready", asset_version_id: "version-1", created_at: "2026-09-15T12:00:00Z",
-    });
-    vi.spyOn(apiClient, "createReportExportDownloadIntent").mockResolvedValue({
-      asset_id: "asset-1", asset_version_id: "version-1", download_url: "https://storage.example.test/report.pdf",
-      expires_at: "2026-09-15T13:00:00Z", media_type: "application/pdf", size_bytes: 1000, file_name: "report.pdf",
-    });
-    const appendSpy = vi.spyOn(document.body, "appendChild");
+  it("renders the print report buttons", () => {
     render(<SessionReportView report={mockReport} session={mockSession} />);
-    fireEvent.click(screen.getByRole("button", { name: /download pdf/i }));
-    await waitFor(() => expect(apiClient.createReportExportDownloadIntent).toHaveBeenCalledWith("export-1"));
-    expect(appendSpy).toHaveBeenCalled();
+    const printButtons = screen.getAllByRole("button", { name: /print pdf report/i });
+    expect(printButtons.length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Print Report").length).toBeGreaterThan(0);
   });
 });
 

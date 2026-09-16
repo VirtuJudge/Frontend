@@ -134,7 +134,7 @@ export function NavDropdown({
   return (
     <div
       ref={containerRef}
-      className={cn("relative inline-block z-40", className)}
+      className={cn("relative inline-block", className)}
     >
       <Button
         variant="glass"
@@ -145,7 +145,7 @@ export function NavDropdown({
         aria-haspopup="listbox"
         aria-label={ariaLabel || `${prefix || "Menu"}: ${displayText}`}
         className={cn(
-          "flex items-center gap-1.5 sm:gap-2 transition-all max-w-75 sm:max-w-90",
+          "flex items-center gap-1.5 sm:gap-2 transition-all max-w-75 sm:max-w-9 z-5",
           isOpen && "text-primary brightness-100",
           buttonClassName,
         )}

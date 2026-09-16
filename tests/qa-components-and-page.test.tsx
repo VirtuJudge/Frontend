@@ -171,8 +171,8 @@ describe("FE-05 QA Feature Components", () => {
     );
 
     expect(screen.getByText("Q&A Round Completed!")).toBeDefined();
-    expect(screen.getByText("View Final Report")).toBeDefined();
-    expect(screen.getByText("Project Home")).toBeDefined();
+    expect(screen.getByText("View Report")).toBeDefined();
+    expect(screen.getByText("Back to the project")).toBeDefined();
   });
 });
 

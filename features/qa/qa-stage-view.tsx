@@ -82,8 +82,7 @@ export function QAStageView({
     if (typeof window === "undefined") return;
 
     // @ts-expect-error browser SpeechRecognition compatibility
-    const SpeechClass =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (isRecording && !isPaused && SpeechClass) {
       try {
@@ -188,7 +187,9 @@ export function QAStageView({
     "What was your main focus on your business model in your product?";
 
   // Formatted countdown or elapsed timer
-  const formattedTimer = isListeningState ? formatTimer(durationMs) : "02:00";
+  const formattedTimer = isListeningState
+    ? formatTimer(durationMs)
+    : "02:00";
 
   return (
     <div className="fixed inset-0 w-full h-full bg-[#000f0e] overflow-hidden select-none flex flex-col items-center justify-between py-8 px-6 sm:px-12 z-50">
@@ -208,10 +209,7 @@ export function QAStageView({
           role="alert"
         >
           <div className="flex items-center gap-2">
-            <Icon
-              icon="tabler:alert-circle"
-              className="text-danger text-xl shrink-0"
-            />
+            <Icon icon="tabler:alert-circle" className="text-danger text-xl shrink-0" />
             <p className="text-xs sm:text-sm text-white/90">
               {actionError || recorderError?.message}
             </p>
@@ -235,7 +233,7 @@ export function QAStageView({
         {/* Sub-header text & Icon */}
         {!isListeningState ? (
           /* Screen 1: A judge is asking... */
-          <div className="flex items-center gap-2.5 text-white/90  text-sm sm:text-base tracking-wide select-none">
+          <div className="flex items-center gap-2.5 text-white/90 font-mono text-sm sm:text-base tracking-wide select-none">
             <div className="relative flex items-center justify-center">
               <Icon
                 icon="tabler:speakerphone"
@@ -249,7 +247,7 @@ export function QAStageView({
           </div>
         ) : (
           /* Screen 2: Judges are listening */
-          <div className="flex items-center gap-2.5 text-white/90  text-sm sm:text-base tracking-wide select-none">
+          <div className="flex items-center gap-2.5 text-white/90 font-mono text-sm sm:text-base tracking-wide select-none">
             <Icon
               icon="tabler:microphone"
               className="text-xl text-[#00e5cc] animate-pulse"
@@ -267,24 +265,22 @@ export function QAStageView({
               : "border-[#00e5cc]/40"
           }`}
           role="region"
-          aria-label={
-            isListeningState ? "Spoken Answer Capture" : "Active Judge Question"
-          }
+          aria-label={isListeningState ? "Spoken Answer Capture" : "Active Judge Question"}
         >
           {!isListeningState ? (
             /* Screen 1 Question text */
             <div className="flex flex-col items-center gap-2 max-w-2xl">
-              <p className=" text-sm sm:text-base md:text-lg text-white/90 leading-relaxed group-hover:text-white transition-colors">
+              <p className="font-mono text-sm sm:text-base md:text-lg text-white/90 leading-relaxed group-hover:text-white transition-colors">
                 {defaultQuestionText}
               </p>
-              <span className="text-[11px]  text-[#00e5cc]/60 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-[11px] font-mono text-[#00e5cc]/60 opacity-0 group-hover:opacity-100 transition-opacity">
                 (Click or press Space to start speaking)
               </span>
             </div>
           ) : (
             /* Screen 2 Live Spoken Transcript text */
             <div className="flex flex-col items-center gap-2 max-w-2xl">
-              <p className=" text-sm sm:text-base md:text-lg text-white/90 leading-relaxed">
+              <p className="font-mono text-sm sm:text-base md:text-lg text-white/90 leading-relaxed">
                 {liveTranscript || (
                   <span className="text-white/40 italic">
                     Listening to your voice... start speaking your answer
@@ -293,9 +289,8 @@ export function QAStageView({
                 <span className="inline-block w-2 h-4 sm:h-5 bg-[#00e5cc] ml-1.5 animate-pulse align-middle" />
               </p>
               {isNearingLimit && (
-                <span className="text-xs  text-amber-400 font-semibold animate-pulse">
-                  Approaching 2-minute limit ({formatTimer(remainingMs)}{" "}
-                  remaining)
+                <span className="text-xs font-mono text-amber-400 font-semibold animate-pulse">
+                  Approaching 2-minute limit ({formatTimer(remainingMs)} remaining)
                 </span>
               )}
             </div>
@@ -342,10 +337,7 @@ export function QAStageView({
               className="h-12 px-6 py-0 rounded-full flex items-center gap-2.5 text-white shadow-xl cursor-pointer hover:brightness-125 transition-all active:scale-95"
               aria-label="Start recording answer"
             >
-              <Icon
-                icon="tabler:microphone"
-                className="text-xl text-[#00e5cc]"
-              />
+              <Icon icon="tabler:microphone" className="text-xl text-[#00e5cc]" />
               <span className="text-sm font-semibold">Answer</span>
             </Wrapper>
           ) : (
@@ -360,7 +352,10 @@ export function QAStageView({
 
         {/* Bottom Right: Timer Badge */}
         <div className="pointer-events-auto">
-          <SessionTimerBadge showTimer={true} formattedTime={formattedTimer} />
+          <SessionTimerBadge
+            showTimer={true}
+            formattedTime={formattedTimer}
+          />
         </div>
       </div>
 
