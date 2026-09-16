@@ -32,6 +32,7 @@ const mockReport: Report = {
     improvements: [finding("mi1", "improvement", "Use shorter answers", "Lead with the conclusion.")],
     delivery_components: [], qa_feedback: null,
   }],
+  markdown: "# Complete AI report\n\n## Evidence\n\n| Dimension | Score |\n| --- | --- |\n| Clarity | 88 |",
   transcript_timeline: [], document_alignment: [], qa_review: [],
   recommendations: ["Lead Q&A answers with the key metric."], limitations: [], reproducibility: {},
   generated_at: "2026-09-15T12:00:00Z",
@@ -47,9 +48,11 @@ describe("SessionReportView", () => {
   it("renders the backend report shape and scales normalized score", () => {
     render(<SessionReportView report={mockReport} session={mockSession} />);
     expect(screen.getByText("Series A Rehearsal")).toBeDefined();
-    expect(screen.getByText("88")).toBeDefined();
+    expect(screen.getAllByText("88").length).toBeGreaterThan(0);
     expect(screen.getByText("Alice Founder")).toBeDefined();
     expect(screen.getByText("Clear problem framing")).toBeDefined();
+    expect(screen.getByRole("heading", { name: "Complete AI report" })).toBeDefined();
+    expect(screen.getByText("Clarity")).toBeDefined();
   });
 
   it("uses the asynchronous PDF export and download-intent workflow", async () => {

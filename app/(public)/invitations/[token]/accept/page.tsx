@@ -6,7 +6,7 @@ import { Button, Text, Wrapper } from "@/components";
 import { apiClient, ApiClientError } from "@/lib/api/client";
 import { useAuth } from "@/features/auth";
 
-export function InvitationAcceptContent({ token }: { token: string }) {
+function InvitationAcceptContent({ token }: { token: string }) {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, signOut } = useAuth();
 

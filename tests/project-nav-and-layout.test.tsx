@@ -10,7 +10,7 @@ import {
 } from "@/components/Nav-Bar/workspace-nav-bar";
 import NavBar from "@/components/Nav-Bar/nav-bar";
 import ProjectLayout from "@/app/(auth)/projects/layout";
-import { ProjectDetailsContent } from "@/app/(auth)/projects/[projectId]/page";
+import { ProjectDetailsContent } from "@/features/projects/project-details-content";
 import RootPage from "@/app/(auth)/(index)/page";
 import { AuthProvider } from "@/features/auth";
 import { apiClient } from "@/lib/api/client";

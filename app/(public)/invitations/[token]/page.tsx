@@ -9,7 +9,7 @@ import { useAuth } from "@/features/auth";
 import NotFoundPage from "@/app/not-found";
 import LoadingPage from "@/app/loading";
 
-export function InvitationPreviewContent({ token }: { token: string }) {
+function InvitationPreviewContent({ token }: { token: string }) {
   const router = useRouter();
   const { user, isAuthenticated, signOut } = useAuth();
 
