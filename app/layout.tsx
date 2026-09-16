@@ -16,7 +16,8 @@ export const metadata: Metadata = {
   description: "AI-assisted pitch analysis, rehearsal, and evaluation.",
   openGraph: {
     title: "VirtuJudge",
-    description: `With over ${new Date().getFullYear() - 1999} years of impactful experience, the IEEE Zagazig University Student Branch (ZSB) stands as one of the first and most influential branches in Egypt. While based at Zagazig University, our influence extends nationwide through a variety of workshops, events, and initiatives that explore the evolving role of technology in all aspects of life.`,
+    description:
+      "A platform that helps you to improve your presentation skills by providing a suite of AI-assisted tools. With our cutting-edge technology, we're able to analyze your performance, identify areas for improvement, and provide personalized feedback to help you become the best presenter you can be.",
     url: "https://virtu-judge.vercel.app/",
     siteName: "VirtuJudge",
     images: [
