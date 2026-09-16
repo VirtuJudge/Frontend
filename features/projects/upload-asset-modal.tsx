@@ -173,7 +173,7 @@ export function UploadAssetModal({
                   style={{ width: `${activeItem.progress || 50}%` }}
                 />
               </div>
-              <span className="text-xs text-primary font-mono">
+              <span className="text-xs text-primary ">
                 {activeItem.stage}... {activeItem.progress}%
               </span>
             </div>
@@ -181,7 +181,7 @@ export function UploadAssetModal({
         </div>
 
         {/* Formats Note */}
-        <span className="text-xs sm:text-sm text-foreground/50 font-mono tracking-wider mt-4">
+        <span className="text-xs sm:text-sm text-foreground/50  tracking-wider mt-4">
           pdf & pptx files only
         </span>
 

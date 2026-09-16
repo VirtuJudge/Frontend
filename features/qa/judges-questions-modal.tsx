@@ -52,7 +52,10 @@ export function JudgesQuestionsModal({
               <Icon icon="tabler:messages" className="text-xl" />
             </div>
             <div>
-              <h2 id="judges-questions-title" className="text-xl font-bold text-white">
+              <h2
+                id="judges-questions-title"
+                className="text-xl font-bold text-white"
+              >
                 Judges Questions
               </h2>
               <p className="text-xs text-white/50">
@@ -83,8 +86,9 @@ export function JudgesQuestionsModal({
         {activeQuestion && (
           <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white/[0.03] border border-[#00e5cc]/20">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="text-xs font-mono font-semibold text-[#00e5cc] uppercase tracking-wider">
-                Active Question {currentQuestionNumber} of {Math.min(3, questions.length)}
+              <span className="text-xs  font-semibold text-[#00e5cc] uppercase tracking-wider">
+                Active Question {currentQuestionNumber} of{" "}
+                {Math.min(3, questions.length)}
               </span>
 
               {activeQuestion.rubric_dimension && (
@@ -94,13 +98,16 @@ export function JudgesQuestionsModal({
               )}
             </div>
 
-            <p className="text-base sm:text-lg font-mono text-white font-medium leading-relaxed">
+            <p className="text-base sm:text-lg  text-white font-medium leading-relaxed">
               &ldquo;{activeQuestion.text}&rdquo;
             </p>
 
             {activeQuestion.reason && (
               <div className="text-xs text-white/60 flex items-start gap-2 pt-1 border-t border-white/5">
-                <Icon icon="tabler:info-circle" className="text-sm text-[#00e5cc] shrink-0 mt-0.5" />
+                <Icon
+                  icon="tabler:info-circle"
+                  className="text-sm text-[#00e5cc] shrink-0 mt-0.5"
+                />
                 <span>
                   <strong>Rationale:</strong> {activeQuestion.reason}
                 </span>
@@ -129,11 +136,11 @@ export function JudgesQuestionsModal({
                       : "bg-white/[0.02] border-white/5 text-white/70"
                   }`}
                 >
-                  <span className="font-mono text-white/40 font-bold shrink-0 mt-0.5">
+                  <span className=" text-white/40 font-bold shrink-0 mt-0.5">
                     Q{idx + 1}
                   </span>
                   <div className="flex-1 flex flex-col gap-1">
-                    <span className="font-mono line-clamp-2">{q.text}</span>
+                    <span className=" line-clamp-2">{q.text}</span>
                   </div>
                   <span className="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium">
                     {isAnswered ? (

@@ -3,13 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
-import {
-  Wrapper,
-  Button,
-  Modal,
-  PillBadge,
-  Text,
-} from "@/components";
+import { Wrapper, Button, Modal, PillBadge, Text } from "@/components";
 import { SessionHeader } from "./session-header";
 import { apiClient, ApiClientError } from "@/lib/api/client";
 import {
@@ -72,7 +66,8 @@ export function SpeakerMappingView({
       // endpoint. Never invent labels, timestamps, or transcript quotations.
       setSpeakers([]);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to load practice session";
+      const msg =
+        err instanceof Error ? err.message : "Failed to load practice session";
       setLoadError(msg);
     } finally {
       setIsLoading(false);
@@ -91,8 +86,8 @@ export function SpeakerMappingView({
       prev.map((s) =>
         s.speaker_label === speakerLabel
           ? { ...s, assigned_user_id: userId || null }
-          : s
-      )
+          : s,
+      ),
     );
   };
 
@@ -114,7 +109,9 @@ export function SpeakerMappingView({
   // Submit speaker mappings
   const handleSubmit = async () => {
     if (hasDuplicateError) {
-      setSaveError("Each team member may only be assigned to one speaker label.");
+      setSaveError(
+        "Each team member may only be assigned to one speaker label.",
+      );
       return;
     }
 
@@ -133,7 +130,7 @@ export function SpeakerMappingView({
       await apiClient.saveSpeakerMappings(
         sessionId,
         mappingsToSubmit,
-        sessionVersion
+        sessionVersion,
       );
 
       if (onSuccess) {
@@ -148,7 +145,11 @@ export function SpeakerMappingView({
       } else if (err instanceof ApiClientError && err.status === 422) {
         setSaveError(err.message || "Invalid speaker label or team member.");
       } else {
-        setSaveError(err instanceof Error ? err.message : "Failed to save speaker mappings. Please try again.");
+        setSaveError(
+          err instanceof Error
+            ? err.message
+            : "Failed to save speaker mappings. Please try again.",
+        );
       }
     } finally {
       setIsSaving(false);
@@ -178,7 +179,9 @@ export function SpeakerMappingView({
         <SessionHeader onNavigate={handleNavigateBack} />
         <div className="flex flex-col items-center gap-4 text-center z-10">
           <div className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <p className="text-sm font-mono text-white/60">Loading speaker diarization results...</p>
+          <p className="text-sm  text-white/60">
+            Loading speaker diarization results...
+          </p>
         </div>
       </div>
     );
@@ -189,17 +192,34 @@ export function SpeakerMappingView({
     return (
       <div className="fixed inset-0 w-full h-full bg-[#000f0e] flex items-center justify-center text-white p-4">
         <SessionHeader onNavigate={handleNavigateBack} />
-        <Wrapper variant="glass-dark" className="max-w-md w-full p-8 flex flex-col items-center text-center gap-4 z-10">
+        <Wrapper
+          variant="glass-dark"
+          className="max-w-md w-full p-8 flex flex-col items-center text-center gap-4 z-10"
+        >
           <div className="w-12 h-12 rounded-full bg-danger/20 border border-danger/30 flex items-center justify-center text-danger">
             <Icon icon="tabler:alert-circle" className="text-2xl" />
           </div>
-          <Text as="h3" size="lg">Unable to Load Speakers</Text>
-          <Text size="sm" className="text-white/60">{loadError}</Text>
+          <Text as="h3" size="lg">
+            Unable to Load Speakers
+          </Text>
+          <Text size="sm" className="text-white/60">
+            {loadError}
+          </Text>
           <div className="flex gap-3 w-full mt-2">
-            <Button variant="primary" size="sm" onClick={() => loadData()} className="flex-1">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => loadData()}
+              className="flex-1"
+            >
               Try Again
             </Button>
-            <Button variant="glass" size="sm" onClick={handleNavigateBack} className="flex-1">
+            <Button
+              variant="glass"
+              size="sm"
+              onClick={handleNavigateBack}
+              className="flex-1"
+            >
               Go Back
             </Button>
           </div>
@@ -219,26 +239,44 @@ export function SpeakerMappingView({
             <Text as="h2" size="lg" className="text-2xl sm:text-3xl font-bold">
               Map Presenters
             </Text>
-            <PillBadge variant="glass-dark" icon="tabler:users" className="text-xs">
+            <PillBadge
+              variant="glass-dark"
+              icon="tabler:users"
+              className="text-xs"
+            >
               {speakers.length} Speakers Detected
             </PillBadge>
           </div>
           <Text size="xs" className="text-white/70 text-left">
-            Confirm who presented each section so individual feedback and communication scores are attributed accurately in your evaluation report.
+            Confirm who presented each section so individual feedback and
+            communication scores are attributed accurately in your evaluation
+            report.
           </Text>
         </div>
 
         {/* Informative Guidance Banner */}
-        <Wrapper variant="glass-dark" className="p-4 rounded-2xl flex items-start gap-3 border border-white/10">
-          <Icon icon="tabler:info-circle" className="text-primary text-xl mt-0.5 shrink-0" />
+        <Wrapper
+          variant="glass-dark"
+          className="p-4 rounded-2xl flex items-start gap-3 border border-white/10"
+        >
+          <Icon
+            icon="tabler:info-circle"
+            className="text-primary text-xl mt-0.5 shrink-0"
+          />
           <Text size="xs" className="text-white/80 leading-relaxed text-left">
-            <strong>How speaker mapping works:</strong> Each mapped team member will receive an individual feedback card in the final report. Unmapped speakers remain anonymous and will still contribute to team-wide presentation scores without creating fake profiles.
+            <strong>How speaker mapping works:</strong> Each mapped team member
+            will receive an individual feedback card in the final report.
+            Unmapped speakers remain anonymous and will still contribute to
+            team-wide presentation scores without creating fake profiles.
           </Text>
         </Wrapper>
 
         {/* Global Save/Validation Error */}
         {saveError && (
-          <Wrapper variant="danger" className="p-4 rounded-2xl flex items-center gap-3">
+          <Wrapper
+            variant="danger"
+            className="p-4 rounded-2xl flex items-center gap-3"
+          >
             <Icon icon="tabler:alert-triangle" className="text-xl shrink-0" />
             <span className="text-sm font-medium">{saveError}</span>
           </Wrapper>
@@ -248,11 +286,16 @@ export function SpeakerMappingView({
         {speakers.length === 0 && (
           <Wrapper variant="glass" className="rounded-3xl p-6 text-center">
             <Text size="sm" className="text-white/70">
-              Detected speaker labels are not available from the backend yet. You can continue to Q&amp;A without mapping presenters.
+              Detected speaker labels are not available from the backend yet.
+              You can continue to Q&amp;A without mapping presenters.
             </Text>
           </Wrapper>
         )}
-        <div className="flex flex-col gap-4" role="list" aria-label="Detected Speakers List">
+        <div
+          className="flex flex-col gap-4"
+          role="list"
+          aria-label="Detected Speakers List"
+        >
           {speakers.map((speaker) => {
             const isAssigned = Boolean(speaker.assigned_user_id);
             const isDuplicate =
@@ -264,19 +307,30 @@ export function SpeakerMappingView({
                 key={speaker.speaker_label}
                 variant="glass"
                 className={`p-5 rounded-3xl flex flex-col gap-4 transition-all duration-200 ${
-                  isDuplicate ? "border border-danger/60" : "hover:border-primary/40"
+                  isDuplicate
+                    ? "border border-danger/60"
+                    : "hover:border-primary/40"
                 }`}
                 role="listitem"
               >
                 {/* Header Row */}
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <PillBadge variant="primary" icon="tabler:microphone" className="text-sm font-bold">
+                    <PillBadge
+                      variant="primary"
+                      icon="tabler:microphone"
+                      className="text-sm font-bold"
+                    >
                       {speaker.speaker_label}
                     </PillBadge>
                     {speaker.preview && (
-                      <PillBadge variant="glass-dark" icon="tabler:clock" className="text-xs text-white/70 font-mono">
-                        {formatTime(speaker.preview.start_ms)} – {formatTime(speaker.preview.end_ms)}
+                      <PillBadge
+                        variant="glass-dark"
+                        icon="tabler:clock"
+                        className="text-xs text-white/70 "
+                      >
+                        {formatTime(speaker.preview.start_ms)} –{" "}
+                        {formatTime(speaker.preview.end_ms)}
                       </PillBadge>
                     )}
                   </div>
@@ -296,8 +350,11 @@ export function SpeakerMappingView({
                 {/* Preview Segment Text */}
                 {speaker.preview?.quote_text && (
                   <div className="bg-black/30 p-3.5 rounded-2xl border border-white/5 flex flex-col gap-1">
-                    <span className="text-[11px] font-mono uppercase tracking-wider text-white/40 flex items-center gap-1.5">
-                      <Icon icon="tabler:lock" className="text-xs text-white/40" />
+                    <span className="text-[11px]  uppercase tracking-wider text-white/40 flex items-center gap-1.5">
+                      <Icon
+                        icon="tabler:lock"
+                        className="text-xs text-white/40"
+                      />
                       Authorized Transcript Preview
                     </span>
                     <blockquote className="text-sm text-white/90 italic">
@@ -326,7 +383,7 @@ export function SpeakerMappingView({
                     onChange={(e) =>
                       handleAssignMember(
                         speaker.speaker_label,
-                        e.target.value ? e.target.value : null
+                        e.target.value ? e.target.value : null,
                       )
                     }
                     className={`h-11 px-4 rounded-xl bg-white/5 border text-sm text-white outline-none transition-all cursor-pointer ${
@@ -394,9 +451,13 @@ export function SpeakerMappingView({
         cancelText="Close"
       >
         <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-start gap-3 text-sm text-white/80">
-          <Icon icon="tabler:alert-triangle" className="text-warning text-xl shrink-0 mt-0.5" />
+          <Icon
+            icon="tabler:alert-triangle"
+            className="text-warning text-xl shrink-0 mt-0.5"
+          />
           <p>
-            To prevent overwriting changes made by your teammate, please reload the latest canonical state before saving your mappings.
+            To prevent overwriting changes made by your teammate, please reload
+            the latest canonical state before saving your mappings.
           </p>
         </div>
       </Modal>

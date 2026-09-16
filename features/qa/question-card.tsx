@@ -53,7 +53,9 @@ export function QuestionCard({
                 icon={isFollowUp ? "tabler:git-branch" : "tabler:help-hexagon"}
                 className="text-sm"
               />
-              <span>{isFollowUp ? "Adaptive Follow-up" : "Primary Question"}</span>
+              <span>
+                {isFollowUp ? "Adaptive Follow-up" : "Primary Question"}
+              </span>
             </div>
 
             {/* Rubric Dimension Badge */}
@@ -65,7 +67,7 @@ export function QuestionCard({
             )}
           </div>
 
-          <span className="text-xs text-white/50 font-mono">
+          <span className="text-xs text-white/50 ">
             {isFollowUp
               ? `Follow-up ${question.position || questionIndex}`
               : `Question ${questionIndex} of ${Math.min(3, totalQuestions)}`}
@@ -102,9 +104,13 @@ export function QuestionCard({
         {/* Follow-up parent context note */}
         {isFollowUp && question.parent_answer_id && (
           <div className="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-200/90 flex items-center gap-2">
-            <Icon icon="tabler:corner-down-right" className="text-base shrink-0 text-purple-400" />
+            <Icon
+              icon="tabler:corner-down-right"
+              className="text-base shrink-0 text-purple-400"
+            />
             <span>
-              This question was adaptively generated based on your earlier response.
+              This question was adaptively generated based on your earlier
+              response.
             </span>
           </div>
         )}
