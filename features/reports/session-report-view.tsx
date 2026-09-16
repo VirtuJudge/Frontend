@@ -14,7 +14,6 @@ export interface SessionReportViewProps {
   session?: PracticeSession | null;
   projectId?: string;
   teamId?: string;
-  onRefresh?: () => void;
 }
 
 export function SessionReportView({
@@ -36,9 +35,10 @@ export function SessionReportView({
     <div className="flex flex-col items-center justify-center max-w-5xl mx-auto w-full gap-10 pt-60 sm:pt-45 md:pt-45 lg:pt-45 xl:pt-30 mb-20">
       <WorkspaceNavBar selectedProjectId={projectId} selectedTeamId={teamId} />
 
-      <div className="flex flew-row flex-wrap items-center gap-3">
+      <div className="flex flex-row flex-wrap items-center gap-3">
         <Text size="lg">
-          {report.title || session?.name || "Practice Session Report"},{" "}
+          <span>{report.title || session?.name || "Practice Session Report"}</span>
+          {", "}
           <span className="text-primary">Score: {displayScore}/100</span>
         </Text>
       </div>

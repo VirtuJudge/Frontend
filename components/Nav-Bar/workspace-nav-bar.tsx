@@ -37,7 +37,8 @@ export function WorkspaceNavBar({
   const queryClient = useQueryClient();
 
   const activeParamProjectId = params?.projectId as string | undefined;
-  const projectId = selectedProjectId || initialProjectId || activeParamProjectId;
+  const projectId =
+    selectedProjectId || initialProjectId || activeParamProjectId;
 
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
@@ -48,7 +49,6 @@ export function WorkspaceNavBar({
     enabled: !!projectId,
   });
 
-  // Fetch all user teams
   const { data: teamsPage } = useQuery({
     queryKey: ["teams"],
     queryFn: () => apiClient.getTeams(),
@@ -60,14 +60,12 @@ export function WorkspaceNavBar({
   const resolvedTeamId =
     selectedTeamId || initialTeamId || project?.team_id || defaultTeamId;
 
-  // Fetch current team
   const { data: currentTeam } = useQuery({
     queryKey: ["team", resolvedTeamId],
     queryFn: () => apiClient.getTeam(resolvedTeamId!),
     enabled: !!resolvedTeamId,
   });
 
-  // Fetch projects for the active team
   const { data: teamProjectsPage } = useQuery({
     queryKey: ["teamProjects", resolvedTeamId],
     queryFn: () => apiClient.getProjects(resolvedTeamId!),
