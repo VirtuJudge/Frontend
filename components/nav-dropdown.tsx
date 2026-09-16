@@ -72,9 +72,9 @@ export function NavDropdown({
   }, [isOpen]);
 
   const alignmentClasses = {
-    left: "left-0",
-    right: "right-0",
-    center: "left-1/2 -translate-x-1/2",
+    left: "",
+    right: "",
+    center: "left-1/2 translate-x-1/2",
   }[align];
 
   const originClass = {
@@ -145,7 +145,7 @@ export function NavDropdown({
         aria-haspopup="listbox"
         aria-label={ariaLabel || `${prefix || "Menu"}: ${displayText}`}
         className={cn(
-          "flex items-center gap-1.5 sm:gap-2 transition-all max-w-75 sm:max-w-9 z-5",
+          "flex items-center gap-1.5 sm:gap-2 transition-all max-w-75 sm:max-w-90 z-5",
           isOpen && "text-primary brightness-100",
           buttonClassName,
         )}
@@ -168,9 +168,8 @@ export function NavDropdown({
             exit="exit"
             style={{ willChange: "transform" }}
             className={cn(
-              "absolute top-full mt-3 z-50 min-w-50 sm:min-w-60 max-w-80 w-max",
+              "absolute top-full zzzzzzz mt-3 z-50 min-w-50 sm:min-w-60 max-w-80 w-max",
               originClass,
-              alignmentClasses,
             )}
           >
             <Wrapper
