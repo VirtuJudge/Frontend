@@ -564,3 +564,30 @@ export interface ResyncRequiredEvent extends SseSessionEvent {
   current_sequence: number;
   requested_sequence?: number;
 }
+
+export type ContactSubmissionStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'resolved'
+  | 'spam';
+
+export interface ContactSubmission {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  message: string;
+  status: ContactSubmissionStatus;
+  user_id?: string | null;
+  created_at: UtcTimestamp;
+  updated_at: UtcTimestamp;
+}
+
+export interface CreateContactSubmissionInput {
+  name: string;
+  email: string;
+  phone?: string | null;
+  message: string;
+  user_id?: string | null;
+}
+
