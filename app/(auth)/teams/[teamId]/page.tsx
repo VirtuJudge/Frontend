@@ -24,7 +24,7 @@ import {
   ManageMemberModal,
   ManageInvitationModal,
 } from "@/features/teams";
-import { CreateProjectModal } from "@/features/projects";
+import { CreateProjectModal, DeleteProjectModal } from "@/features/projects";
 import { Project, TeamMembership, TeamInvitation } from "@/lib/api/types";
 
 function TeamDetailsContent({ teamId }: { teamId: string }) {
@@ -33,6 +33,7 @@ function TeamDetailsContent({ teamId }: { teamId: string }) {
 
   // Modals state
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [isInviteMemberOpen, setIsInviteMemberOpen] = useState(false);
   const [manageMember, setManageMember] = useState<TeamMembership | null>(null);
   const [memberManageView, setMemberManageView] = useState<
@@ -138,12 +139,15 @@ function TeamDetailsContent({ teamId }: { teamId: string }) {
 
                   {/* Right: Trash icon and Assets badge */}
                   <div className="flex items-center gap-3 shrink-0">
-                    <ActionIconButton
-                      icon="solar:trash-bin-trash-linear"
-                      variant="danger"
-                      ariaLabel={`Delete project ${project.name}`}
-                      title="Delete project"
-                    />
+                    {isOwner && (
+                      <ActionIconButton
+                        icon="solar:trash-bin-trash-linear"
+                        variant="danger"
+                        onClick={() => setProjectToDelete(project)}
+                        ariaLabel={`Delete project ${project.name}`}
+                        title="Delete project"
+                      />
+                    )}
 
                     <ProjectAssetsCountBadge projectId={project.id} />
                   </div>
@@ -362,6 +366,16 @@ function TeamDetailsContent({ teamId }: { teamId: string }) {
         onInvitationUpdated={() => {
           handleInvitationUpdated();
           setManageInvitation(null);
+        }}
+      />
+
+      <DeleteProjectModal
+        project={projectToDelete}
+        isOpen={!!projectToDelete}
+        onClose={() => setProjectToDelete(null)}
+        onProjectDeleted={() => {
+          queryClient.invalidateQueries({ queryKey: ["teamProjects", teamId] });
+          setProjectToDelete(null);
         }}
       />
     </div>

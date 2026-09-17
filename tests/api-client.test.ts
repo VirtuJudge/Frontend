@@ -304,4 +304,35 @@ describe('API Client Boundary', () => {
       body: JSON.stringify({ mappings: [{ speaker_label: 'SPEAKER_00', user_id: 'user-1' }] }),
     }));
   });
+
+  it('deletes a project with confirmation', async () => {
+    const client = new ApiClient({ baseUrl: '/api/v1', getToken: () => 'token' });
+    fetchSpy.mockResolvedValue(new Response(null, { status: 204 }));
+
+    await client.deleteProject('project-123', 'My Pitch Project');
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      '/api/v1/projects/project-123',
+      expect.objectContaining({
+        method: 'DELETE',
+        headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ confirmation: 'My Pitch Project' }),
+      }),
+    );
+  });
+
+  it('deletes a practice session', async () => {
+    const client = new ApiClient({ baseUrl: '/api/v1', getToken: () => 'token' });
+    fetchSpy.mockResolvedValue(new Response(null, { status: 204 }));
+
+    await client.deletePracticeSession('sess-456');
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      '/api/v1/practice-sessions/sess-456',
+      expect.objectContaining({
+        method: 'DELETE',
+      }),
+    );
+  });
 });
+

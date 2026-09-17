@@ -388,6 +388,23 @@ export class ApiClient {
     return this.request<Project>(API_ENDPOINTS.project(projectId));
   }
 
+  public async deleteProject(
+    projectId: string,
+    confirmation?: string,
+  ): Promise<void> {
+    return this.request<void>(API_ENDPOINTS.project(projectId), {
+      method: "DELETE",
+      ...(confirmation
+        ? {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ confirmation }),
+          }
+        : {}),
+    });
+  }
+
   public async getAssets(
     projectId: string,
     filters?: AssetFilterParams,
@@ -598,6 +615,12 @@ export class ApiClient {
       },
     );
     return this.normalizePracticeSession(session);
+  }
+
+  public async deletePracticeSession(sessionId: string): Promise<void> {
+    return this.request<void>(API_ENDPOINTS.practiceSession(sessionId), {
+      method: "DELETE",
+    });
   }
 
   public async updatePracticeSession(

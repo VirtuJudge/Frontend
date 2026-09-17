@@ -8,6 +8,7 @@ import { Icon } from "@iconify/react";
 import {
   Wrapper,
   Text,
+  Button,
   ListRowCard,
   PillBadge,
   ActionAddButton,
@@ -17,9 +18,11 @@ import { WorkspaceNavBar } from "@/components/Nav-Bar";
 import {
   UploadAssetModal,
   DeleteAssetModal,
-  CancelSessionModal,
+  DeleteSessionModal,
+  DeleteProjectModal,
 } from "@/features/projects";
 import { apiClient } from "@/lib/api/client";
+import { useAuth } from "@/features/auth";
 import { Asset, PracticeSession } from "@/lib/api/types";
 import LoadingPage from "@/app/loading";
 import NotFoundPage from "@/app/not-found";
@@ -60,12 +63,14 @@ function FileTypeBadge({
 export function ProjectDetailsContent({ projectId }: { projectId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
-  const [sessionToCancel, setSessionToCancel] = useState<PracticeSession | null>(
+  const [sessionToDelete, setSessionToDelete] = useState<PracticeSession | null>(
     null,
   );
+  const [isDeleteProjectOpen, setIsDeleteProjectOpen] = useState(false);
 
   const { data: project, isLoading: isProjectLoading } = useQuery({
     queryKey: ["project", projectId],
@@ -74,11 +79,23 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
 
   const teamId = project?.team_id;
 
-  const { isLoading: isTeamLoading } = useQuery({
+  const { data: team, isLoading: isTeamLoading } = useQuery({
     queryKey: ["team", teamId],
     queryFn: () => apiClient.getTeam(teamId!),
     enabled: !!teamId,
   });
+
+  const { data: membersPage } = useQuery({
+    queryKey: ["teamMembers", teamId],
+    queryFn: () => apiClient.getTeamMembers(teamId!),
+    enabled: !!teamId,
+  });
+
+  const isOwner =
+    team?.role === "owner" ||
+    membersPage?.items?.some(
+      (m) => m.user_id === user?.id && m.role === "owner",
+    );
 
   const { data: assetsPage, isLoading: isAssetsLoading } = useQuery({
     queryKey: ["projectAssets", projectId],
@@ -145,8 +162,8 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
     queryClient.invalidateQueries({ queryKey: ["projectSessions", projectId] });
   };
 
-  const sessionCancelIndex = sessionToCancel
-    ? sessions.findIndex((s) => s.id === sessionToCancel.id) + 1 || 1
+  const sessionDeleteIndex = sessionToDelete
+    ? sessions.findIndex((s) => s.id === sessionToDelete.id) + 1 || 1
     : 1;
 
   return (
@@ -258,9 +275,9 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
                       <ActionIconButton
                         icon="solar:trash-bin-trash-linear"
                         variant="danger"
-                        onClick={() => setSessionToCancel(session)}
-                        ariaLabel={`Cancel Session ${index + 1}`}
-                        title="Cancel session"
+                        onClick={() => setSessionToDelete(session)}
+                        ariaLabel={`Delete Session ${index + 1}`}
+                        title="Delete session"
                       />
 
                       <PillBadge
@@ -289,6 +306,22 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
             />
           </div>
         </div>
+
+        {/* ================= Danger Zone (Project Owner Only) ================= */}
+        {isOwner && (
+          <div className="flex flex-col items-center gap-4 pt-10 border-t border-white/10 w-full">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setIsDeleteProjectOpen(true)}
+              className="rounded-full px-8 py-3 bg-[#e11d48] text-white font-bold"
+              aria-label="Delete project"
+            >
+              <Icon icon="solar:trash-bin-trash-linear" className="text-xl mr-2 inline" />
+              Delete Project
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Modals */}
@@ -309,14 +342,24 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
         }}
       />
 
-      <CancelSessionModal
-        session={sessionToCancel}
-        sessionIndex={sessionCancelIndex}
-        isOpen={!!sessionToCancel}
-        onClose={() => setSessionToCancel(null)}
-        onSessionCancelled={() => {
+      <DeleteSessionModal
+        session={sessionToDelete}
+        sessionIndex={sessionDeleteIndex}
+        isOpen={!!sessionToDelete}
+        onClose={() => setSessionToDelete(null)}
+        onSessionDeleted={() => {
           handleSessionUpdated();
-          setSessionToCancel(null);
+          setSessionToDelete(null);
+        }}
+      />
+
+      <DeleteProjectModal
+        project={project}
+        isOpen={isDeleteProjectOpen}
+        onClose={() => setIsDeleteProjectOpen(false)}
+        onProjectDeleted={() => {
+          queryClient.invalidateQueries({ queryKey: ["teamProjects", teamId] });
+          router.push(teamId ? `/teams/${teamId}` : "/teams");
         }}
       />
     </div>

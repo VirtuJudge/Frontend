@@ -1,54 +1,41 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import { Modal, Text, Button } from "@/components";
 import { PracticeSession } from "@/lib/api/types";
 import { apiClient } from "@/lib/api/client";
-import { generateIdempotencyKey } from "@/lib/upload/idempotency";
 
-export interface CancelSessionModalProps {
+export interface DeleteSessionModalProps {
   session: PracticeSession | null;
   sessionIndex: number;
   isOpen: boolean;
   onClose: () => void;
+  onSessionDeleted?: () => void;
   onSessionCancelled?: () => void;
 }
 
-export function CancelSessionModal({
+export function DeleteSessionModal({
   session,
   sessionIndex,
   isOpen,
   onClose,
+  onSessionDeleted,
   onSessionCancelled,
-}: CancelSessionModalProps) {
+}: DeleteSessionModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const idempotencyKeyRef = useRef<string | null>(null);
-  const sessionId = session?.id;
 
-  useEffect(() => {
-    idempotencyKeyRef.current = sessionId
-      ? generateIdempotencyKey("cancel-session")
-      : null;
-  }, [sessionId]);
-
-  const handleCancel = async () => {
+  const handleDelete = async () => {
     if (!session) return;
     setLoading(true);
     setError(null);
     try {
-      const idempotencyKey =
-        idempotencyKeyRef.current ?? generateIdempotencyKey("cancel-session");
-      idempotencyKeyRef.current = idempotencyKey;
-      await apiClient.cancelPracticeSession(
-        session.id,
-        idempotencyKey,
-      );
-      onSessionCancelled?.();
+      await apiClient.deletePracticeSession(session.id);
+      (onSessionDeleted ?? onSessionCancelled)?.();
       onClose();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to cancel session.",
+        err instanceof Error ? err.message : "Failed to delete session.",
       );
     } finally {
       setLoading(false);
@@ -66,19 +53,19 @@ export function CancelSessionModal({
           onClose();
         }
       }}
-      title="Cancel Session"
+      title="Delete Session"
     >
       <div className="flex flex-col items-center gap-8 text-center my-4 max-w-lg">
         <Text
           size="sm"
           className="text-foreground/80 leading-relaxed text-center"
         >
-          You are going to cancel{" "}
+          You are going to permanently delete{" "}
           <span className="text-primary font-semibold">
             Session {sessionIndex}
           </span>{" "}
-          from this project. It will no longer be active or processed. This
-          does not delete session data. Are you sure?
+          from this project. All associated attempts, questions, answers, and
+          evaluations will be removed. Are you sure?
         </Text>
 
         {error && (
@@ -103,16 +90,19 @@ export function CancelSessionModal({
           <Button
             variant="danger"
             size="sm"
-            onClick={handleCancel}
+            onClick={handleDelete}
             disabled={loading}
             loading={loading}
             className="rounded-full px-8 py-3 bg-[#e11d48] text-white font-bold"
-            aria-label="Cancel session"
+            aria-label="Delete session"
           >
-            Cancel Session
+            Delete Session
           </Button>
         </div>
       </div>
     </Modal>
   );
 }
+
+export const CancelSessionModal = DeleteSessionModal;
+export type CancelSessionModalProps = DeleteSessionModalProps;
