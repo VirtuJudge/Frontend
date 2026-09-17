@@ -23,10 +23,9 @@ export const PUBLIC_ROUTES = [
   "/home",
   "/about",
   "/pricing",
-  "/team",
-  "/data-privacy",
-  "/terms-and-conditions",
-  "/contacts",
+  "/company/data-privacy",
+  "/company/terms-and-conditions",
+  "/company/contact-us",
   "/invitations",
 ];
 

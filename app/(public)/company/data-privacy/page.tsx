@@ -32,7 +32,7 @@ export default function DataPrivacyPage() {
 
       <ol className="flex flex-col gap-6">
         {DATA_PRIVACY.map((p, i) => (
-          <Text as="li" size="body" key={p.title}>
+          <Text as="li" size="body" key={p.title} className="text-left">
             <b>{`${i + 1}. ${p.title}:`}</b>
             <br />
             {p.body}

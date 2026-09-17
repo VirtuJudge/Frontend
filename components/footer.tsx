@@ -34,7 +34,7 @@ export function Footer() {
           <Text as="a" size="body" href="/company/data-privacy">
             Data privacy
           </Text>
-          <Text as="a" size="body" href="/company/terms">
+          <Text as="a" size="body" href="/company/terms-and-conditions">
             Terms and conditions
           </Text>
           <Text as="a" size="body" href="/company/contact-us">
