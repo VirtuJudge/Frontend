@@ -1,9 +1,12 @@
-import { apiClient, ApiClientError } from "@/lib/api/client";
-import type { User, Team, Project, Page } from "@/lib/api/types";
+import { apiClient } from "@/lib/api/client";
+import type { User, Team, Project } from "@/lib/api/types";
 import type { QueryClient } from "@tanstack/react-query";
 
 // In-memory locks to prevent concurrent duplicate creation per user
-const inFlightInits = new Map<string, Promise<DefaultWorkspaceResult>>();
+const inFlightInits = new Map<
+  string,
+  Promise<DefaultWorkspaceResult>
+>();
 
 export interface DefaultWorkspaceResult {
   team: Team | null;
@@ -63,38 +66,10 @@ export async function ensureDefaultTeamAndProject(
       let created = false;
 
       if (teams.length === 0) {
-        const baseTeamName = `${user.display_name}'s Team`;
-        const idempotencyKeyTeam = `team-default-${userId}`;
-
-        try {
-          activeTeam = await apiClient.createTeam(
-            baseTeamName,
-            idempotencyKeyTeam,
-          );
-        } catch (err: unknown) {
-          const isConflict =
-            (err instanceof ApiClientError &&
-              (err.status === 409 ||
-                err.problem?.detail === "team_name_conflict" ||
-                err.message?.includes("team_name_conflict"))) ||
-            (err instanceof Error &&
-              err.message.includes("team_name_conflict"));
-
-          if (isConflict) {
-            try {
-              const refreshed = await apiClient.getTeams();
-              if (refreshed?.items && refreshed.items.length > 0) {
-                activeTeam =
-                  refreshed.items.find((t) => t.name === baseTeamName) ||
-                  refreshed.items[0];
-              }
-            } catch {}
-          }
-
-          if (!activeTeam) {
-            throw err;
-          }
-        }
+        // User has no team and no project -> create both
+        const teamName = formatDefaultTeamName(user.display_name, user.email);
+        const idempotencyKeyTeam = `team-default-${userId}-${Date.now()}`;
+        activeTeam = await apiClient.createTeam(teamName, idempotencyKeyTeam);
 
         const idempotencyKeyProj = `proj-default-${userId}-${Date.now()}`;
         activeProject = await apiClient.createProject(
@@ -134,32 +109,8 @@ export async function ensureDefaultTeamAndProject(
         localStorage.removeItem("virtujudge_new_user");
       }
 
-      // Populate cache and invalidate relevant queries so the UI updates immediately
+      // Invalidate relevant queries so the UI updates immediately
       if (queryClient) {
-        if (activeTeam) {
-          queryClient.setQueryData(["teams"], (old: Page<Team> | undefined) => {
-            if (!old) return { items: [activeTeam], has_more: false };
-            const existing = old.items || [];
-            if (existing.some((t) => t.id === activeTeam!.id)) return old;
-            return { ...old, items: [activeTeam, ...existing] };
-          });
-          queryClient.setQueryData(["team", activeTeam.id], activeTeam);
-        }
-        if (activeTeam && activeProject) {
-          queryClient.setQueryData(
-            ["teamProjects", activeTeam.id],
-            (old: Page<Project> | undefined) => {
-              if (!old) return { items: [activeProject], has_more: false };
-              const existing = old.items || [];
-              if (existing.some((p) => p.id === activeProject!.id)) return old;
-              return { ...old, items: [activeProject, ...existing] };
-            },
-          );
-          queryClient.setQueryData(
-            ["project", activeProject.id],
-            activeProject,
-          );
-        }
         await queryClient.invalidateQueries({ queryKey: ["teams"] });
         if (activeTeam) {
           await queryClient.invalidateQueries({

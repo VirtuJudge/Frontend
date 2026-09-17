@@ -130,26 +130,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         syncSessionToCookies(session.access_token);
         setToken(session.access_token);
         await queryClient.invalidateQueries({ queryKey: ["me"] });
-
-        if (event === "SIGNED_IN" && session.user) {
-          try {
-            const meta = session.user.user_metadata as
-              | Record<string, unknown>
-              | undefined;
-            const authUser: User = {
-              id: session.user.id,
-              display_name:
-                (meta?.display_name as string) ||
-                session.user.email?.split("@")[0] ||
-                "User",
-              email: session.user.email || "",
-              created_at: session.user.created_at || new Date().toISOString(),
-            };
-            ensureDefaultTeamAndProject(authUser, queryClient).catch(() => {});
-          } catch {
-            // Ignore background init error
-          }
-        }
       } else if (event === "SIGNED_OUT") {
         syncSessionToCookies(null);
         setToken(null);
@@ -199,12 +179,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     enabled: Boolean(token),
     retry: false,
   });
-
-  useEffect(() => {
-    if (user && user.id) {
-      ensureDefaultTeamAndProject(user, queryClient).catch(() => {});
-    }
-  }, [user, queryClient]);
 
   const signInWithPassword = useCallback(
     async ({ email, password }: SignInPasswordArgs) => {
