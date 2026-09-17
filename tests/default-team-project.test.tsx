@@ -4,11 +4,11 @@ import { render, waitFor, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RootPage from "@/app/(auth)/(index)/page";
 import AuthenticatedLayout from "@/app/(auth)/layout";
-import { AuthProvider, ensureDefaultTeamAndProject, formatDefaultTeamName } from "@/features/auth";
+import { AuthProvider } from "@/features/auth";
 import { apiClient } from "@/lib/api/client";
 import { getSupabaseClient } from "@/lib/auth/supabase";
 import { createSyntheticJwt } from "@/lib/auth/jwt";
-import type { Team, Project, User } from "@/lib/api/types";
+import type { Team, Project } from "@/lib/api/types";
 
 vi.mock("@/lib/auth/supabase", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/supabase")>(
@@ -34,7 +34,7 @@ function renderWithProviders(ui: React.ReactElement) {
   );
 }
 
-describe("Default Team & Project Creation for First-Time User Login", () => {
+describe("Default Team & Project Creation on Route /", () => {
   const mockToken = createSyntheticJwt({
     sub: "user_new_123",
     email: "sarah@example.com",
@@ -76,16 +76,7 @@ describe("Default Team & Project Creation for First-Time User Login", () => {
     });
   });
 
-  it("formats team name correctly with display name, email, or fallback", () => {
-    expect(formatDefaultTeamName("Sarah Connor", "sarah@example.com")).toBe(
-      "Sarah Connor's Team",
-    );
-    expect(formatDefaultTeamName("", "alex@example.com")).toBe("alex's Team");
-    expect(formatDefaultTeamName(null, "user@test.org")).toBe("user's Team");
-    expect(formatDefaultTeamName(undefined, undefined)).toBe("User's Team");
-  });
-
-  it("automatically creates a new team (displayname's Team) and project (Project 1) if user logs in for first time with no team or project", async () => {
+  it("in route / after retrieving teams if no team found, creates new team named (user.display_name's Team) and a project (Project 1)", async () => {
     let teamsList: Team[] = [];
 
     vi.spyOn(apiClient, "getTeams").mockImplementation(async () => {
@@ -148,85 +139,9 @@ describe("Default Team & Project Creation for First-Time User Login", () => {
         expect.stringContaining("proj-default-user_new_123"),
       );
     });
-
-    // Verify localStorage setup flag was marked done
-    expect(localStorage.getItem("default_setup_done_user_new_123")).toBe("true");
   });
 
-  it("automatically creates default team and project via AuthenticatedLayout on login", async () => {
-    let teamsList: Team[] = [];
-
-    vi.spyOn(apiClient, "getTeams").mockImplementation(async () => {
-      return {
-        items: teamsList,
-        has_more: false,
-      };
-    });
-
-    vi.spyOn(apiClient, "getProjects").mockResolvedValue({
-      items: [],
-      has_more: false,
-    });
-
-    const createTeamSpy = vi
-      .spyOn(apiClient, "createTeam")
-      .mockImplementation(async (name: string) => {
-        const newTeam: Team = {
-          id: "team_layout_111",
-          name,
-          role: "owner",
-          member_count: 1,
-          created_at: new Date().toISOString(),
-          version: 1,
-        };
-        teamsList = [newTeam];
-        return newTeam;
-      });
-
-    const createProjectSpy = vi
-      .spyOn(apiClient, "createProject")
-      .mockImplementation(
-        async (
-          teamId: string,
-          data: { name: string; description?: string },
-        ) => {
-          return {
-            id: "project_layout_222",
-            team_id: teamId,
-            name: data.name,
-            description: data.description,
-            created_by: "user_new_123",
-            created_at: new Date().toISOString(),
-            version: 1,
-          };
-        },
-      );
-
-    renderWithProviders(
-      <AuthenticatedLayout>
-        <div data-testid="child-page">Child Content</div>
-      </AuthenticatedLayout>,
-    );
-
-    await waitFor(() => {
-      expect(createTeamSpy).toHaveBeenCalledWith(
-        "Sarah Connor's Team",
-        expect.stringContaining("team-default-user_new_123"),
-      );
-      expect(createProjectSpy).toHaveBeenCalledWith(
-        "team_layout_111",
-        { name: "Project 1" },
-        expect.stringContaining("proj-default-user_new_123"),
-      );
-    });
-
-    expect(screen.getByTestId("child-page")).toBeDefined();
-    expect(localStorage.getItem("default_setup_done_user_new_123")).toBe("true");
-  });
-
-  it("does not create default team or project if setup is already completed", async () => {
-    localStorage.setItem("default_setup_done_user_new_123", "true");
-
+  it("AuthenticatedLayout renders children without creating teams", async () => {
     vi.spyOn(apiClient, "getTeams").mockResolvedValue({
       items: [],
       has_more: false,
@@ -240,15 +155,18 @@ describe("Default Team & Project Creation for First-Time User Login", () => {
     const createTeamSpy = vi.spyOn(apiClient, "createTeam");
     const createProjectSpy = vi.spyOn(apiClient, "createProject");
 
-    renderWithProviders(<RootPage />);
+    renderWithProviders(
+      <AuthenticatedLayout>
+        <div data-testid="child-page">Child Content</div>
+      </AuthenticatedLayout>,
+    );
 
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
+    expect(screen.getByTestId("child-page")).toBeDefined();
     expect(createTeamSpy).not.toHaveBeenCalled();
     expect(createProjectSpy).not.toHaveBeenCalled();
   });
 
-  it("does not create default team or project if user already has existing teams and projects", async () => {
+  it("does not create default team or project if user already has existing teams", async () => {
     vi.spyOn(apiClient, "getTeams").mockResolvedValue({
       items: [
         {
@@ -288,30 +206,35 @@ describe("Default Team & Project Creation for First-Time User Login", () => {
     expect(createProjectSpy).not.toHaveBeenCalled();
   });
 
-  it("creates Project 1 if user has a team but no project in it", async () => {
-    vi.spyOn(apiClient, "getTeams").mockResolvedValue({
-      items: [
-        {
-          id: "team_has_no_proj",
-          name: "Sarah's Team",
-          role: "owner",
-          member_count: 1,
-          created_at: new Date().toISOString(),
-          version: 1,
-        },
-      ],
-      has_more: false,
+  it("handles 409 Conflict when team name exists by falling back gracefully", async () => {
+    let getTeamsCallCount = 0;
+    vi.spyOn(apiClient, "getTeams").mockImplementation(async () => {
+      getTeamsCallCount++;
+      if (getTeamsCallCount === 1) {
+        return { items: [], has_more: false };
+      }
+      return {
+        items: [
+          {
+            id: "team_recovered_409",
+            name: "Sarah Connor's Team",
+            role: "owner",
+            member_count: 1,
+            created_at: new Date().toISOString(),
+            version: 1,
+          },
+        ],
+        has_more: false,
+      };
     });
 
-    vi.spyOn(apiClient, "getProjects").mockResolvedValue({
-      items: [],
-      has_more: false,
-    });
+    vi.spyOn(apiClient, "createTeam").mockRejectedValueOnce(
+      new Error("409 Conflict: team_name_conflict"),
+    );
 
-    const createTeamSpy = vi.spyOn(apiClient, "createTeam");
     const createProjectSpy = vi.spyOn(apiClient, "createProject").mockResolvedValue({
-      id: "project_new_1",
-      team_id: "team_has_no_proj",
+      id: "project_recovered_409",
+      team_id: "team_recovered_409",
       name: "Project 1",
       created_by: "user_new_123",
       created_at: new Date().toISOString(),
@@ -321,70 +244,11 @@ describe("Default Team & Project Creation for First-Time User Login", () => {
     renderWithProviders(<RootPage />);
 
     await waitFor(() => {
-      expect(createTeamSpy).not.toHaveBeenCalled();
       expect(createProjectSpy).toHaveBeenCalledWith(
-        "team_has_no_proj",
+        "team_recovered_409",
         { name: "Project 1" },
         expect.stringContaining("proj-default-user_new_123"),
       );
     });
-  });
-
-  it("deduplicates concurrent calls to ensureDefaultTeamAndProject", async () => {
-    let teamsList: Team[] = [];
-
-    vi.spyOn(apiClient, "getTeams").mockImplementation(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 20));
-      return {
-        items: teamsList,
-        has_more: false,
-      };
-    });
-
-    const createTeamSpy = vi
-      .spyOn(apiClient, "createTeam")
-      .mockImplementation(async (name: string) => {
-        const newTeam: Team = {
-          id: "team_dedup_1",
-          name,
-          role: "owner",
-          member_count: 1,
-          created_at: new Date().toISOString(),
-          version: 1,
-        };
-        teamsList = [newTeam];
-        return newTeam;
-      });
-
-    const createProjectSpy = vi
-      .spyOn(apiClient, "createProject")
-      .mockResolvedValue({
-        id: "proj_dedup_1",
-        team_id: "team_dedup_1",
-        name: "Project 1",
-        created_by: "user_new_123",
-        created_at: new Date().toISOString(),
-        version: 1,
-      });
-
-    const user: User = {
-      id: "user_new_123",
-      display_name: "Sarah Connor",
-      email: "sarah@example.com",
-      created_at: new Date().toISOString(),
-    };
-
-    // Call concurrently multiple times
-    const [res1, res2, res3] = await Promise.all([
-      ensureDefaultTeamAndProject(user),
-      ensureDefaultTeamAndProject(user),
-      ensureDefaultTeamAndProject(user),
-    ]);
-
-    expect(createTeamSpy).toHaveBeenCalledTimes(1);
-    expect(createProjectSpy).toHaveBeenCalledTimes(1);
-    expect(res1.team?.id).toBe("team_dedup_1");
-    expect(res2.team?.id).toBe("team_dedup_1");
-    expect(res3.team?.id).toBe("team_dedup_1");
   });
 });
