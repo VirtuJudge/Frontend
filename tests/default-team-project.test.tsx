@@ -4,8 +4,13 @@ import { render, waitFor, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import RootPage from "@/app/(auth)/(index)/page";
 import AuthenticatedLayout from "@/app/(auth)/layout";
-import { AuthProvider, ensureDefaultTeamAndProject, formatDefaultTeamName } from "@/features/auth";
-import { apiClient } from "@/lib/api/client";
+import {
+  AuthProvider,
+  useAuth,
+  ensureDefaultTeamAndProject,
+  formatDefaultTeamName,
+} from "@/features/auth";
+import { apiClient, ApiClientError } from "@/lib/api/client";
 import { getSupabaseClient } from "@/lib/auth/supabase";
 import { createSyntheticJwt } from "@/lib/auth/jwt";
 import type { Team, Project, User } from "@/lib/api/types";
@@ -386,5 +391,126 @@ describe("Default Team & Project Creation for First-Time User Login", () => {
     expect(res1.team?.id).toBe("team_dedup_1");
     expect(res2.team?.id).toBe("team_dedup_1");
     expect(res3.team?.id).toBe("team_dedup_1");
+  });
+
+  it("creates default team and project during signInWithPassword for first-time login", async () => {
+    vi.spyOn(apiClient, "getTeams").mockResolvedValue({
+      items: [],
+      has_more: false,
+    });
+
+    const createTeamSpy = vi.spyOn(apiClient, "createTeam").mockResolvedValue({
+      id: "team_sign_in_1",
+      name: "Sarah Connor's Team",
+      role: "owner",
+      member_count: 1,
+      created_at: new Date().toISOString(),
+      version: 1,
+    });
+
+    const createProjectSpy = vi.spyOn(apiClient, "createProject").mockResolvedValue({
+      id: "proj_sign_in_1",
+      team_id: "team_sign_in_1",
+      name: "Project 1",
+      created_by: "user_new_123",
+      created_at: new Date().toISOString(),
+      version: 1,
+    });
+
+    vi.mocked(getSupabaseClient).mockReturnValue({
+      auth: {
+        signInWithPassword: vi.fn().mockResolvedValue({
+          data: {
+            session: {
+              access_token: mockToken,
+              user: {
+                id: "user_new_123",
+                email: "sarah@example.com",
+                user_metadata: { display_name: "Sarah Connor" },
+              },
+            },
+          },
+          error: null,
+        }),
+        getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+        onAuthStateChange: vi.fn().mockReturnValue({
+          data: { subscription: { unsubscribe: vi.fn() } },
+        }),
+      },
+    } as unknown as ReturnType<typeof getSupabaseClient>);
+
+    let authContextValue: ReturnType<typeof useAuth> | undefined;
+    function Consumer() {
+      authContextValue = useAuth();
+      return <div>Consumer</div>;
+    }
+
+    renderWithProviders(<Consumer />);
+
+    await waitFor(() => {
+      expect(authContextValue).toBeDefined();
+    });
+
+    await authContextValue!.signInWithPassword({
+      email: "sarah@example.com",
+      password: "password123",
+    });
+
+    await waitFor(() => {
+      expect(createTeamSpy).toHaveBeenCalledWith(
+        "Sarah Connor's Team",
+        expect.stringContaining("team-default-user_new_123"),
+      );
+      expect(createProjectSpy).toHaveBeenCalledWith(
+        "team_sign_in_1",
+        { name: "Project 1" },
+        expect.stringContaining("proj-default-user_new_123"),
+      );
+    });
+  });
+
+  it("populates query client cache with created default team and project", async () => {
+    const queryClient = new QueryClient();
+
+    vi.spyOn(apiClient, "getTeams").mockResolvedValue({
+      items: [],
+      has_more: false,
+    });
+
+    const newTeam: Team = {
+      id: "team_cache_1",
+      name: "Sarah Connor's Team",
+      role: "owner",
+      member_count: 1,
+      created_at: new Date().toISOString(),
+      version: 1,
+    };
+
+    const newProject: Project = {
+      id: "project_cache_1",
+      team_id: "team_cache_1",
+      name: "Project 1",
+      created_by: "user_new_123",
+      created_at: new Date().toISOString(),
+      version: 1,
+    };
+
+    vi.spyOn(apiClient, "createTeam").mockResolvedValue(newTeam);
+    vi.spyOn(apiClient, "createProject").mockResolvedValue(newProject);
+
+    const user: User = {
+      id: "user_new_123",
+      display_name: "Sarah Connor",
+      email: "sarah@example.com",
+      created_at: new Date().toISOString(),
+    };
+
+    const result = await ensureDefaultTeamAndProject(user, queryClient);
+
+    expect(result.created).toBe(true);
+    expect(result.team?.id).toBe("team_cache_1");
+    expect(result.project?.id).toBe("project_cache_1");
+    expect(queryClient.getQueryData(["team", "team_cache_1"])).toEqual(newTeam);
+    expect(queryClient.getQueryData(["project", "project_cache_1"])).toEqual(newProject);
   });
 });
