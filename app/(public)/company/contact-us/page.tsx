@@ -58,17 +58,43 @@ export default function ContactsPage() {
 
     setLoading(true);
     try {
+      let authUserId: string | null = null;
+      try {
+        if (typeof supabase.auth?.getUser === "function") {
+          const { data: authData } = await supabase.auth.getUser();
+          authUserId = authData?.user?.id ?? null;
+        }
+      } catch {
+        authUserId = null;
+      }
+
       const payload: CreateContactSubmissionInput = {
         name: trimmedName,
         email: trimmedEmail,
         phone: trimmedPhone ? trimmedPhone : null,
         message: trimmedMessage,
-        user_id: user?.id ?? null,
+        user_id: authUserId,
       };
 
-      const { error: insertError } = await supabase
+      let { error: insertError } = await supabase
         .from("contact_submissions")
         .insert([payload]);
+
+      if (
+        insertError &&
+        (insertError.code === "23503" ||
+          insertError.message?.includes("foreign key constraint") ||
+          insertError.message?.includes("contact_submissions_user_id_fkey"))
+      ) {
+        const fallbackPayload: CreateContactSubmissionInput = {
+          ...payload,
+          user_id: null,
+        };
+        const { error: retryError } = await supabase
+          .from("contact_submissions")
+          .insert([fallbackPayload]);
+        insertError = retryError;
+      }
 
       if (insertError) {
         throw new Error(insertError.message || "Failed to submit message.");
