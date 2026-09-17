@@ -10,7 +10,7 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
 
 export const COMPANY_NAV_ITEMS: NavItem[] = [
   { label: "Data privacy", href: "/company/data-privacy" },
-  { label: "Terms and conditions", href: "/company/terms" },
+  { label: "Terms and conditions", href: "/company/terms-and-conditions" },
   { label: "Contact us", href: "/company/contact-us" },
 ];
 

@@ -9,8 +9,7 @@ import AuthContainer from "@/components/auth/container";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { signUpWithPassword, checkEmailVerificationStatus, isAuthenticated } =
-    useAuth();
+  const { signUpWithPassword, isAuthenticated } = useAuth();
 
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -70,22 +69,6 @@ export default function RegisterPage() {
       setLoading(true);
       setError(null);
       setSuccessMessage(null);
-
-      // const status = await checkEmailVerificationStatus(email.trim());
-
-      // if (status.exists) {
-      //   if (status.isConfirmed || !status.waitingConfirmation) {
-      //     router.push(
-      //       `/auth/login?email=${encodeURIComponent(email.trim())}&message=${encodeURIComponent("An account with this email already exists. Please log in.")}`,
-      //     );
-      //     return;
-      //   }
-
-      //   router.push(
-      //     `/auth/verify-registration?email=${encodeURIComponent(email.trim())}`,
-      //   );
-      //   return;
-      // }
 
       const result = await signUpWithPassword({
         email: email.trim(),
@@ -205,7 +188,7 @@ export default function RegisterPage() {
             >
               I agree to VirtuJudge&#8217;s{" "}
               <Link
-                href="/terms-and-conditions"
+                href="/company/terms-and-conditions"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline hover:text-primary transition-colors"
@@ -234,7 +217,7 @@ export default function RegisterPage() {
             >
               I agree to VirtuJudge&#8217;s{" "}
               <Link
-                href="/data-privacy"
+                href="/company/data-privacy"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline hover:text-primary transition-colors"
@@ -267,14 +250,6 @@ export default function RegisterPage() {
         Already have an account?{" "}
         <Link href="/auth/login" className="underline">
           Log in here!
-        </Link>
-        {" • "}
-        <Link href="/terms-and-conditions" className="underline">
-          Terms and conditions
-        </Link>
-        {" • "}
-        <Link href="/data-privacy" className="underline">
-          Data privacy
         </Link>
       </Text>
     </AuthContainer>
