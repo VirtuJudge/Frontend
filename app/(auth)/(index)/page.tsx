@@ -4,9 +4,15 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components";
 import { WorkspaceNavBar } from "@/components/Nav-Bar";
-import { useAuth, ensureDefaultTeamAndProject } from "@/features/auth";
-import { apiClient } from "@/lib/api/client";
+import { useAuth } from "@/features/auth";
+import { apiClient, ApiClientError } from "@/lib/api/client";
+import type { Team, Project } from "@/lib/api/types";
 import { Text } from "@/components/text";
+
+const inFlightWorkspaceCreations = new Map<
+  string,
+  Promise<{ team: Team; project: Project } | null>
+>();
 
 export default function RootPage() {
   const { user } = useAuth();
@@ -33,29 +39,121 @@ export default function RootPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<
     string | undefined
   >(undefined);
-  const activeProjectId =
-    selectedProjectId || teamProjects[0]?.id;
+  const activeProjectId = selectedProjectId || teamProjects[0]?.id;
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !teamsPage) return;
 
-    ensureDefaultTeamAndProject(user, queryClient)
-      .then((res) => {
-        if (res.team && !selectedTeamId) {
-          setSelectedTeamId(res.team.id);
-        }
-        if (res.project && !selectedProjectId) {
-          setSelectedProjectId(res.project.id);
-        }
-      })
-      .catch((err) => {
-        console.warn("Failed to ensure default workspace on RootPage:", err);
+    if (teams.length === 0) {
+      const userId = user.id;
+      const teamName = `${user.display_name}'s Team`;
+      const idempotencyKeyTeam = `team-default-${userId}`;
+      const idempotencyKeyProj = `proj-default-${userId}`;
+
+      let initPromise = inFlightWorkspaceCreations.get(userId);
+      if (!initPromise) {
+        initPromise = (async () => {
+          try {
+            let newTeam: Team | null = null;
+            try {
+              newTeam = await apiClient.createTeam(
+                teamName,
+                idempotencyKeyTeam,
+              );
+            } catch (err: unknown) {
+              const isConflict =
+                (err instanceof ApiClientError && err.status === 409) ||
+                (err instanceof Error && err.message.includes("409"));
+
+              if (isConflict) {
+                const refreshed = await apiClient.getTeams();
+                if (refreshed?.items && refreshed.items.length > 0) {
+                  newTeam =
+                    refreshed.items.find((t) => t.name === teamName) ||
+                    refreshed.items[0];
+                } else {
+                  const fallbackName = `${teamName} (${userId.slice(0, 4)})`;
+                  newTeam = await apiClient.createTeam(
+                    fallbackName,
+                    `${idempotencyKeyTeam}-fallback`,
+                  );
+                }
+              } else {
+                throw err;
+              }
+            }
+
+            if (!newTeam) {
+              return null;
+            }
+
+            let newProject: Project | null = null;
+            try {
+              newProject = await apiClient.createProject(
+                newTeam.id,
+                { name: "Project 1" },
+                idempotencyKeyProj,
+              );
+            } catch (projErr: unknown) {
+              const isConflict =
+                (projErr instanceof ApiClientError && projErr.status === 409) ||
+                (projErr instanceof Error && projErr.message.includes("409"));
+
+              if (isConflict) {
+                const projList = await apiClient.getProjects(newTeam.id);
+                if (projList?.items && projList.items.length > 0) {
+                  newProject =
+                    projList.items.find((p) => p.name === "Project 1") ||
+                    projList.items[0];
+                }
+              }
+              if (!newProject) {
+                throw projErr;
+              }
+            }
+
+            return { team: newTeam, project: newProject };
+          } catch (err) {
+            console.warn(
+              "Failed to create default team and project on RootPage:",
+              err,
+            );
+            return null;
+          } finally {
+            inFlightWorkspaceCreations.delete(userId);
+          }
+        })();
+
+        inFlightWorkspaceCreations.set(userId, initPromise);
+      }
+
+      initPromise.then((result) => {
+        if (!result) return;
+        const { team: newTeam, project: newProject } = result;
+
+        setSelectedTeamId(newTeam.id);
+        setSelectedProjectId(newProject.id);
+
+        queryClient.setQueryData(["teams"], {
+          items: [newTeam],
+          has_more: false,
+        });
+        queryClient.setQueryData(["teamProjects", newTeam.id], {
+          items: [newProject],
+          has_more: false,
+        });
+
+        queryClient.invalidateQueries({ queryKey: ["teams"] });
+        queryClient.invalidateQueries({
+          queryKey: ["teamProjects", newTeam.id],
+        });
       });
-  }, [user, queryClient, selectedTeamId, selectedProjectId]);
+    }
+  }, [user, teamsPage, teams.length, queryClient]);
 
   const startHref = activeProjectId
     ? `/projects/${activeProjectId}/session/prepare`
-    : "/projects";
+    : "/teams";
 
   const historyHref = activeProjectId
     ? `/projects/${activeProjectId}#sessions`
