@@ -394,6 +394,7 @@ export class ApiClient {
   ): Promise<void> {
     return this.request<void>(API_ENDPOINTS.project(projectId), {
       method: "DELETE",
+      idempotencyKey: generateIdempotencyKey("erase-project"),
       ...(confirmation
         ? {
             headers: {
@@ -620,6 +621,7 @@ export class ApiClient {
   public async deletePracticeSession(sessionId: string): Promise<void> {
     return this.request<void>(API_ENDPOINTS.practiceSession(sessionId), {
       method: "DELETE",
+      idempotencyKey: generateIdempotencyKey("erase-session"),
     });
   }
 
