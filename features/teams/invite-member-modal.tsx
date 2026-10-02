@@ -84,39 +84,26 @@ export function InviteMemberModal({
       titleId="invite-member-title"
       error={error}
       loading={loading}
-      footer={null}
+      onSubmit={handleSubmit}
+      submitText="Send Invitation"
+      loadingText="Sending..."
     >
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-2xl flex flex-col gap-2.5 my-4 items-center"
-      >
-        <div className="w-full flex flex-col gap-2.5">
-          <div className="flex flex-wrap justify-center items-center gap-3 w-full">
-            <Input
-              type="email"
-              label="Member email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="colleague@example.com"
-              disabled={loading}
-              autoFocus
-              wrapperClassName="!rounded-full !bg-white/5 !border-white/10"
-              className="max-w-md w-full"
-            />
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={loading}
-              className="rounded-full px-10 py-2 font-bold shrink-0 self-end"
-            >
-              {loading ? "Sending..." : "Send"}
-            </Button>
-          </div>
-        </div>
-        <Text className="text-md text-foreground/60 text-center mt-2">
+      <div className="flex w-full max-w-md flex-col items-center gap-4 py-2">
+        <Input
+          type="email"
+          label="Member email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="colleague@example.com"
+          disabled={loading}
+          autoFocus
+          wrapperClassName="!w-full !rounded-full !bg-white/5 !border-white/10"
+          className="w-full"
+        />
+        <Text size="inherit" className="text-sm sm:text-base text-foreground/60 text-center">
           Invitation expires in 7 days
         </Text>
-      </form>
+      </div>
     </Modal>
   );
 }

@@ -35,7 +35,7 @@ export function SessionConfirmationModal({
         <button
           type="button"
           onClick={onConfirm}
-          className="h-12 w-60 rounded-full  font-bold text-black bg-[#00e5cc] hover:bg-[#00f5db] active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center text-center"
+          className="h-12 w-60 rounded-full  font-bold text-black bg-accent hover:bg-[#00f5db] active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center text-center"
         >
           {confirmLabel}
         </button>

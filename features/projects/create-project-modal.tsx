@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Button, Input, Modal } from "@/components";
 import { apiClient } from "@/lib/api/client";
 import { Project } from "@/lib/api/types";
+import { useAsyncAction } from "@/hooks";
 
 interface CreateProjectModalProps {
   teamId: string;
@@ -20,8 +21,18 @@ export function CreateProjectModal({
 }: CreateProjectModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { error, isPending: loading, run, setError } = useAsyncAction(
+    () =>
+      apiClient.createProject(
+        teamId,
+        {
+          name: name.trim(),
+          description: description.trim() || undefined,
+        },
+        `proj-create-${Date.now()}`,
+      ),
+    "Failed to create project",
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,27 +41,13 @@ export function CreateProjectModal({
       return;
     }
 
-    try {
-      setLoading(true);
-      setError(null);
-      const idempotencyKey = `proj-create-${Date.now()}`;
-      const project = await apiClient.createProject(
-        teamId,
-        {
-          name: name.trim(),
-          description: description.trim() || undefined,
-        },
-        idempotencyKey,
-      );
-      setName("");
-      setDescription("");
-      onProjectCreated(project);
-      onClose();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to create project");
-    } finally {
-      setLoading(false);
-    }
+    const project = await run();
+    if (!project) return;
+
+    setName("");
+    setDescription("");
+    onProjectCreated(project);
+    onClose();
   };
 
   return (
@@ -61,43 +58,31 @@ export function CreateProjectModal({
       titleId="create-project-title"
       error={error}
       loading={loading}
-      footer={null}
+      onSubmit={handleSubmit}
+      submitText="Create"
+      loadingText="Creating..."
     >
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-2xl flex flex-col gap-2.5 my-4"
-      >
-        <div className="flex flex-col flex-wrap justify-center items-center gap-5 w-full">
-            <Input
-              value={name}
-              label="Project name"
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Series A Pitch Rehearsal"
-              disabled={loading}
-              autoFocus
-              wrapperClassName="!rounded-full !bg-white/5 !border-white/10"
-              className="max-w-md w-full"
-            />
-            <Input
-              value={description}
-              label="Project description"
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the project's goals and scope"
-              disabled={loading}
-              wrapperClassName="!rounded-full !bg-white/5 !border-white/10"
-              className="max-w-md w-full"
-            />
-
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={loading}
-            className="rounded-full px-10 py-2 font-bold shrink-0"
-          >
-            {loading ? "Creating..." : "Create"}
-          </Button>
-        </div>
-      </form>
+      <div className="flex w-full max-w-md flex-col items-center gap-4 py-2">
+        <Input
+          value={name}
+          label="Project name"
+          onChange={(event) => setName(event.target.value)}
+          placeholder="e.g. Series A Pitch Rehearsal"
+          disabled={loading}
+          autoFocus
+          wrapperClassName="!w-full !rounded-full !border-white/10 !bg-white/5"
+          className="w-full"
+        />
+        <Input
+          value={description}
+          label="Project description"
+          onChange={(event) => setDescription(event.target.value)}
+          placeholder="Describe the project's goals and scope"
+          disabled={loading}
+          wrapperClassName="!w-full !rounded-full !border-white/10 !bg-white/5"
+          className="w-full"
+        />
+      </div>
     </Modal>
   );
 }
