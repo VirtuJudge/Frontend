@@ -10,8 +10,8 @@ import {
 } from "./wrapper";
 import { cn } from "@/lib/utils";
 
-export type ButtonVariant = WrapperVariant;
-export type ButtonSize = "sm" | "default" | "lg";
+type ButtonVariant = WrapperVariant;
+type ButtonSize = "sm" | "default" | "lg";
 
 export interface ButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> {
@@ -90,7 +90,7 @@ export const Button = React.forwardRef<HTMLElement, ButtonProps>(function Button
         borderGradient={borderGradient}
         className={mergedClassName}
         style={style}
-        aria-disabled={disabled || loading}
+        aria-disabled={(disabled || loading) ? true : undefined}
         onClick={handleClick}
         {...(rest as unknown as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
       >
@@ -108,7 +108,7 @@ export const Button = React.forwardRef<HTMLElement, ButtonProps>(function Button
       borderGradient={borderGradient}
       className={mergedClassName}
       style={style}
-      disabled={disabled || loading}
+      disabled={(disabled || loading) ? true : undefined}
       aria-busy={loading}
       onClick={handleClick}
       {...rest}

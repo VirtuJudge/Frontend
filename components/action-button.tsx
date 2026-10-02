@@ -35,7 +35,7 @@ export function ActionAddButton({
   );
 }
 
-export type ActionIconVariant = "danger" | "primary" | "default";
+type ActionIconVariant = "danger" | "primary" | "default";
 
 export interface ActionIconButtonProps {
   icon: string;

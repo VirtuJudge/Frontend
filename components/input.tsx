@@ -11,8 +11,8 @@ import { Text } from "@/components/text";
 
 import { cn } from "@/lib/utils";
 
-export type InputVariant = WrapperVariant;
-export type InputSize = "sm" | "default" | "lg";
+type InputVariant = WrapperVariant;
+type InputSize = "sm" | "default" | "lg";
 
 export interface InputProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
@@ -33,9 +33,9 @@ const SIZES: Record<
   InputSize,
   { height: string; text: string; padding: string }
 > = {
-  sm: { height: "h-[42px]", text: "text-[16px]", padding: "px-[16px]" },
-  default: { height: "h-[55px]", text: "text-[18px]", padding: "px-[24px]" },
-  lg: { height: "h-[64px]", text: "text-[20px]", padding: "px-[28px]" },
+  sm: { height: "h-10.5", text: "text-[14px] sm:text-[16px]", padding: "px-4" },
+  default: { height: "h-13.75", text: "text-[16px] sm:text-[18px]", padding: "px-6" },
+  lg: { height: "h-16", text: "text-[18px] sm:text-[20px]", padding: "px-7" },
 };
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -79,7 +79,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     };
 
     const mergedWrapperClassName = cn(
-      "flex items-center transition-all duration-200 cursor-text w-[480px]",
+      "flex items-center transition-all duration-200 cursor-text w-120",
       sizeConfig.height,
       sizeConfig.padding,
       disabled && "opacity-50 pointer-events-none cursor-not-allowed",
@@ -138,12 +138,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     if (label) {
       const mergedLabelWrapperClassName = cn(
-        "flex flex-col gap-[8px] w-[480px]",
+        "flex flex-col gap-2 w-120",
         className,
       );
 
       const mergedLabelClassName = cn(
-        "pl-6 select-none text-left",
+        "pl-6 select-none text-left text-lg sm:text-xl font-medium text-foreground/80",
         labelClassName,
       );
 

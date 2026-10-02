@@ -54,12 +54,12 @@ export function RoleBadge({ role, className }: RoleBadgeProps) {
   );
 }
 
-export interface SectionHeaderBadgeProps {
+interface SectionHeaderBadgeProps {
   children: React.ReactNode;
   className?: string;
 }
 
-export function SectionHeaderBadge({
+function SectionHeaderBadge({
   children,
   className,
 }: SectionHeaderBadgeProps) {

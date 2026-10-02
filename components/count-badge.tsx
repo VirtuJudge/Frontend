@@ -8,7 +8,7 @@ import { apiClient } from "@/lib/api/client";
 import { useAuth } from "@/features/auth";
 import { cn } from "@/lib/utils";
 
-export interface CountBadgeProps {
+interface CountBadgeProps {
   count?: number;
   label: string;
   icon?: string;
@@ -16,7 +16,7 @@ export interface CountBadgeProps {
   className?: string;
 }
 
-export function CountBadge({
+function CountBadge({
   count = 0,
   label,
   icon,
@@ -67,7 +67,7 @@ export function ProjectAssetsCountBadge({
   );
 }
 
-export const AssetsCountBadge = ProjectAssetsCountBadge;
+const AssetsCountBadge = ProjectAssetsCountBadge;
 
 export interface TeamProjectsCountBadgeProps {
   teamId?: string;
@@ -97,7 +97,7 @@ export function TeamProjectsCountBadge({
   );
 }
 
-export const ProjectsCountBadge = TeamProjectsCountBadge;
+const ProjectsCountBadge = TeamProjectsCountBadge;
 
 export interface MembersCountBadgeProps {
   teamId?: string;
@@ -127,7 +127,7 @@ export function MembersCountBadge({
   );
 }
 
-export const TeamMembersCountBadge = MembersCountBadge;
+const TeamMembersCountBadge = MembersCountBadge;
 
 export interface TeamRoleBadgeProps {
   teamId: string;

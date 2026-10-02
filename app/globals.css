@@ -6,6 +6,7 @@
 
 @theme {
   --color-primary: hsla(175, 95%, 50%, 1);
+  --color-accent: #00e5cc;
   --color-glass: hsla(176, 92%, 90%, 0.07);
   --color-glass-dark: hsla(177, 50%, 3%, 0.7);
 
