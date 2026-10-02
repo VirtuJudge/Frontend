@@ -3,12 +3,12 @@
  * Based on Docs/Contracts/Data-Contracts.md and Docs/Contracts/Frontend-Backend-API.md
  */
 
-export type ResourceId = string; // 26-character ULID
-export type UtcTimestamp = string; // RFC 3339 UTC, e.g. 2026-09-02T12:30:00Z
-export type DurationMs = number; // >= 0
-export type Checksum = string; // sha256: followed by 64 lowercase hex characters
-export type NormalizedScore = number; // 0.0 <= value <= 1.0
-export type EmailAddress = string;
+type ResourceId = string; // 26-character ULID
+type UtcTimestamp = string; // RFC 3339 UTC, e.g. 2026-09-02T12:30:00Z
+type DurationMs = number; // >= 0
+type Checksum = string; // sha256: followed by 64 lowercase hex characters
+type NormalizedScore = number; // 0.0 <= value <= 1.0
+type EmailAddress = string;
 
 export interface ProblemDetails {
   type: string;
@@ -87,7 +87,7 @@ export interface InvitationPreview {
   status: InvitationStatus;
 }
 
-export interface UserInvitation {
+interface UserInvitation {
   id: ResourceId;
   team_id: ResourceId;
   team_name: string;
@@ -113,7 +113,7 @@ export interface Project {
 }
 
 export type AssetKind = 'presentation_video' | 'supporting_document' | 'answer_audio' | 'report_pdf';
-export type AssetState =
+type AssetState =
   | 'pending_upload'
   | 'uploaded'
   | 'verifying'
@@ -217,7 +217,7 @@ export type SessionState =
   | 'failed'
   | 'cancelled';
 
-export type AnalysisStage =
+type AnalysisStage =
   | 'ingestion'
   | 'speech'
   | 'diarization'
@@ -231,7 +231,7 @@ export type AnalysisStage =
   | 'report'
   | 'processing';
 
-export type StageStatus =
+type StageStatus =
   | 'pending'
   | 'running'
   | 'completed'
@@ -239,7 +239,7 @@ export type StageStatus =
   | 'skipped'
   | 'cancelled';
 
-export interface StageProgress {
+interface StageProgress {
   stage: AnalysisStage;
   status: StageStatus;
   progress: number;
@@ -264,7 +264,7 @@ export interface SpeakerMapping {
   mapped_at: UtcTimestamp;
 }
 
-export interface DetectedSpeaker {
+interface DetectedSpeaker {
   speaker_label: string;
   preview?: SpeakerPreviewInterval;
   assigned_user_id?: string;
@@ -275,18 +275,18 @@ export interface SpeakerMappingRequestItem {
   user_id: string;
 }
 
-export interface ConsentRecord {
+interface ConsentRecord {
   policy_version: string;
   affirmed_at: UtcTimestamp;
   affirmed_by: ResourceId;
 }
 
-export interface RubricSpec {
+interface RubricSpec {
   rubric_id: string;
   version: number;
 }
 
-export interface SessionManifest {
+interface SessionManifest {
   id: ResourceId;
   session_id: ResourceId;
   presentation_version_id: ResourceId;
@@ -297,7 +297,7 @@ export interface SessionManifest {
   frozen_at?: UtcTimestamp | null;
 }
 
-export interface SafeFailure {
+interface SafeFailure {
   code: string;
   stage?: string;
   retryable: boolean;
@@ -305,7 +305,7 @@ export interface SafeFailure {
   trace_id: string;
 }
 
-export interface Limitation {
+interface Limitation {
   code: string;
   scope: string;
   message: string;
@@ -356,10 +356,10 @@ export interface UpdatePracticeSessionRequest {
 
 // ================= Q&A =================
 
-export type QARoundState = 'not_started' | 'in_progress' | 'completed';
-export type QuestionKind = 'primary' | 'follow_up';
-export type QuestionState = 'pending' | 'active' | 'answered' | 'skipped';
-export type AnswerStatus = 'draft' | 'submitted' | 'skipped';
+type QARoundState = 'not_started' | 'in_progress' | 'completed';
+type QuestionKind = 'primary' | 'follow_up';
+type QuestionState = 'pending' | 'active' | 'answered' | 'skipped';
+type AnswerStatus = 'draft' | 'submitted' | 'skipped';
 
 export interface QARound {
   id: ResourceId;
@@ -404,7 +404,7 @@ export interface AnswerUploadIntentResponse {
 
 // ================= Reports =================
 
-export interface ScoreComponent {
+interface ScoreComponent {
   dimension: string;
   status: 'scored' | 'not_evaluated';
   configured_weight: number;
@@ -428,7 +428,7 @@ export interface Finding {
   speaker_labels: string[];
 }
 
-export interface FeedbackSection {
+interface FeedbackSection {
   summary: string;
   strengths: Finding[];
   improvements: Finding[];
@@ -436,7 +436,7 @@ export interface FeedbackSection {
   limitations: Array<Record<string, unknown>>;
 }
 
-export interface MemberFeedback {
+interface MemberFeedback {
   user_id: ResourceId;
   display_name: string;
   speaker_labels: string[];
@@ -482,13 +482,13 @@ export interface ReportExport {
 
 // ================= Erasure =================
 
-export interface ErasureStep {
+interface ErasureStep {
   store: string;
   status: 'pending' | 'in_progress' | 'completed' | 'failed';
   attempts: number;
 }
 
-export interface ErasureRequest {
+interface ErasureRequest {
   id: ResourceId;
   scope: 'asset' | 'practice_session' | 'project' | 'team';
   scope_id: ResourceId;
@@ -502,14 +502,14 @@ export interface ErasureRequest {
 
 // ================= SSE Events =================
 
-export interface SseSessionEvent {
+interface SseSessionEvent {
   sequence: number;
   practice_session_id: ResourceId;
   occurred_at: UtcTimestamp;
   trace_id: string;
 }
 
-export interface SessionUpdatedEvent extends SseSessionEvent {
+interface SessionUpdatedEvent extends SseSessionEvent {
   version: number;
   state: SessionState;
   current_attempt?: number;
@@ -523,7 +523,7 @@ export interface AnalysisProgressedEvent extends SseSessionEvent {
   progress: number;
 }
 
-export interface QuestionAvailableEvent extends SseSessionEvent {
+interface QuestionAvailableEvent extends SseSessionEvent {
   qa_round_id: ResourceId;
   question_id: ResourceId;
   position: number;
@@ -532,7 +532,7 @@ export interface QuestionAvailableEvent extends SseSessionEvent {
   version: number;
 }
 
-export interface AnswerUpdatedEvent extends SseSessionEvent {
+interface AnswerUpdatedEvent extends SseSessionEvent {
   qa_round_id: ResourceId;
   question_id: ResourceId;
   answer_id: ResourceId;
@@ -540,38 +540,38 @@ export interface AnswerUpdatedEvent extends SseSessionEvent {
   version: number;
 }
 
-export interface ReportReadyEvent extends SseSessionEvent {
+interface ReportReadyEvent extends SseSessionEvent {
   report_id: ResourceId;
   evaluation_id: ResourceId;
   status: 'ready';
   version: number;
 }
 
-export interface ErasureUpdatedEvent extends SseSessionEvent {
+interface ErasureUpdatedEvent extends SseSessionEvent {
   erasure_request_id: ResourceId;
   scope: 'practice_session' | 'project' | 'team' | 'asset';
   status: 'pending' | 'in_progress' | 'completed' | 'failed';
 }
 
-export type ResyncReason =
+type ResyncReason =
   | 'cursor_missing'
   | 'cursor_trimmed'
   | 'cursor_expired'
   | 'cursor_future';
 
-export interface ResyncRequiredEvent extends SseSessionEvent {
+interface ResyncRequiredEvent extends SseSessionEvent {
   reason: ResyncReason;
   current_sequence: number;
   requested_sequence?: number;
 }
 
-export type ContactSubmissionStatus =
+type ContactSubmissionStatus =
   | 'pending'
   | 'in_progress'
   | 'resolved'
   | 'spam';
 
-export interface ContactSubmission {
+interface ContactSubmission {
   id: string;
   name: string;
   email: string;
