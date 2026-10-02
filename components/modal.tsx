@@ -163,16 +163,16 @@ export function Modal({
                     size="sm"
                     onClick={onClose}
                     disabled={loading}
-                    className="rounded-full py-3 flex-1 max-w-[160px]"
+                    className="rounded-full py-3 flex-1 max-w-40"
                   >
                     {cancelText}
                   </Button>
                   <Button
                     type="submit"
-                    variant={submitVariant as any}
+                    variant={submitVariant as "primary" | "danger" | "glass" | "glass-dark" | "dark"}
                     size="sm"
                     disabled={loading || isSubmitDisabled}
-                    className="rounded-full py-3 font-bold flex-1 max-w-[160px]"
+                    className="rounded-full py-3 font-bold flex-1 max-w-40"
                   >
                     {loading ? loadingText : submitText}
                   </Button>

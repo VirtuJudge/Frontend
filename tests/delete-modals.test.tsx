@@ -41,7 +41,7 @@ describe("Deletion Modals", () => {
       );
 
       expect(screen.getByText("deck.pdf")).toBeDefined();
-      const deleteBtn = screen.getByRole("button", { name: /Delete Asset/i });
+      const deleteBtn = screen.getByRole("button", { name: "Delete" });
       fireEvent.click(deleteBtn);
 
       await waitFor(() => {

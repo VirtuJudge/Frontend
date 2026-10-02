@@ -11,10 +11,12 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/features/auth", async (importOriginal) => {
-  const actual = await importOriginal<any>();
+  const actual = await importOriginal<typeof import("@/features/auth")>();
   return {
     ...actual,
-    AuthContainer: ({ children }: any) => <div data-testid="auth-container">{children}</div>,
+    AuthContainer: ({ children }: React.PropsWithChildren) => (
+      <div data-testid="auth-container">{children}</div>
+    ),
     useAuth: () => ({ resetPassword, verifyPasswordRecoveryOtp }),
   };
 });
