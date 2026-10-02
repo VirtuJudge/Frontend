@@ -1,5 +1,5 @@
 import React from "react";
-import { BaseNavBar } from "@/components/Nav-Bar/base-nav-bar";
+import { BaseNavBar } from "@/components/nav-bar/base-nav-bar";
 
 export default function TeamsLayout({
   children,

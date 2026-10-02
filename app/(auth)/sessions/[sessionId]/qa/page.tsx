@@ -1,11 +1,11 @@
 "use client";
 
+import { useQASession } from "@/hooks";
 import { use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
-import { Button } from "@/components";
+import { Button, ImmersivePageShell } from "@/components";
 import {
-  useQASession,
   QAStageView,
   QAAnalyzingCard,
   QACompletedCard,
@@ -81,12 +81,9 @@ export default function SessionQAPage({
   // 1. Initial Loading State
   if (isLoading && !qaRound) {
     return (
-      <div className="fixed inset-0 w-full h-full bg-[#000f0e] flex items-center justify-center text-white p-4">
-        <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[220px] bg-[#00e5cc]/12 rounded-full blur-[110px] pointer-events-none" />
-        <SessionHeader onNavigate={handleNavigateBack} />
-
-        <div className="flex flex-col items-center gap-4 text-center z-10">
-          <div className="w-12 h-12 rounded-full border-2 border-[#00e5cc] border-t-transparent animate-spin" />
+      <ImmersivePageShell header={<SessionHeader onNavigate={handleNavigateBack} />}>
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="w-12 h-12 rounded-full border-2 border-accent border-t-transparent animate-spin" />
           <div className="flex flex-col gap-1">
             <h2 className="text-lg  font-semibold text-white">
               Loading Practice Q&A
@@ -96,18 +93,18 @@ export default function SessionQAPage({
             </p>
           </div>
         </div>
-      </div>
+      </ImmersivePageShell>
     );
   }
 
   // 2. Error State
   if (isError && !qaRound) {
     return (
-      <div className="fixed inset-0 w-full h-full bg-[#000f0e] flex items-center justify-center text-white p-4">
-        <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[220px] bg-[#00e5cc]/12 rounded-full blur-[110px] pointer-events-none" />
-        <SessionHeader onNavigate={handleNavigateBack} />
-
-        <div className="max-w-md w-full p-8 rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center text-center gap-5 z-10 backdrop-blur-xl">
+      <ImmersivePageShell
+        header={<SessionHeader onNavigate={handleNavigateBack} />}
+        contentClassName="w-full max-w-md"
+      >
+        <div className="flex flex-col items-center gap-5 rounded-3xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xl">
           <div className="w-14 h-14 rounded-full bg-danger/20 border border-danger/30 flex items-center justify-center text-danger">
             <Icon icon="tabler:alert-triangle" className="text-2xl" />
           </div>
@@ -133,40 +130,36 @@ export default function SessionQAPage({
             </Button>
           </div>
         </div>
-      </div>
+      </ImmersivePageShell>
     );
   }
 
   // 3. Completed State
   if (isRoundCompleted) {
     return (
-      <div className="fixed inset-0 w-full h-full bg-[#000f0e] flex items-center justify-center text-white p-4">
-        <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[220px] bg-[#00e5cc]/12 rounded-full blur-[110px] pointer-events-none" />
-        <SessionHeader onNavigate={handleNavigateBack} />
-
-        <div className="w-full max-w-2xl z-10">
-          <QACompletedCard
-            sessionId={sessionId}
-            projectId={practiceSession?.project_id}
-            questions={allQuestions}
-            answers={submittedAnswers}
-          />
-        </div>
-      </div>
+      <ImmersivePageShell
+        header={<SessionHeader onNavigate={handleNavigateBack} />}
+        contentClassName="w-full max-w-2xl"
+      >
+        <QACompletedCard
+          sessionId={sessionId}
+          projectId={practiceSession?.project_id}
+          questions={allQuestions}
+          answers={submittedAnswers}
+        />
+      </ImmersivePageShell>
     );
   }
 
   // 4. Analyzing Answer State
   if (isAnalyzing) {
     return (
-      <div className="fixed inset-0 w-full h-full bg-[#000f0e] flex items-center justify-center text-white p-4">
-        <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] h-[220px] bg-[#00e5cc]/12 rounded-full blur-[110px] pointer-events-none" />
-        <SessionHeader onNavigate={handleNavigateBack} />
-
-        <div className="w-full max-w-xl z-10">
-          <QAAnalyzingCard progress={analysisProgress} />
-        </div>
-      </div>
+      <ImmersivePageShell
+        header={<SessionHeader onNavigate={handleNavigateBack} />}
+        contentClassName="w-full max-w-xl"
+      >
+        <QAAnalyzingCard progress={analysisProgress} />
+      </ImmersivePageShell>
     );
   }
 

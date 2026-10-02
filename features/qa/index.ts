@@ -1,5 +1,3 @@
-export * from "./hooks/use-audio-recorder";
-export * from "./hooks/use-qa-session";
 export * from "./audio-player";
 export * from "./audio-recorder-panel";
 export * from "./qa-header";

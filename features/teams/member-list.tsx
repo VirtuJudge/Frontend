@@ -15,7 +15,7 @@ interface MemberListProps {
   onOwnershipTransferred?: (newOwnerUserId: string) => void;
 }
 
-export function MemberList({
+function MemberList({
   teamId,
   teamName,
   members,

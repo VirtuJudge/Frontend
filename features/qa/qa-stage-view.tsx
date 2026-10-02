@@ -10,8 +10,8 @@ import { Question } from "@/lib/api/types";
 import {
   useAudioRecorder,
   AudioRecordingDraft,
-} from "./hooks/use-audio-recorder";
-import { SubmitAnswerProgress } from "./hooks/use-qa-session";
+} from "@/hooks";
+import { SubmitAnswerProgress } from "@/hooks";
 import { JudgesQuestionsModal } from "./judges-questions-modal";
 import { ReviewDraftModal } from "./review-draft-modal";
 import { SkipQuestionModal } from "./skip-question-modal";
@@ -195,7 +195,7 @@ export function QAStageView({
     <div className="fixed inset-0 w-full h-full bg-[#000f0e] overflow-hidden select-none flex flex-col items-center justify-between py-8 px-6 sm:px-12 z-50">
       {/* Top Ambient Glow matching screenshots */}
       <div
-        className="fixed top-0 left-1/2 -translate-x-1/2 w-[600px] sm:w-[800px] h-[220px] bg-[#00e5cc]/12 rounded-full blur-[110px] pointer-events-none z-0"
+        className="fixed top-0 left-1/2 -translate-x-1/2 w-150 sm:w-200 h-55 bg-accent/12 rounded-full blur-[110px] pointer-events-none z-0"
         aria-hidden="true"
       />
 
@@ -239,7 +239,7 @@ export function QAStageView({
                 icon="tabler:speakerphone"
                 className="text-2xl text-white -rotate-12"
               />
-              <span className="text-[10px] font-bold text-[#00e5cc] absolute -top-1 -right-2">
+              <span className="text-[10px] font-bold text-accent absolute -top-1 -right-2">
                 ?
               </span>
             </div>
@@ -250,7 +250,7 @@ export function QAStageView({
           <div className="flex items-center gap-2.5 text-white/90 font-mono text-sm sm:text-base tracking-wide select-none">
             <Icon
               icon="tabler:microphone"
-              className="text-xl text-[#00e5cc] animate-pulse"
+              className="text-xl text-accent animate-pulse"
             />
             <span>Judges are listening</span>
           </div>
@@ -259,10 +259,10 @@ export function QAStageView({
         {/* Stadium-rounded Glass Pill Container */}
         <div
           onClick={!isListeningState ? handleStartAnswering : undefined}
-          className={`w-full max-w-3xl min-h-[160px] sm:min-h-[180px] px-8 sm:px-16 py-10 rounded-[60px] sm:rounded-full bg-[#0a1b18]/75 border border-[#00e5cc]/30 backdrop-blur-2xl flex items-center justify-center text-center shadow-[0_0_60px_rgba(0,0,0,0.6)] transition-all ${
+          className={`w-full max-w-3xl min-h-40 sm:min-h-45 px-8 sm:px-16 py-10 rounded-[60px] sm:rounded-full bg-[#0a1b18]/75 border border-accent/30 backdrop-blur-2xl flex items-center justify-center text-center shadow-[0_0_60px_rgba(0,0,0,0.6)] transition-all ${
             !isListeningState
-              ? "cursor-pointer hover:border-[#00e5cc]/50 hover:bg-[#0a1b18]/90 group"
-              : "border-[#00e5cc]/40"
+              ? "cursor-pointer hover:border-accent/50 hover:bg-[#0a1b18]/90 group"
+              : "border-accent/40"
           }`}
           role="region"
           aria-label={isListeningState ? "Spoken Answer Capture" : "Active Judge Question"}
@@ -273,7 +273,7 @@ export function QAStageView({
               <p className="font-mono text-sm sm:text-base md:text-lg text-white/90 leading-relaxed group-hover:text-white transition-colors">
                 {defaultQuestionText}
               </p>
-              <span className="text-[11px] font-mono text-[#00e5cc]/60 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-[11px] font-mono text-accent/60 opacity-0 group-hover:opacity-100 transition-opacity">
                 (Click or press Space to start speaking)
               </span>
             </div>
@@ -286,7 +286,7 @@ export function QAStageView({
                     Listening to your voice... start speaking your answer
                   </span>
                 )}
-                <span className="inline-block w-2 h-4 sm:h-5 bg-[#00e5cc] ml-1.5 animate-pulse align-middle" />
+                <span className="inline-block w-2 h-4 sm:h-5 bg-accent ml-1.5 animate-pulse align-middle" />
               </p>
               {isNearingLimit && (
                 <span className="text-xs font-mono text-amber-400 font-semibold animate-pulse">
@@ -337,7 +337,7 @@ export function QAStageView({
               className="h-12 px-6 py-0 rounded-full flex items-center gap-2.5 text-white shadow-xl cursor-pointer hover:brightness-125 transition-all active:scale-95"
               aria-label="Start recording answer"
             >
-              <Icon icon="tabler:microphone" className="text-xl text-[#00e5cc]" />
+              <Icon icon="tabler:microphone" className="text-xl text-accent" />
               <span className="text-sm font-semibold">Answer</span>
             </Wrapper>
           ) : (

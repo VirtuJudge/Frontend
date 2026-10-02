@@ -208,4 +208,4 @@ export function WorkspaceNavBar({
 
 // Re-export as ProjectNavBar for backward compatibility
 export const ProjectNavBar = WorkspaceNavBar;
-export type ProjectNavBarProps = WorkspaceNavBarProps;
+type ProjectNavBarProps = WorkspaceNavBarProps;

@@ -46,7 +46,7 @@ export function QuestionCard({
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
                 isFollowUp
                   ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                  : "bg-[#00e5cc]/15 text-[#00e5cc] border border-[#00e5cc]/30"
+                  : "bg-accent/15 text-accent border border-accent/30"
               }`}
             >
               <Icon
@@ -61,7 +61,7 @@ export function QuestionCard({
             {/* Rubric Dimension Badge */}
             {question.rubric_dimension && (
               <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/80 border border-white/10">
-                <Icon icon="tabler:target" className="text-xs text-[#00e5cc]" />
+                <Icon icon="tabler:target" className="text-xs text-accent" />
                 <span>{formatRubricDimension(question.rubric_dimension)}</span>
               </div>
             )}
@@ -89,7 +89,7 @@ export function QuestionCard({
           <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex items-start gap-3 text-sm text-white/75">
             <Icon
               icon="tabler:info-circle"
-              className="text-lg text-[#00e5cc] shrink-0 mt-0.5"
+              className="text-lg text-accent shrink-0 mt-0.5"
               aria-hidden="true"
             />
             <div className="flex flex-col gap-1">

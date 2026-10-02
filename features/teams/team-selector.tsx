@@ -12,7 +12,7 @@ interface TeamSelectorProps {
   onTeamCreated: (newTeam: Team) => void;
 }
 
-export function TeamSelector({
+function TeamSelector({
   teams,
   onTeamCreated,
 }: TeamSelectorProps) {

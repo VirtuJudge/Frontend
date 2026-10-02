@@ -1,4 +1,4 @@
-export interface StoredSessionAsset {
+interface StoredSessionAsset {
   id: string;
   assetId?: string;
   versionId?: string;
@@ -42,14 +42,14 @@ export interface StoredSessionConfig {
 /**
  * Get the localStorage key for a given projectId
  */
-export function getSessionStorageKey(projectId: string): string {
+function getSessionStorageKey(projectId: string): string {
   return projectId;
 }
 
 /**
  * Fallback prefixed key
  */
-export function getPrefixedStorageKey(projectId: string): string {
+function getPrefixedStorageKey(projectId: string): string {
   return `session_config_${projectId}`;
 }
 

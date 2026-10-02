@@ -1,4 +1,4 @@
-export interface DirectUploadProgress {
+interface DirectUploadProgress {
   bytesUploaded: number;
   totalBytes: number;
   percentage: number;

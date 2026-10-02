@@ -117,7 +117,7 @@ export function AudioPlayer({
         <button
           type="button"
           onClick={togglePlay}
-          className="h-11 w-11 rounded-full bg-[#00e5cc] text-black hover:bg-[#00f5db] active:scale-95 transition-all flex items-center justify-center shrink-0 cursor-pointer shadow-md focus-visible:ring-2 focus-visible:ring-[#00e5cc] focus-visible:outline-none"
+          className="h-11 w-11 rounded-full bg-accent text-black hover:bg-[#00f5db] active:scale-95 transition-all flex items-center justify-center shrink-0 cursor-pointer shadow-md focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
           aria-label={isPlaying ? "Pause audio draft" : "Play audio draft"}
         >
           <Icon
@@ -140,7 +140,7 @@ export function AudioPlayer({
               step={0.1}
               value={currentTime}
               onChange={handleSeek}
-              className="w-full h-2 rounded-lg bg-white/10 appearance-none cursor-pointer accent-[#00e5cc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00e5cc]"
+              className="w-full h-2 rounded-lg bg-white/10 appearance-none cursor-pointer accent-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               aria-label="Seek audio"
               aria-valuemin={0}
               aria-valuemax={effectiveDuration}
@@ -162,11 +162,11 @@ export function AudioPlayer({
           className="flex items-center justify-center gap-1 h-3 mt-1"
           aria-hidden="true"
         >
-          <span className="w-1 bg-[#00e5cc] rounded-full animate-pulse h-2" />
-          <span className="w-1 bg-[#00e5cc] rounded-full animate-pulse h-3 [animation-delay:150ms]" />
-          <span className="w-1 bg-[#00e5cc] rounded-full animate-pulse h-2 [animation-delay:300ms]" />
-          <span className="w-1 bg-[#00e5cc] rounded-full animate-pulse h-3.5 [animation-delay:75ms]" />
-          <span className="w-1 bg-[#00e5cc] rounded-full animate-pulse h-2.5 [animation-delay:225ms]" />
+          <span className="w-1 bg-accent rounded-full animate-pulse h-2" />
+          <span className="w-1 bg-accent rounded-full animate-pulse h-3 [animation-delay:150ms]" />
+          <span className="w-1 bg-accent rounded-full animate-pulse h-2 [animation-delay:300ms]" />
+          <span className="w-1 bg-accent rounded-full animate-pulse h-3.5 [animation-delay:75ms]" />
+          <span className="w-1 bg-accent rounded-full animate-pulse h-2.5 [animation-delay:225ms]" />
         </div>
       )}
     </div>

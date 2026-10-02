@@ -12,7 +12,7 @@ interface ProjectListProps {
   onProjectCreated: (newProject: Project) => void;
 }
 
-export function ProjectList({
+function ProjectList({
   teamId,
   projects,
   onProjectCreated,

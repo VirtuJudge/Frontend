@@ -5,3 +5,4 @@ export * from "./invite-member-modal";
 export * from "./manage-member-modal";
 export * from "./manage-invitation-modal";
 export * from "./invitations-list";
+export * from "./team-dashboard";

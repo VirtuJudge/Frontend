@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components";
-import { WorkspaceNavBar } from "@/components/Nav-Bar";
+import { WorkspaceNavBar } from "@/components/nav-bar";
 import { useAuth } from "@/features/auth";
 import { apiClient, ApiClientError } from "@/lib/api/client";
 import type { Team, Project } from "@/lib/api/types";

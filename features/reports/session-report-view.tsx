@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Wrapper, Button, Text } from "@/components";
 import type { Finding, PracticeSession, Report } from "@/lib/api/types";
-import { WorkspaceNavBar } from "@/components/Nav-Bar";
+import { WorkspaceNavBar } from "@/components/nav-bar";
 import { useReactToPrint } from "react-to-print";
 
 export interface SessionReportViewProps {

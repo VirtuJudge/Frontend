@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Icon } from "@iconify/react";
 import { PracticeSession } from "@/lib/api/types";
 
-export interface QAHeaderProps {
+interface QAHeaderProps {
   session: PracticeSession | null;
   sessionId?: string;
   isAnalyzing?: boolean;
@@ -13,7 +13,7 @@ export interface QAHeaderProps {
   className?: string;
 }
 
-export function QAHeader({
+function QAHeader({
   session,
   isAnalyzing = false,
   isRoundCompleted = false,
@@ -29,7 +29,7 @@ export function QAHeader({
           {projectId ? (
             <Link
               href={`/projects/${projectId}`}
-              className="hover:text-white transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#00e5cc] rounded-md px-1"
+              className="hover:text-white transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent rounded-md px-1"
             >
               <Icon icon="tabler:arrow-left" className="text-base" />
               <span>Project Overview</span>
@@ -37,7 +37,7 @@ export function QAHeader({
           ) : (
             <Link
               href="/me"
-              className="hover:text-white transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#00e5cc] rounded-md px-1"
+              className="hover:text-white transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent rounded-md px-1"
             >
               <Icon icon="tabler:arrow-left" className="text-base" />
               <span>My Account</span>
@@ -45,7 +45,7 @@ export function QAHeader({
           )}
 
           <span className="text-white/30">/</span>
-          <span className="text-white/80 font-medium truncate max-w-[200px] sm:max-w-xs">
+          <span className="text-white/80 font-medium truncate max-w-50 sm:max-w-xs">
             {session?.name || "Practice Session"}
           </span>
         </div>
@@ -63,8 +63,8 @@ export function QAHeader({
               <span>Q&A Complete</span>
             </div>
           ) : (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#00e5cc]/15 text-[#00e5cc] border border-[#00e5cc]/30">
-              <span className="w-2 h-2 rounded-full bg-[#00e5cc] animate-pulse" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/30">
+              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
               <span>Q&A In Progress</span>
             </div>
           )}

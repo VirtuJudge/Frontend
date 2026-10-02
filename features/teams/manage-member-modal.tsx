@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Input, Modal, Text, Wrapper } from "@/components";
+import {
+  Button,
+  ConfirmActionModal,
+  Input,
+  Modal,
+  Text,
+  Wrapper,
+} from "@/components";
 import { Icon } from "@iconify/react";
 import { TeamMembership } from "@/lib/api/types";
 import { apiClient } from "@/lib/api/client";
@@ -21,6 +28,38 @@ type ManageView = "overview" | "remove" | "transfer";
 
 export function ManageMemberModal(props: ManageMemberModalProps) {
   if (!props.isOpen || !props.member) return null;
+
+  if (props.initialView === "remove") {
+    const { member } = props;
+    return (
+      <ConfirmActionModal
+        isOpen={props.isOpen}
+        onClose={props.onClose}
+        title="Remove Member"
+        confirmLabel="Remove"
+        confirmAriaLabel="Remove member"
+        errorMessage="Failed to remove member"
+        description={
+          <>
+            You are going to remove{" "}
+            <span className="font-semibold text-primary">
+              {member.display_name}
+            </span>{" "}
+            from{" "}
+            <span className="font-semibold text-primary">
+              {props.teamName || "Team 1"}
+            </span>
+            . They will lose access to this team and all projects and sessions
+            inside it. <span className="font-bold text-foreground">Are you sure?</span>
+          </>
+        }
+        onConfirm={async () => {
+          await apiClient.removeTeamMember(props.teamId, member.user_id);
+          props.onMemberRemoved(member.user_id);
+        }}
+      />
+    );
+  }
 
   return (
     <ManageMemberModalDialog
@@ -317,51 +356,8 @@ function ManageMemberModalDialog({
         </div>
       ))}
 
-      {view === "remove" &&
-        (initialView === "remove" ? (
-          <div className="flex flex-col items-center gap-8 text-center my-4">
-            <Text
-              size="sm"
-              className="text-foreground/80 leading-relaxed text-center"
-            >
-              You are going to remove{" "}
-              <span className="text-primary font-semibold">
-                {member.display_name}
-              </span>{" "}
-              from{" "}
-              <span className="text-primary font-semibold">
-                {teamName || "Team 1"}
-              </span>
-              . They will lose access to this team and all projects and session
-              inside it.{" "}
-              <span className="font-bold text-foreground">Are you sure?</span>
-            </Text>
-
-            <div className="flex items-center justify-center gap-4">
-              <Button
-                variant="glass"
-                size="sm"
-                onClick={onClose}
-                disabled={loading}
-                className="rounded-full px-8 py-3"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleRemove}
-                disabled={loading}
-                loading={loading}
-                className="rounded-full px-8 py-3 bg-[#e11d48] text-white font-bold"
-                aria-label="Remove member"
-              >
-                Remove
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
+      {view === "remove" && (
+        <div className="flex flex-col gap-4">
             <button
               type="button"
               onClick={() => {
@@ -433,8 +429,8 @@ function ManageMemberModalDialog({
                 Remove member
               </Button>
             </div>
-          </div>
-        ))}
+        </div>
+      )}
     </Modal>
   );
 }
