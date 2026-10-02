@@ -4,10 +4,9 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Input, Text } from "@/components";
-import RightSection from "@/components/auth/right-section";
 import { useAuth } from "@/features/auth";
 import { getSupabaseClient } from "@/lib/auth/supabase";
-import AuthContainer from "@/components/auth/container";
+import { AuthContainer } from "@/features/auth";
 
 const MIN_PASSWORD_LENGTH = 8;
 

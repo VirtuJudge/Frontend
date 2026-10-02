@@ -4,25 +4,58 @@ import React, { useEffect, useRef, useState } from "react";
 import { Button, Input, Text } from "@/components";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/features/auth";
-import AuthContainer from "@/components/auth/container";
+import { useAuth, AuthContainer } from "@/features/auth";
 import { cn } from "@/lib/utils";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 const OTP_LENGTH = 8;
+
+const emailSchema = z.object({
+  email: z.string().min(1, "Please enter your email address").email("Invalid email address"),
+});
+
+const otpSchema = z.object({
+  otp: z
+    .string()
+    .length(OTP_LENGTH, "Please enter all 8 numbers of the verification code")
+    .regex(/^\d{8}$/, "Please enter all 8 numbers of the verification code"),
+});
+
+type EmailFormValues = z.infer<typeof emailSchema>;
+type OtpFormValues = z.infer<typeof otpSchema>;
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const { resetPassword, verifyPasswordRecoveryOtp } = useAuth();
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const emailForm = useForm<EmailFormValues>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: { email: "" },
+  });
+
+  const otpForm = useForm<OtpFormValues>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: { otp: "" },
+  });
+
+  const savedEmail = emailForm.getValues("email");
+  const otpValue = useWatch({ control: otpForm.control, name: "otp" }) || "";
+  const otpArray = Array.from({ length: OTP_LENGTH }, (_, i) => otpValue[i] || "");
+
+  const emailError = emailForm.formState.errors.root?.message || emailForm.formState.errors.email?.message;
+  const otpError = otpForm.formState.errors.root?.message || otpForm.formState.errors.otp?.message;
+  const currentError = submitted ? otpError : emailError;
+  const isEmailLoading = emailForm.formState.isSubmitting;
+  const isOtpLoading = otpForm.formState.isSubmitting;
 
   useEffect(() => {
     if (submitted) {
@@ -38,43 +71,34 @@ export default function ForgotPasswordPage() {
 
   const handleOtpChange = (index: number, val: string) => {
     const digits = val.replace(/\D/g, "").split("");
-    setError(null);
+    if (otpError) otpForm.clearErrors();
 
-    setOtp((prev) => {
-      const next = [...prev];
-      if (digits.length === 0) {
-        next[index] = "";
-      } else {
-        digits.forEach((d, i) => {
-          if (index + i < OTP_LENGTH) next[index + i] = d;
-        });
-      }
-      return next;
-    });
+    const nextOtp = [...otpArray];
+    if (digits.length === 0) {
+      nextOtp[index] = "";
+    } else {
+      digits.forEach((d, i) => {
+        if (index + i < OTP_LENGTH) nextOtp[index + i] = d;
+      });
+    }
+    const nextOtpValue = nextOtp.join("");
+    otpForm.setValue("otp", nextOtpValue, { shouldValidate: nextOtpValue.length === OTP_LENGTH });
 
-    const nextIndex = Math.min(
-      index + Math.max(digits.length, 1),
-      OTP_LENGTH - 1,
-    );
+    const nextIndex = Math.min(index + Math.max(digits.length, 1), OTP_LENGTH - 1);
     inputRefs.current[nextIndex]?.focus();
   };
 
-  const handleKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace") {
       e.preventDefault();
-      setOtp((prev) => {
-        const next = [...prev];
-        if (next[index]) {
-          next[index] = "";
-        } else if (index > 0) {
-          next[index - 1] = "";
-          inputRefs.current[index - 1]?.focus();
-        }
-        return next;
-      });
+      const nextOtp = [...otpArray];
+      if (nextOtp[index]) {
+        nextOtp[index] = "";
+      } else if (index > 0) {
+        nextOtp[index - 1] = "";
+        inputRefs.current[index - 1]?.focus();
+      }
+      otpForm.setValue("otp", nextOtp.join(""));
     } else if (e.key === "ArrowLeft" && index > 0) {
       e.preventDefault();
       inputRefs.current[index - 1]?.focus();
@@ -86,85 +110,58 @@ export default function ForgotPasswordPage() {
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const digits = e.clipboardData
-      .getData("text")
-      .replace(/\D/g, "")
-      .slice(0, OTP_LENGTH);
+    const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
     if (!digits) return;
 
-    setError(null);
-    setOtp(Array.from({ length: OTP_LENGTH }, (_, i) => digits[i] || ""));
+    if (otpError) otpForm.clearErrors();
+    const newOtpArray = Array.from({ length: OTP_LENGTH }, (_, i) => digits[i] || "");
+    otpForm.setValue("otp", newOtpArray.join(""));
     inputRefs.current[Math.min(digits.length, OTP_LENGTH - 1)]?.focus();
   };
 
-  const handleReset = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      setError("Please enter your email address");
-      return;
-    }
-
+  const onEmailSubmit = async (data: EmailFormValues) => {
     try {
-      setLoading(true);
-      setError(null);
       setSuccessMessage(null);
-      await resetPassword(trimmedEmail);
+      await resetPassword(data.email.trim());
       setSubmitted(true);
       setResendCooldown(60);
-      setOtp(Array(OTP_LENGTH).fill(""));
+      otpForm.setValue("otp", "");
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to send reset code",
-      );
-    } finally {
-      setLoading(false);
+      emailForm.setError("root", {
+        message: err instanceof Error ? err.message : "Failed to send reset code",
+      });
     }
   };
 
-  const handleVerifyOtp = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const code = otp.join("");
-    if (code.length !== OTP_LENGTH || !/^\d{8}$/.test(code)) {
-      setError("Please enter all 8 numbers of the verification code");
-      return;
-    }
-
+  const onOtpSubmit = async (data: OtpFormValues) => {
     try {
-      setLoading(true);
-      setError(null);
-      await verifyPasswordRecoveryOtp(email.trim(), code);
+      await verifyPasswordRecoveryOtp(savedEmail.trim(), data.otp);
       router.push("/auth/reset-password");
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to verify reset code",
-      );
-    } finally {
-      setLoading(false);
+      otpForm.setError("root", {
+        message: err instanceof Error ? err.message : "Failed to verify reset code",
+      });
     }
   };
 
   const handleResend = async () => {
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      setError("Please enter your email address to resend reset code");
+    if (!savedEmail) {
+      otpForm.setError("root", { message: "Please enter your email address to resend reset code" });
       return;
     }
     if (resendCooldown > 0 || resending) return;
 
     try {
       setResending(true);
-      setError(null);
+      otpForm.clearErrors();
       setSuccessMessage(null);
-      await resetPassword(trimmedEmail);
-      setSuccessMessage(
-        `A new 8-digit verification code has been sent to ${trimmedEmail}`,
-      );
+      await resetPassword(savedEmail.trim());
+      setSuccessMessage(`A new 8-digit verification code has been sent to ${savedEmail.trim()}`);
       setResendCooldown(60);
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Failed to resend reset code",
-      );
+      otpForm.setError("root", {
+        message: err instanceof Error ? err.message : "Failed to resend reset code",
+      });
     } finally {
       setResending(false);
     }
@@ -175,16 +172,15 @@ export default function ForgotPasswordPage() {
       <Text size="lg">Reset Password</Text>
 
       <Text className="w-full px-8 text-center text-fg-light/80">
-        Enter the email address associated with your account to receive a
-        password reset code.
+        Enter the email address associated with your account to receive a password reset code.
       </Text>
 
-      {error && (
+      {currentError && (
         <Text
           role="alert"
           className="w-full p-3 rounded-2xl bg-danger/20 border border-danger/40 text-danger-lighter text-center"
         >
-          {error}
+          {currentError}
         </Text>
       )}
 
@@ -206,16 +202,12 @@ export default function ForgotPasswordPage() {
             If an account with{" "}
             <span className="inline-block align-bottom max-w-[20ch] sm:max-w-[30ch] md:max-w-[40ch] truncate">
               {" "}
-              {email}
+              {savedEmail}
             </span>{" "}
-            exists, a password reset email has been sent. Enter its code below
-            to continue.
+            exists, a password reset email has been sent. Enter its code below to continue.
           </Text>
 
-          <form
-            onSubmit={handleVerifyOtp}
-            className="flex flex-col items-center gap-6 w-full"
-          >
+          <form onSubmit={otpForm.handleSubmit(onOtpSubmit)} className="flex flex-col items-center gap-6 w-full">
             <div className="flex flex-col items-center gap-4 w-full">
               <Text as="label">Verification Code</Text>
 
@@ -224,7 +216,7 @@ export default function ForgotPasswordPage() {
                 role="group"
                 aria-label="8-digit verification code"
               >
-                {otp.map((digit, index) => (
+                {otpArray.map((digit, index) => (
                   <input
                     key={index}
                     ref={(el) => {
@@ -240,18 +232,18 @@ export default function ForgotPasswordPage() {
                     onKeyDown={(e) => handleKeyDown(index, e)}
                     onPaste={handlePaste}
                     onFocus={(e) => e.target.select()}
-                    disabled={loading}
+                    disabled={isOtpLoading}
                     aria-label={`Digit ${index + 1}`}
                     className={cn(
                       "w-9 h-9 sm:w-12 sm:h-12 align-middle text-center font-bold",
                       "rounded-full bg-glass border transition-all duration-150",
                       "outline-none focus:outline-none focus:border-primary text-md sm:text-lg",
-                      error
+                      currentError
                         ? "border-danger/60"
                         : digit
                           ? "border-primary/80 shadow-[0_0_8px_rgba(6,249,228,0.2)]"
                           : "border-white/10 hover:border-white/30",
-                      loading && "opacity-50 cursor-not-allowed",
+                      isOtpLoading && "opacity-50 cursor-not-allowed",
                     )}
                   />
                 ))}
@@ -262,16 +254,16 @@ export default function ForgotPasswordPage() {
               type="submit"
               variant="primary"
               className="w-full"
-              disabled={loading || otp.join("").length !== OTP_LENGTH}
-              loading={loading}
+              disabled={isOtpLoading || otpValue.length !== OTP_LENGTH}
+              loading={isOtpLoading}
             >
-              {loading ? "Verifying code..." : "Verify Code"}
+              {isOtpLoading ? "Verifying code..." : "Verify Code"}
             </Button>
 
             <Button
               type="button"
               onClick={handleResend}
-              disabled={loading || resending || resendCooldown > 0}
+              disabled={isOtpLoading || resending || resendCooldown > 0}
               className="text-primary disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-opacity w-full"
             >
               {resendCooldown > 0
@@ -283,29 +275,25 @@ export default function ForgotPasswordPage() {
           </form>
         </div>
       ) : (
-        <form
-          onSubmit={handleReset}
-          className="flex flex-col items-center gap-6 w-full"
-        >
+        <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="flex flex-col items-center gap-6 w-full">
           <Input
             label="Email"
             type="email"
             placeholder="Enter your email address"
             className="w-full"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
+            disabled={isEmailLoading}
             required
+            {...emailForm.register("email")}
           />
 
           <Button
             type="submit"
             variant="primary"
             className="w-full mt-2"
-            disabled={loading}
-            loading={loading}
+            disabled={isEmailLoading}
+            loading={isEmailLoading}
           >
-            {loading ? "Sending reset code..." : "Send Reset Code"}
+            {isEmailLoading ? "Sending reset code..." : "Send Reset Code"}
           </Button>
         </form>
       )}

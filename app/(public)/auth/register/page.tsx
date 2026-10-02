@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button, Input, Text } from "@/components";
 import Link from "next/link";
 import { useAuth } from "@/features/auth";
-import AuthContainer from "@/components/auth/container";
+import { AuthContainer } from "@/features/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
