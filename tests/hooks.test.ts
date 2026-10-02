@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useMediaQuery, useIsMobile, useLocalStorage } from "@/hooks";
+import {
+  useAsyncAction,
+  useIsMobile,
+  useLocalStorage,
+  useMediaQuery,
+} from "@/hooks";
 
 describe("useMediaQuery & useIsMobile", () => {
   let listeners: Record<string, ((event: MediaQueryListEvent) => void)[]> = {};
@@ -154,5 +159,46 @@ describe("useLocalStorage", () => {
 
     expect(result.current[0]).toBe(true);
     expect(window.localStorage.getItem("test_key")).toBe("true");
+  });
+});
+
+describe("useAsyncAction", () => {
+  it("exposes pending state and returns a successful result", async () => {
+    let resolveAction: (value: string) => void;
+    const action = vi.fn(
+      () => new Promise<string>((resolve) => { resolveAction = resolve; }),
+    );
+    const { result } = renderHook(() => useAsyncAction(action, "Fallback"));
+
+    let request: Promise<string | undefined>;
+    act(() => {
+      request = result.current.run();
+    });
+
+    expect(result.current.isPending).toBe(true);
+    act(() => resolveAction("created"));
+
+    await act(async () => {
+      await request;
+    });
+
+    expect(action).toHaveBeenCalledTimes(1);
+    expect(result.current.isPending).toBe(false);
+    expect(result.current.error).toBeNull();
+  });
+
+  it("captures an action error without throwing to the caller", async () => {
+    const { result } = renderHook(() =>
+      useAsyncAction(async () => {
+        throw new Error("Request failed");
+      }, "Fallback"),
+    );
+
+    await act(async () => {
+      await expect(result.current.run()).resolves.toBeUndefined();
+    });
+
+    expect(result.current.error).toBe("Request failed");
+    expect(result.current.isPending).toBe(false);
   });
 });

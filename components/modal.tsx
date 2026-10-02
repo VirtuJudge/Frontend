@@ -18,7 +18,9 @@ export interface ModalProps {
   submitText?: string;
   loadingText?: string;
   cancelText?: string;
-  children: React.ReactNode;
+  submitVariant?: "primary" | "danger" | "glass" | "glass-dark" | "dark";
+  isSubmitDisabled?: boolean;
+  children?: React.ReactNode;
   footer?: React.ReactNode;
   className?: string;
 }
@@ -35,6 +37,8 @@ export function Modal({
   submitText = "Save",
   loadingText = "Saving...",
   cancelText = "Cancel",
+  submitVariant = "primary",
+  isSubmitDisabled = false,
   children,
   footer,
   className,
@@ -126,8 +130,8 @@ export function Modal({
 
           {description && (
             <Text
-              size="sm"
-              className="text-foreground/70 text-center max-w-xl mb-4"
+              size="inherit"
+              className="text-sm sm:text-base text-foreground/80 text-center max-w-xl mb-4 leading-relaxed"
             >
               {description}
             </Text>
@@ -152,23 +156,23 @@ export function Modal({
               {footer !== undefined ? (
                 footer
               ) : (
-                <div className="flex justify-center gap-3 mt-4 w-full">
+                <div className="flex justify-center gap-4 mt-4 w-full">
                   <Button
                     type="button"
                     variant="glass"
                     size="sm"
                     onClick={onClose}
                     disabled={loading}
-                    className="rounded-full px-6"
+                    className="rounded-full py-3 flex-1 max-w-40"
                   >
                     {cancelText}
                   </Button>
                   <Button
                     type="submit"
-                    variant="primary"
+                    variant={submitVariant as "primary" | "danger" | "glass" | "glass-dark" | "dark"}
                     size="sm"
-                    disabled={loading}
-                    className="rounded-full px-6 font-bold"
+                    disabled={loading || isSubmitDisabled}
+                    className="rounded-full py-3 font-bold flex-1 max-w-40"
                   >
                     {loading ? loadingText : submitText}
                   </Button>

@@ -7,8 +7,8 @@ import { NavDropdown, NavDropdownOption } from "@/components/nav-dropdown";
 import {
   WorkspaceNavBar,
   ProjectNavBar,
-} from "@/components/Nav-Bar/workspace-nav-bar";
-import NavBar from "@/components/Nav-Bar/nav-bar";
+} from "@/components/nav-bar/workspace-nav-bar";
+import NavBar from "@/components/nav-bar/nav-bar";
 import ProjectLayout from "@/app/(auth)/projects/layout";
 import { ProjectDetailsContent } from "@/features/projects/project-details-content";
 import RootPage from "@/app/(auth)/(index)/page";

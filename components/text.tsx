@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-export type TextSize =
+type TextSize =
   // deprecated
   "xs" | "sm" | "md" | "lg" |
   // new sizes

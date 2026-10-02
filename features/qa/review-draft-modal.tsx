@@ -4,8 +4,8 @@ import React from "react";
 import { Icon } from "@iconify/react";
 import { Wrapper, Button } from "@/components";
 import { AudioPlayer } from "./audio-player";
-import { AudioRecordingDraft } from "./hooks/use-audio-recorder";
-import { SubmitAnswerProgress } from "./hooks/use-qa-session";
+import { AudioRecordingDraft } from "@/hooks";
+import { SubmitAnswerProgress } from "@/hooks";
 
 export interface ReviewDraftModalProps {
   isOpen: boolean;
@@ -42,7 +42,7 @@ export function ReviewDraftModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#00e5cc]/15 border border-[#00e5cc]/30 flex items-center justify-center text-[#00e5cc]">
+            <div className="w-10 h-10 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
               <Icon icon="tabler:headphones" className="text-xl" />
             </div>
             <div>
@@ -78,7 +78,7 @@ export function ReviewDraftModal({
             </div>
             <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-[#00e5cc] h-full transition-all duration-300 rounded-full"
+                className="bg-accent h-full transition-all duration-300 rounded-full"
                 style={{ width: `${submitProgress.percent}%` }}
               />
             </div>
@@ -91,7 +91,7 @@ export function ReviewDraftModal({
             type="button"
             onClick={onRecordAgain}
             disabled={isSubmitting}
-            className="flex-1 h-12 rounded-full min-w-[140px]"
+            className="flex-1 h-12 rounded-full min-w-35"
             aria-label="Discard draft and record again"
           >
             <Icon icon="tabler:rotate" className="text-lg" />
@@ -102,7 +102,7 @@ export function ReviewDraftModal({
             type="button"
             onClick={onSubmit}
             disabled={isSubmitting}
-            className="flex-1 h-12 rounded-full font-bold text-black bg-[#00e5cc] hover:bg-[#00f5db] active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-[#00e5cc] focus-visible:outline-none min-w-[170px]"
+            className="flex-1 h-12 rounded-full font-bold text-black bg-accent hover:bg-[#00f5db] active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none min-w-42.5"
             aria-label="Submit answer recording"
           >
             {isSubmitting ? (

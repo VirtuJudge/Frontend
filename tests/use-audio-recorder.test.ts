@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useAudioRecorder } from "@/features/qa/hooks/use-audio-recorder";
+import { useAudioRecorder } from "@/hooks";
 
 class MockMediaStream {
   tracks: Array<{ stop: () => void; readyState: string; enabled: boolean }>;

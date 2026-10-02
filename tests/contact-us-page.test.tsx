@@ -7,6 +7,9 @@ import * as supabaseModule from "@/lib/auth/supabase";
 import * as authModule from "@/features/auth";
 
 vi.mock("@/features/auth", () => ({
+  AuthContainer: ({ children }: React.PropsWithChildren) => (
+    <div data-testid="auth-container">{children}</div>
+  ),
   useAuth: vi.fn(),
 }));
 

@@ -6,11 +6,11 @@ import { Wrapper, Button } from "@/components";
 import {
   useAudioRecorder,
   AudioRecordingDraft,
-} from "./hooks/use-audio-recorder";
+} from "@/hooks";
 import { AudioPlayer } from "./audio-player";
-import { SubmitAnswerProgress } from "./hooks/use-qa-session";
+import { SubmitAnswerProgress } from "@/hooks";
 
-export interface AudioRecorderPanelProps {
+interface AudioRecorderPanelProps {
   isSubmitting?: boolean;
   submitProgress?: SubmitAnswerProgress | null;
   onSubmitDraft: (draft: AudioRecordingDraft) => Promise<void> | void;
@@ -25,7 +25,7 @@ function formatDuration(ms: number): string {
   return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export function AudioRecorderPanel({
+function AudioRecorderPanel({
   isSubmitting = false,
   submitProgress = null,
   onSubmitDraft,
@@ -104,7 +104,7 @@ export function AudioRecorderPanel({
       {/* 2. Ready State (Before recording, no draft) */}
       {state === "idle" && !hasDraft && (
         <div className="flex flex-col items-center justify-center text-center gap-5 py-4">
-          <div className="w-16 h-16 rounded-full bg-[#00e5cc]/10 border border-[#00e5cc]/25 flex items-center justify-center text-[#00e5cc]">
+          <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/25 flex items-center justify-center text-accent">
             <Icon icon="tabler:microphone" className="text-3xl" />
           </div>
 
@@ -123,7 +123,7 @@ export function AudioRecorderPanel({
             <button
               type="button"
               onClick={startRecording}
-              className="flex-1 h-12 rounded-full font-bold text-black bg-[#00e5cc] hover:bg-[#00f5db] active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-[#00e5cc] focus-visible:outline-none min-w-[180px]"
+              className="flex-1 h-12 rounded-full font-bold text-black bg-accent hover:bg-[#00f5db] active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none min-w-45"
               aria-label="Start recording answer"
             >
               <Icon icon="tabler:microphone" className="text-xl" />
@@ -133,7 +133,7 @@ export function AudioRecorderPanel({
             <Button
               type="button"
               onClick={onOpenSkipModal}
-              className="h-12 px-6 rounded-full min-w-[120px]"
+              className="h-12 px-6 rounded-full min-w-30"
               aria-label="Skip this question"
             >
               <Icon icon="tabler:player-skip-forward" className="text-lg" />
@@ -146,7 +146,7 @@ export function AudioRecorderPanel({
       {/* 3. Requesting Permission State */}
       {state === "requesting_permission" && (
         <div className="flex flex-col items-center justify-center gap-4 py-8 text-center">
-          <div className="w-12 h-12 rounded-full border-2 border-[#00e5cc] border-t-transparent animate-spin" />
+          <div className="w-12 h-12 rounded-full border-2 border-accent border-t-transparent animate-spin" />
           <p className="text-sm text-white/80">
             Requesting microphone access...
           </p>
@@ -209,7 +209,7 @@ export function AudioRecorderPanel({
             {[18, 36, 24, 42, 30, 20, 38, 28, 44, 22, 32].map((height, i) => (
               <span
                 key={i}
-                className={`w-1.5 rounded-full bg-[#00e5cc] transition-all duration-150 ${
+                className={`w-1.5 rounded-full bg-accent transition-all duration-150 ${
                   isRecording ? "animate-pulse" : "opacity-40"
                 }`}
                 style={{
@@ -226,7 +226,7 @@ export function AudioRecorderPanel({
               <Button
                 type="button"
                 onClick={pauseRecording}
-                className="flex-1 h-12 rounded-full min-w-[130px]"
+                className="flex-1 h-12 rounded-full min-w-32.5"
                 aria-label="Pause recording"
               >
                 <Icon icon="tabler:player-pause" className="text-lg" />
@@ -236,7 +236,7 @@ export function AudioRecorderPanel({
               <Button
                 type="button"
                 onClick={resumeRecording}
-                className="flex-1 h-12 rounded-full min-w-[130px]"
+                className="flex-1 h-12 rounded-full min-w-32.5"
                 aria-label="Resume recording"
               >
                 <Icon icon="tabler:player-play" className="text-lg" />
@@ -247,7 +247,7 @@ export function AudioRecorderPanel({
             <button
               type="button"
               onClick={stopRecording}
-              className="flex-1 h-12 rounded-full font-bold text-white bg-red-600 hover:bg-red-500 active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none min-w-[150px]"
+              className="flex-1 h-12 rounded-full font-bold text-white bg-red-600 hover:bg-red-500 active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none min-w-37.5"
               aria-label="Stop recording and review answer draft"
             >
               <Icon icon="tabler:player-stop-filled" className="text-lg" />
@@ -287,7 +287,7 @@ export function AudioRecorderPanel({
               </div>
               <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-[#00e5cc] h-full transition-all duration-300 rounded-full"
+                  className="bg-accent h-full transition-all duration-300 rounded-full"
                   style={{ width: `${submitProgress.percent}%` }}
                 />
               </div>
@@ -300,7 +300,7 @@ export function AudioRecorderPanel({
               type="button"
               onClick={discardDraft}
               disabled={isSubmitting}
-              className="flex-1 h-12 rounded-full min-w-[150px]"
+              className="flex-1 h-12 rounded-full min-w-37.5"
               aria-label="Discard draft and record again"
             >
               <Icon icon="tabler:rotate" className="text-lg" />
@@ -311,7 +311,7 @@ export function AudioRecorderPanel({
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="flex-1 h-12 rounded-full font-bold text-black bg-[#00e5cc] hover:bg-[#00f5db] active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-[#00e5cc] focus-visible:outline-none min-w-[180px]"
+              className="flex-1 h-12 rounded-full font-bold text-black bg-accent hover:bg-[#00f5db] active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none min-w-45"
               aria-label="Submit answer recording"
             >
               {isSubmitting ? (

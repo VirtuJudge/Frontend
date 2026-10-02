@@ -43,4 +43,4 @@ export function getSupabaseClient(): SupabaseClient | null {
   return supabaseInstance;
 }
 
-export const supabase = getSupabaseClient();
+const supabase = getSupabaseClient();

@@ -14,7 +14,7 @@ import {
   ActionAddButton,
   ActionIconButton,
 } from "@/components";
-import { WorkspaceNavBar } from "@/components/Nav-Bar";
+import { WorkspaceNavBar } from "@/components/nav-bar";
 import {
   UploadAssetModal,
   DeleteAssetModal,

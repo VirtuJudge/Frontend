@@ -48,7 +48,7 @@ export function JudgesQuestionsModal({
         {/* Header */}
         <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#00e5cc]/15 border border-[#00e5cc]/30 flex items-center justify-center text-[#00e5cc]">
+            <div className="w-10 h-10 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
               <Icon icon="tabler:messages" className="text-xl" />
             </div>
             <div>
@@ -84,9 +84,9 @@ export function JudgesQuestionsModal({
 
         {/* Active Question Details */}
         {activeQuestion && (
-          <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white/[0.03] border border-[#00e5cc]/20">
+          <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white/[0.03] border border-accent/20">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="text-xs  font-semibold text-[#00e5cc] uppercase tracking-wider">
+              <span className="text-xs  font-semibold text-accent uppercase tracking-wider">
                 Active Question {currentQuestionNumber} of{" "}
                 {Math.min(3, questions.length)}
               </span>
@@ -106,7 +106,7 @@ export function JudgesQuestionsModal({
               <div className="text-xs text-white/60 flex items-start gap-2 pt-1 border-t border-white/5">
                 <Icon
                   icon="tabler:info-circle"
-                  className="text-sm text-[#00e5cc] shrink-0 mt-0.5"
+                  className="text-sm text-accent shrink-0 mt-0.5"
                 />
                 <span>
                   <strong>Rationale:</strong> {activeQuestion.reason}
@@ -132,7 +132,7 @@ export function JudgesQuestionsModal({
                   key={q.id}
                   className={`p-3.5 rounded-xl border transition-all text-xs sm:text-sm flex items-start gap-3 ${
                     isCurrent
-                      ? "bg-[#00e5cc]/10 border-[#00e5cc]/40 text-white"
+                      ? "bg-accent/10 border-accent/40 text-white"
                       : "bg-white/[0.02] border-white/5 text-white/70"
                   }`}
                 >
@@ -148,7 +148,7 @@ export function JudgesQuestionsModal({
                     ) : isSkipped ? (
                       <span className="text-amber-400">Skipped</span>
                     ) : isCurrent ? (
-                      <span className="text-[#00e5cc]">Active</span>
+                      <span className="text-accent">Active</span>
                     ) : (
                       <span className="text-white/40">Upcoming</span>
                     )}

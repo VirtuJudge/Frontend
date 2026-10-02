@@ -71,12 +71,6 @@ export function NavDropdown({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
-  const alignmentClasses = {
-    left: "",
-    right: "",
-    center: "left-1/2 translate-x-1/2",
-  }[align];
-
   const originClass = {
     left: "origin-top-left",
     right: "origin-top-right",

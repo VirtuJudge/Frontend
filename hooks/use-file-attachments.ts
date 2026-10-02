@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 
 export const MAX_FILES = 5;
 export const MAX_FILE_SIZE = 25 * 1024 * 1024;
-export const ALLOWED_EXTENSIONS = [".pdf", ".pptx"] as const;
+const ALLOWED_EXTENSIONS = [".pdf", ".pptx"] as const;
 
 export function isAllowedFile(file: File): boolean {
   const name = file.name.toLowerCase();

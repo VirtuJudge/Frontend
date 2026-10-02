@@ -4,6 +4,8 @@ export * from "./wrapper";
 export * from "./dropdown-menu";
 export * from "./text";
 export * from "./modal";
+export * from "./confirm-action-modal";
+export * from "./immersive-page-shell";
 export * from "./nav-dropdown";
 export * from "./toggle-switch";
 export * from "./duration-picker";

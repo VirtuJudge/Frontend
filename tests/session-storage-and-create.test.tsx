@@ -240,10 +240,6 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
         expect(initial).not.toBeNull();
       });
 
-      // Verify localStorage is updated immediately without clicking Start!
-      await waitFor(() => {
-        const updated = getSessionConfig(mockProjectId);
-      });
     });
   });
 

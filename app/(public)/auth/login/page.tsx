@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/features/auth";
 import { Button, Input, Text } from "@/components";
 import Link from "next/link";
-import AuthContainer from "@/components/auth/container";
+import { AuthContainer } from "@/features/auth";
 
 export default function LoginPage() {
   const router = useRouter();

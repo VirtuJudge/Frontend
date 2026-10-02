@@ -10,9 +10,16 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace }),
 }));
 
-vi.mock("@/features/auth", () => ({
-  useAuth: () => ({ signOut }),
-}));
+vi.mock("@/features/auth", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/auth")>();
+  return {
+    ...actual,
+    AuthContainer: ({ children }: React.PropsWithChildren) => (
+      <div data-testid="auth-container">{children}</div>
+    ),
+    useAuth: () => ({ signOut }),
+  };
+});
 
 vi.mock("@/lib/auth/supabase", () => ({
   getSupabaseClient: () => ({ auth: { updateUser } }),

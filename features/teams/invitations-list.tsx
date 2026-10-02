@@ -14,7 +14,7 @@ interface InvitationsListProps {
   isOwner?: boolean;
 }
 
-export function InvitationsList({
+function InvitationsList({
   teamId,
   teamName,
   invitations,

@@ -36,13 +36,13 @@ export function QAStepper({
           return (
             <li
               key={question.id}
-              className="flex-1 flex flex-col items-center gap-1.5 min-w-[70px]"
+              className="flex-1 flex flex-col items-center gap-1.5 min-w-17.5"
               aria-current={isActive ? "step" : undefined}
             >
               <div
                 className={`w-full h-1.5 rounded-full transition-all duration-300 ${
                   isActive
-                    ? "bg-[#00e5cc] shadow-[0_0_8px_rgba(0,229,204,0.6)]"
+                    ? "bg-accent shadow-[0_0_8px_rgba(0,229,204,0.6)]"
                     : isAnswered
                     ? "bg-emerald-500"
                     : isSkipped
@@ -68,7 +68,7 @@ export function QAStepper({
                 )}
                 {isActive && (
                   <span
-                    className="w-2 h-2 rounded-full bg-[#00e5cc] animate-pulse"
+                    className="w-2 h-2 rounded-full bg-accent animate-pulse"
                     aria-hidden="true"
                   />
                 )}
@@ -76,7 +76,7 @@ export function QAStepper({
                 <span
                   className={`font-medium truncate ${
                     isActive
-                      ? "text-[#00e5cc] font-semibold"
+                      ? "text-accent font-semibold"
                       : isAnswered
                       ? "text-emerald-400/90"
                       : isSkipped

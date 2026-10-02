@@ -33,7 +33,7 @@ export function MediaPermissionPrompt({
         <span>Click</span>
         <Icon
           icon="teenyicons:adjust-horizontal-alt-outline"
-          className="text-xl shrink-0 text-[#00e5cc]"
+          className="text-xl shrink-0 text-accent"
         />
         <span>
           in your address bar and give permissions for camera and microphone
@@ -51,7 +51,7 @@ export function MediaPermissionPrompt({
           type="button"
           onClick={onRetry}
           disabled={isRequesting}
-          className="h-12 w-60 rounded-full  font-bold text-black bg-[#00e5cc] hover:bg-[#00f5db] active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none text-center"
+          className="h-12 w-60 rounded-full  font-bold text-black bg-accent hover:bg-[#00f5db] active:scale-95 transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none text-center"
         >
           <Icon
             icon={isRequesting ? "tabler:loader-2" : "tabler:refresh"}

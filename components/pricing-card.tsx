@@ -1,8 +1,8 @@
 import { Button, Text, Wrapper, If } from "@/components";
 
-export const ANNUAL_DISCOUNT = 0.2;
+const ANNUAL_DISCOUNT = 0.2;
 
-export const plans = {
+const plans = {
   personal: {
     name: "Personal",
     description: "For individuals and small teams",

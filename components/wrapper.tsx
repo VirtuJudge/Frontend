@@ -11,12 +11,12 @@ export type WrapperVariant =
   | "danger";
 export type BorderGradientVariant = "default" | "nav" | "none" | (string & {});
 
-export const BORDER_GRADIENTS: Record<string, string> = {
+const BORDER_GRADIENTS: Record<string, string> = {
   default: "var(--background-image-gradient-border)",
   nav: "var(--background-image-gradient-nav-border)",
 };
 
-export const BG_VARIANTS: Record<
+const BG_VARIANTS: Record<
   WrapperVariant,
   {
     className: string;
@@ -51,7 +51,7 @@ export const BG_VARIANTS: Record<
   },
 };
 
-export const getBorderGradientClass = (
+const getBorderGradientClass = (
   gradient: BorderGradientVariant = "default",
 ): string => {
   if (gradient === "none") return "border border-transparent";
@@ -114,7 +114,7 @@ export const getWrapperBorderStyle = ({
   return style;
 };
 
-export const getGlassGradientBorderStyle = getWrapperBorderStyle;
+const getGlassGradientBorderStyle = getWrapperBorderStyle;
 
 export interface WrapperProps<E extends React.ElementType = "div"> {
   as?: E;

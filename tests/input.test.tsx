@@ -12,8 +12,8 @@ describe("Input Component", () => {
     expect(input).toBeDefined();
     expect(wrapper).toBeDefined();
     expect(wrapper.className).toContain("rounded-[2.5rem]");
-    expect(wrapper.className).toContain("w-[480px]");
-    expect(wrapper.className).toMatch(/h-\[(55px|3\.4375rem)\]/);
+    expect(wrapper.className).toContain("w-120");
+    expect(wrapper.className).toContain("h-13.75");
     expect(wrapper.className).toContain("bg-glass");
     expect(wrapper.className).toContain("backdrop-blur-[20px]");
     expect(wrapper.className).toContain("border-gradient");
@@ -57,7 +57,7 @@ describe("Input Component", () => {
     expect(label).toBeDefined();
     expect(label.getAttribute("for")).toBe("project-input");
     expect(input.getAttribute("id")).toBe("project-input");
-    expect(label.className).toContain("text-fg");
+    expect(label.className).toContain("text-foreground");
   });
 
   it("associates label via auto-generated id when id is omitted", () => {
@@ -98,17 +98,17 @@ describe("Input Component", () => {
     const { rerender } = render(<Input size="sm" placeholder="Small" />);
     let input = screen.getByPlaceholderText("Small");
     let wrapper = input.closest('[data-slot="input-wrapper"]')!;
-    expect(wrapper.className).toMatch(/h-\[(42px|2\.625rem)\]/);
+    expect(wrapper.className).toContain("h-10.5");
 
     rerender(<Input size="default" placeholder="Default" />);
     input = screen.getByPlaceholderText("Default");
     wrapper = input.closest('[data-slot="input-wrapper"]')!;
-    expect(wrapper.className).toMatch(/h-\[(55px|3\.4375rem)\]/);
+    expect(wrapper.className).toContain("h-13.75");
 
     rerender(<Input size="lg" placeholder="Large" />);
     input = screen.getByPlaceholderText("Large");
     wrapper = input.closest('[data-slot="input-wrapper"]')!;
-    expect(wrapper.className).toMatch(/h-\[(64px|4rem)\]/);
+    expect(wrapper.className).toContain("h-16");
   });
 
   it("handles user input and change events", () => {
@@ -135,14 +135,14 @@ describe("Input Component", () => {
   it("allows custom className overrides for layouts and positioning", () => {
     render(
       <Input
-        className="w-[300px] text-primary"
+        className="w-75 text-primary"
         placeholder="Custom"
       />,
     );
     const input = screen.getByPlaceholderText("Custom");
     const wrapper = input.closest('[data-slot="input-wrapper"]')!;
 
-    expect(wrapper.className).toContain("w-[300px]");
+    expect(wrapper.className).toContain("w-75");
     expect(input.className).toContain("text-primary");
   });
 

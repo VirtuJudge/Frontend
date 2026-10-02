@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Icon } from "@iconify/react";
 import { Wrapper, Button, Text } from "@/components";
 import { Question, Answer } from "@/lib/api/types";

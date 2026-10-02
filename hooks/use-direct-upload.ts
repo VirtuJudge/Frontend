@@ -10,7 +10,7 @@ import {
   generateIdempotencyKey,
 } from "@/lib/upload";
 
-export type UploadStage =
+type UploadStage =
   | "idle"
   | "validating"
   | "hashing"

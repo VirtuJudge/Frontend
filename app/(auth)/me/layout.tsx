@@ -1,5 +1,5 @@
 import React from "react";
-import MeNavBar from "@/components/Nav-Bar/me-nav-bar";
+import MeNavBar from "@/components/nav-bar/me-nav-bar";
 
 export default function MeLayout({
   children,
