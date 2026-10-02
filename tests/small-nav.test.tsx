@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import SmallNav from "@/components/Nav-Bar/small-nav";
+import SmallNav from "@/components/nav-bar/small-nav";
 
 const SMALL_NAV_STORAGE_KEY = "small_nav_menu_open";
 

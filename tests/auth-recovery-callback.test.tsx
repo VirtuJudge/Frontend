@@ -12,6 +12,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/features/auth", () => ({
+  AuthContainer: ({ children }: any) => <div data-testid="auth-container">{children}</div>,
   useAuth: () => ({ signInWithJwt }),
 }));
 

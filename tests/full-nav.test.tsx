@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import FullNav from "@/components/Nav-Bar/full-nav";
+import FullNav from "@/components/nav-bar/full-nav";
 
 describe("FullNav Component", () => {
   it("renders main navigation links and keeps company dropdown closed initially", () => {

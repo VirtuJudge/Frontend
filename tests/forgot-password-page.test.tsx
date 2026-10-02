@@ -10,9 +10,14 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }));
 
-vi.mock("@/features/auth", () => ({
-  useAuth: () => ({ resetPassword, verifyPasswordRecoveryOtp }),
-}));
+vi.mock("@/features/auth", async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    AuthContainer: ({ children }: any) => <div data-testid="auth-container">{children}</div>,
+    useAuth: () => ({ resetPassword, verifyPasswordRecoveryOtp }),
+  };
+});
 
 import ForgotPasswordPage from "@/app/(public)/auth/forgot-password/page";
 

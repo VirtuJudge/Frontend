@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
-import { useQASession } from "@/features/qa/hooks/use-qa-session";
+import { useQASession } from "@/hooks";
 import { QARound, Question } from "@/lib/api/types";
 import * as directUploader from "@/lib/upload/direct-uploader";
 import * as checksumUtil from "@/lib/upload/checksum";

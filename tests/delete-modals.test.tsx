@@ -41,7 +41,7 @@ describe("Deletion Modals", () => {
       );
 
       expect(screen.getByText("deck.pdf")).toBeDefined();
-      const deleteBtn = screen.getByRole("button", { name: "Delete asset" });
+      const deleteBtn = screen.getByRole("button", { name: /Delete Asset/i });
       fireEvent.click(deleteBtn);
 
       await waitFor(() => {
@@ -82,7 +82,7 @@ describe("Deletion Modals", () => {
       );
 
       expect(screen.getByText("Session 2")).toBeDefined();
-      const deleteBtn = screen.getByRole("button", { name: "Delete session" });
+      const deleteBtn = screen.getByRole("button", { name: /Delete Session/i });
       fireEvent.click(deleteBtn);
 
       await waitFor(() => {
@@ -120,7 +120,7 @@ describe("Deletion Modals", () => {
         />,
       );
 
-      const deleteBtn = screen.getByRole("button", { name: "Delete project" });
+      const deleteBtn = screen.getByRole("button", { name: /Delete Project/i });
       expect(deleteBtn.hasAttribute("disabled")).toBe(true);
 
       const input = screen.getByLabelText("Confirm project name");
