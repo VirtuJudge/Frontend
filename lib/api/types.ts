@@ -60,7 +60,7 @@ export interface TeamMembership {
 }
 
 export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
-export type DeliveryStatus = 'queued' | 'accepted_by_gmail' | 'failed';
+export type DeliveryStatus = 'queued' | 'accepted_by_provider' | 'accepted_by_gmail' | 'failed';
 
 export interface TeamInvitation {
   id: ResourceId;

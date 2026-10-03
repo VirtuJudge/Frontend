@@ -14,7 +14,7 @@ interface InvitationsListProps {
   isOwner?: boolean;
 }
 
-function InvitationsList({
+export function InvitationsList({
   teamId,
   teamName,
   invitations,
@@ -30,6 +30,7 @@ function InvitationsList({
 
   const renderDeliveryBadge = (status: DeliveryStatus, attempts: number) => {
     switch (status) {
+      case "accepted_by_provider":
       case "accepted_by_gmail":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
