@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { User } from "@/lib/api/types";
-import { apiClient } from "@/lib/api/client";
+import { apiClient, ApiClientError } from "@/lib/api/client";
 import {
   getClientAuthToken,
   removeClientAuthToken,
@@ -168,24 +168,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       try {
         return await apiClient.getMe();
-      } catch {
-        if (isJwtExpired(token)) {
+      } catch (err: unknown) {
+        const isAuthError =
+          isJwtExpired(token) ||
+          (err instanceof ApiClientError && (err.status === 401 || err.status === 403)) ||
+          (err instanceof Error &&
+            (err.message.includes("401") ||
+              err.message.includes("403") ||
+              err.message.toLowerCase().includes("unauthorized") ||
+              err.message.toLowerCase().includes("forbidden")));
+
+        if (isAuthError) {
           syncSessionToCookies(null);
           setToken(null);
           return null;
         }
 
-        if (decodedToken?.sub) {
+        // Allow fallback user only in an explicitly supported offline mode
+        const isOfflineSupported =
+          (typeof process !== "undefined" &&
+            process.env.NEXT_PUBLIC_ENABLE_OFFLINE_AUTH === "true") ||
+          (typeof window !== "undefined" &&
+            Boolean(
+              (window as unknown as { __OFFLINE_AUTH_MODE__?: boolean })
+                .__OFFLINE_AUTH_MODE__,
+            ));
+
+        if (isOfflineSupported && decodedToken?.sub) {
           const metadata = decodedToken.user_metadata as
             | Record<string, unknown>
             | undefined;
           return {
             id: decodedToken.sub,
-            display_name: metadata?.display_name as string,
+            display_name:
+              (metadata?.display_name as string) ||
+              decodedToken.display_name ||
+              "",
             email: decodedToken.email,
             created_at: decodedToken.created_at,
           } as User;
         }
+
+        // Surface backend failures instead of fabricating user
+        throw err;
       }
     },
     enabled: Boolean(token),

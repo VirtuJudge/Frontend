@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, act, fireEvent } from "@testing-library/react";
+import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   parseJwt,
@@ -15,6 +15,7 @@ import {
 } from "@/lib/auth/cookies";
 import { AuthProvider, useAuth, useOptionalAuth } from "@/features/auth";
 import { isSupabaseConfigured, getSupabaseClient } from "@/lib/auth/supabase";
+import { apiClient } from "@/lib/api/client";
 
 vi.mock("@/lib/auth/supabase", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/supabase")>(
@@ -149,6 +150,18 @@ describe("AuthProvider and useAuth", () => {
       defaultOptions: {
         queries: { retry: false },
       },
+    });
+
+    vi.spyOn(apiClient, "getMe").mockImplementation(async () => {
+      const token = getClientAuthToken();
+      if (!token) throw new Error("Unauthorized");
+      const decoded = parseJwt(token);
+      return {
+        id: decoded?.sub || "custom-id-123",
+        email: decoded?.email || "custom@example.com",
+        display_name: (decoded?.display_name as string) || "Custom User",
+        created_at: new Date().toISOString(),
+      };
     });
 
     vi.mocked(getSupabaseClient).mockReturnValue({
@@ -493,5 +506,94 @@ describe("AuthProvider and useAuth", () => {
 
   it("evaluates isSupabaseConfigured correctly based on environment", () => {
     expect(typeof isSupabaseConfigured()).toBe("boolean");
+  });
+
+  it("does not fabricate user when /me fails with 500 error", async () => {
+    vi.spyOn(apiClient, "getMe").mockRejectedValue(new Error("Internal Server Error (500)"));
+
+    function ErrorConsumer() {
+      const { user, isAuthenticated, signInWithJwt } = useAuth();
+      return (
+        <div>
+          <div data-testid="auth-state">{isAuthenticated ? "Authenticated" : "Unauthenticated"}</div>
+          <div data-testid="user-state">{user ? user.id : "no-user"}</div>
+          <button
+            type="button"
+            onClick={async () => {
+              const testToken = createSyntheticJwt({
+                sub: "real-sub-999",
+                email: "real@example.com",
+              });
+              await signInWithJwt(testToken);
+            }}
+          >
+            Sign In Error
+          </button>
+        </div>
+      );
+    }
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ErrorConsumer />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+
+    const btn = screen.getByRole("button", { name: /sign in error/i });
+    await act(async () => {
+      fireEvent.click(btn);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("user-state").textContent).toBe("no-user");
+      expect(screen.getByTestId("auth-state").textContent).toBe("Unauthenticated");
+    });
+  });
+
+  it("clears session and tokens when /me fails with 401 unauthorized", async () => {
+    vi.spyOn(apiClient, "getMe").mockRejectedValue(new Error("401 Unauthorized"));
+
+    function AuthErrorConsumer() {
+      const { user, isAuthenticated, signInWithJwt } = useAuth();
+      return (
+        <div>
+          <div data-testid="auth-state">{isAuthenticated ? "Authenticated" : "Unauthenticated"}</div>
+          <div data-testid="user-state">{user ? user.id : "no-user"}</div>
+          <button
+            type="button"
+            onClick={async () => {
+              const testToken = createSyntheticJwt({
+                sub: "real-sub-401",
+                email: "real401@example.com",
+              });
+              await signInWithJwt(testToken);
+            }}
+          >
+            Sign In 401
+          </button>
+        </div>
+      );
+    }
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AuthErrorConsumer />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+
+    const btn = screen.getByRole("button", { name: /sign in 401/i });
+    await act(async () => {
+      fireEvent.click(btn);
+    });
+
+    await waitFor(() => {
+      expect(getClientAuthToken()).toBeNull();
+      expect(screen.getByTestId("user-state").textContent).toBe("no-user");
+      expect(screen.getByTestId("auth-state").textContent).toBe("Unauthenticated");
+    });
   });
 });
