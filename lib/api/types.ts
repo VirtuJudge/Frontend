@@ -264,7 +264,7 @@ export interface SpeakerMapping {
   mapped_at: UtcTimestamp;
 }
 
-interface DetectedSpeaker {
+export interface DetectedSpeaker {
   speaker_label: string;
   preview?: SpeakerPreviewInterval;
   assigned_user_id?: string;
@@ -326,6 +326,7 @@ export interface PracticeSession {
   document_asset_ids?: ResourceId[];
   stages?: StageProgress[];
   speaker_mappings?: SpeakerMapping[];
+  detected_speakers?: DetectedSpeaker[];
   consent?: ConsentRecord;
   current_attempt?: number;
   current_question_id?: ResourceId;

@@ -41,7 +41,33 @@ export function useSpeakerMapping({ sessionId, onSuccess, onCancel }: UseSpeaker
       const membersPage = await apiClient.getTeamMembers(project.team_id);
       setTeamMembers(membersPage.items || []);
 
-      setSpeakers([]);
+      let detectedList: SpeakerItem[] = [];
+      if (sess.detected_speakers && sess.detected_speakers.length > 0) {
+        detectedList = sess.detected_speakers.map((s) => ({
+          speaker_label: s.speaker_label,
+          assigned_user_id: s.assigned_user_id || null,
+          preview: s.preview,
+        }));
+      } else if (sess.speaker_mappings && sess.speaker_mappings.length > 0) {
+        detectedList = sess.speaker_mappings.map((m) => ({
+          speaker_label: m.speaker_label,
+          assigned_user_id: (m.user_id || m.member_id) ?? null,
+        }));
+      } else {
+        try {
+          const mappings = await apiClient.getSpeakerMappings(sessionId);
+          if (mappings && mappings.length > 0) {
+            detectedList = mappings.map((m) => ({
+              speaker_label: m.speaker_label,
+              assigned_user_id: (m.user_id || m.member_id) ?? null,
+            }));
+          }
+        } catch {
+          // No separate mapping read model or diarization pending
+        }
+      }
+
+      setSpeakers(detectedList);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to load practice session";
       setLoadError(msg);
@@ -79,6 +105,11 @@ export function useSpeakerMapping({ sessionId, onSuccess, onCancel }: UseSpeaker
   }, [duplicateAssignments]);
 
   const handleSubmit = async () => {
+    if (speakers.length === 0) {
+      setSaveError("No detected speakers available to map. Please wait for diarization results.");
+      return;
+    }
+
     if (hasDuplicateError) {
       setSaveError("Each team member may only be assigned to one speaker label.");
       return;
@@ -118,6 +149,11 @@ export function useSpeakerMapping({ sessionId, onSuccess, onCancel }: UseSpeaker
   };
 
   const handleSkip = () => {
+    if (speakers.length === 0) {
+      setSaveError("Cannot proceed to Q&A until detected speakers are available.");
+      return;
+    }
+
     if (onCancel) {
       onCancel();
     } else {
