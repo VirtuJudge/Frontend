@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Inconsolata } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { QueryClientBoundary } from "@/lib/query-client";
 import { AuthProvider } from "@/features/auth";
 import { Analytics } from "@vercel/analytics/next";
 
-const inconsolata = Inconsolata({
-  subsets: ["latin"],
+const inconsolata = localFont({
+  src: "./fonts/Inconsolata.woff2",
   variable: "--font-inconsolata",
   display: "swap",
 });
