@@ -48,8 +48,44 @@ export function parseJwt(token: string): DecodedJwt | null {
  */
 export function isJwtExpired(token: string): boolean {
   const decoded = parseJwt(token);
-  if (!decoded || typeof decoded.exp !== "number") return false;
+  if (!decoded || typeof decoded.exp !== "number") return true;
   return Date.now() >= decoded.exp * 1000;
+}
+
+export interface JwtValidationResult {
+  valid: boolean;
+  decoded: DecodedJwt | null;
+  reason?: string;
+}
+
+/**
+ * Validates JWT structure, claims (sub, exp), and expiration.
+ */
+export function validateJwt(token: string): JwtValidationResult {
+  if (!token || typeof token !== "string") {
+    return { valid: false, decoded: null, reason: "Missing token" };
+  }
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    return { valid: false, decoded: null, reason: "Invalid JWT format" };
+  }
+  if (!parts[0] || !parts[1] || !parts[2]) {
+    return { valid: false, decoded: null, reason: "Incomplete JWT components" };
+  }
+  const decoded = parseJwt(token);
+  if (!decoded) {
+    return { valid: false, decoded: null, reason: "Failed to parse JWT payload" };
+  }
+  if (!decoded.sub || typeof decoded.sub !== "string" || decoded.sub.trim().length === 0) {
+    return { valid: false, decoded, reason: "Missing or invalid subject claim (sub)" };
+  }
+  if (typeof decoded.exp !== "number") {
+    return { valid: false, decoded, reason: "Missing expiration claim (exp)" };
+  }
+  if (Date.now() >= decoded.exp * 1000) {
+    return { valid: false, decoded, reason: "Token is expired" };
+  }
+  return { valid: true, decoded };
 }
 
 /**
