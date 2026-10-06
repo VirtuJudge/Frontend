@@ -233,4 +233,56 @@ describe("Route Protection Middleware", () => {
       expect(response.headers.get("location")).toContain("/login");
     });
   });
+
+  describe("JWT Validation and Forgery Protection", () => {
+    it("rejects forged JWT with missing sub claim", () => {
+      // Valid structure, but missing subject
+      const header = Buffer.from(JSON.stringify({ alg: "RS256" })).toString("base64url");
+      const payload = Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url");
+      const forgedJwt = `${header}.${payload}.forged_sig`;
+
+      const request = createMockRequest("/me", {
+        [AUTH_COOKIE_NAME]: forgedJwt,
+      });
+      const response = handleRouteProtection(request);
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toContain("/login");
+    });
+
+    it("rejects expired JWT", () => {
+      const header = Buffer.from(JSON.stringify({ alg: "RS256" })).toString("base64url");
+      const payload = Buffer.from(JSON.stringify({ sub: "user-123", exp: Math.floor(Date.now() / 1000) - 3600 })).toString("base64url");
+      const expiredJwt = `${header}.${payload}.sig`;
+
+      const request = createMockRequest("/me", {
+        [AUTH_COOKIE_NAME]: expiredJwt,
+      });
+      const response = handleRouteProtection(request);
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toContain("/login");
+    });
+
+    it("rejects malformed 3-part JWT with unparseable payload", () => {
+      const badJwt = "bad_header.bad_payload.bad_sig";
+      const request = createMockRequest("/me", {
+        [AUTH_COOKIE_NAME]: badJwt,
+      });
+      const response = handleRouteProtection(request);
+      expect(response.status).toBe(307);
+      expect(response.headers.get("location")).toContain("/login");
+    });
+
+    it("accepts valid synthetic JWT with valid sub and exp", () => {
+      const header = Buffer.from(JSON.stringify({ alg: "RS256" })).toString("base64url");
+      const payload = Buffer.from(JSON.stringify({ sub: "user-real-123", exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url");
+      const validJwt = `${header}.${payload}.sig`;
+
+      const request = createMockRequest("/me", {
+        [AUTH_COOKIE_NAME]: validJwt,
+      });
+      const response = handleRouteProtection(request);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("location")).toBeNull();
+    });
+  });
 });
