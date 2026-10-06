@@ -1,6 +1,5 @@
 import { ProblemDetails } from "../types";
 import { getClientAuthToken } from "@/lib/auth/cookies";
-import { AUTH_COOKIE_NAME } from "@/lib/auth/middleware";
 
 export class ApiClientError extends Error {
   constructor(
@@ -88,26 +87,6 @@ export class BaseClient {
   }
 
   public async getAuthToken(): Promise<string | null> {
-    if (typeof window !== "undefined" && window.localStorage) {
-      try {
-        const stored = window.localStorage.getItem(AUTH_COOKIE_NAME);
-        if (stored) return stored;
-
-        for (let i = 0; i < window.localStorage.length; i++) {
-          const key = window.localStorage.key(i);
-          if (key && key.startsWith("sb-") && key.endsWith("-auth-token")) {
-            const raw = window.localStorage.getItem(key);
-            if (raw) {
-              const parsed = JSON.parse(raw);
-              if (parsed?.access_token) return parsed.access_token;
-            }
-          }
-        }
-      } catch {
-        // Ignore localStorage errors
-      }
-    }
-
     if (this.getToken) {
       return await this.getToken();
     }
