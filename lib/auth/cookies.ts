@@ -1,15 +1,6 @@
 import { AUTH_COOKIE_NAME, FALLBACK_SESSION_COOKIE_NAME } from "./middleware";
 
 export function getClientAuthToken(): string | null {
-  if (typeof window !== "undefined" && window.localStorage) {
-    try {
-      const stored = window.localStorage.getItem(AUTH_COOKIE_NAME);
-      if (stored) return stored;
-    } catch {
-      // Ignore localStorage errors
-    }
-  }
-
   if (typeof document === "undefined") return null;
 
   const cookies = document.cookie.split(";").map((c) => c.trim());
@@ -27,14 +18,6 @@ export function getClientAuthToken(): string | null {
 }
 
 export function setClientAuthToken(token: string, days: number = 7): void {
-  if (typeof window !== "undefined" && window.localStorage) {
-    try {
-      window.localStorage.setItem(AUTH_COOKIE_NAME, token);
-    } catch {
-      // Ignore localStorage errors
-    }
-  }
-
   if (typeof document === "undefined") return;
 
   const expires = new Date();

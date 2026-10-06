@@ -266,4 +266,48 @@ describe("useQASession hook", () => {
     expect(apiClient.getQARound).not.toHaveBeenCalled();
     expect(result.current.isError).toBe(false);
   });
+
+  it("blocks submission and prevents fallback selection when current_question_id is omitted by truncation", async () => {
+    // mockQARound has current_question_id: "q-4" which is dropped by the 3-primary truncation rule
+    vi.mocked(apiClient.getQARound).mockResolvedValue({
+      ...mockQARound,
+      current_question_id: "q-4",
+    });
+
+    const { result } = renderHook(() => useQASession("sess-1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.qaRound).not.toBeNull();
+    });
+
+    // Should NOT select a fallback question (like q-2 or q-1)
+    expect(result.current.activeQuestion).toBeNull();
+    expect(result.current.actionError).toMatch(/contract violation/i);
+    expect(result.current.isError).toBe(true);
+
+    const mockDraft = {
+      blob: new Blob(["audio-bytes"], { type: "audio/webm" }),
+      url: "blob:http://localhost/audio-draft",
+      durationMs: 45000,
+      mimeType: "audio/webm",
+      sizeBytes: 1024,
+    };
+
+    let submitted = false;
+    await act(async () => {
+      submitted = await result.current.submitAnswer(mockDraft);
+    });
+    expect(submitted).toBe(false);
+    expect(apiClient.createAnswerUploadIntent).not.toHaveBeenCalled();
+
+    let skipped = false;
+    await act(async () => {
+      skipped = await result.current.skipQuestion("reason");
+    });
+    expect(skipped).toBe(false);
+    expect(apiClient.skipAnswer).not.toHaveBeenCalled();
+  });
 });

@@ -36,6 +36,7 @@ export function getDefaultWorkspaceIdempotencyKeys(userId: string) {
 /**
  * Ensures a user has at least one team and project.
  * Uses stable, deterministic operation keys across retries and tabs to ensure idempotency.
+ * Only writes completion marker if both team and project invariants are confirmed.
  */
 export async function ensureDefaultTeamAndProject(
   user: User,
@@ -56,7 +57,7 @@ export async function ensureDefaultTeamAndProject(
     return { team: null, project: null, created: false };
   }
 
-  // Deduplicate concurrent calls for the same user ID in memory
+  // Deduplicate concurrent calls for the same user ID
   const inFlight = inFlightInits.get(userId);
   if (inFlight) {
     return inFlight;
@@ -64,7 +65,6 @@ export async function ensureDefaultTeamAndProject(
 
   const { teamKey: idempotencyKeyTeam, projectKey: idempotencyKeyProj } =
     getDefaultWorkspaceIdempotencyKeys(userId);
-
   const initPromise = (async (): Promise<DefaultWorkspaceResult> => {
     try {
       const teamsPage = await apiClient.getTeams();
@@ -132,7 +132,7 @@ export async function ensureDefaultTeamAndProject(
         }
       }
 
-      // Only mark setup completed if both team and project exist
+      // Invariant check: only mark setup completed if BOTH team and project exist
       if (activeTeam && activeProject) {
         if (typeof window !== "undefined") {
           localStorage.setItem(setupKey, "true");
@@ -141,7 +141,7 @@ export async function ensureDefaultTeamAndProject(
         }
       }
 
-      // Populate query client caches
+      // Populate cache if queryClient is provided
       if (queryClient) {
         if (activeTeam) {
           queryClient.setQueryData(["teams"], (old: Page<Team> | undefined) => {
