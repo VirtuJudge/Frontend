@@ -55,8 +55,11 @@ export function useDirectUpload({
 }: UseDirectUploadOptions) {
   const [items, setItems] = useState<UploadItem[]>([]);
   const itemsRef = useRef<UploadItem[]>([]);
-  itemsRef.current = items;
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   useEffect(() => {
     const controllers = abortControllersRef.current;
