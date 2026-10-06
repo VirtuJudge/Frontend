@@ -23,7 +23,19 @@ export function formatDefaultTeamName(
 }
 
 /**
+ * Returns stable, deterministic idempotency keys for default workspace operations.
+ * These keys are scoped strictly to the user and operation to prevent duplicates on retries.
+ */
+export function getDefaultWorkspaceIdempotencyKeys(userId: string) {
+  return {
+    teamKey: `team-default-${userId}`,
+    projectKey: `proj-default-${userId}`,
+  };
+}
+
+/**
  * Ensures a user has at least one team and project.
+ * Uses stable, deterministic operation keys across retries and tabs to ensure idempotency.
  * Only writes completion marker if both team and project invariants are confirmed.
  */
 export async function ensureDefaultTeamAndProject(
@@ -51,6 +63,8 @@ export async function ensureDefaultTeamAndProject(
     return inFlight;
   }
 
+  const { teamKey: idempotencyKeyTeam, projectKey: idempotencyKeyProj } =
+    getDefaultWorkspaceIdempotencyKeys(userId);
   const initPromise = (async (): Promise<DefaultWorkspaceResult> => {
     try {
       const teamsPage = await apiClient.getTeams();
@@ -62,7 +76,6 @@ export async function ensureDefaultTeamAndProject(
 
       if (teams.length === 0) {
         const baseTeamName = `${user.display_name}'s Team`;
-        const idempotencyKeyTeam = `team-default-${userId}`;
 
         try {
           activeTeam = await apiClient.createTeam(
@@ -90,7 +103,6 @@ export async function ensureDefaultTeamAndProject(
           }
         }
 
-        const idempotencyKeyProj = `proj-default-${userId}`;
         activeProject = await apiClient.createProject(
           activeTeam.id,
           { name: "Project 1" },
@@ -106,7 +118,6 @@ export async function ensureDefaultTeamAndProject(
           const projectsPage = await apiClient.getProjects(activeTeam.id);
           const projects = projectsPage?.items || [];
           if (projects.length === 0) {
-            const idempotencyKeyProj = `proj-default-${userId}`;
             activeProject = await apiClient.createProject(
               activeTeam.id,
               { name: "Project 1" },

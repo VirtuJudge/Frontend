@@ -252,8 +252,77 @@ describe("Default Team & Project Creation on Route /", () => {
     });
   });
 
+  it("derives stable operation idempotency keys without timestamp and reuses them on retries", async () => {
+    const { ensureDefaultTeamAndProject, getDefaultWorkspaceIdempotencyKeys } =
+      await import("@/features/auth/ensure-default-workspace");
+
+    const userId = "user_stable_key_777";
+    const keys = getDefaultWorkspaceIdempotencyKeys(userId);
+
+    expect(keys.teamKey).toBe("team-default-user_stable_key_777");
+    expect(keys.projectKey).toBe("proj-default-user_stable_key_777");
+    expect(keys.teamKey).not.toMatch(/\d{13}/);
+    expect(keys.projectKey).not.toMatch(/\d{13}/);
+
+    let createProjectCallCount = 0;
+    const projectKeysUsed: string[] = [];
+
+    vi.spyOn(apiClient, "getTeams").mockResolvedValue({
+      items: [
+        {
+          id: "team_stable_1",
+          name: "Stable Team",
+          role: "owner",
+          member_count: 1,
+          created_at: new Date().toISOString(),
+          version: 1,
+        },
+      ],
+      has_more: false,
+    });
+
+    vi.spyOn(apiClient, "getProjects").mockResolvedValue({
+      items: [],
+      has_more: false,
+    });
+
+    vi.spyOn(apiClient, "createProject").mockImplementation(
+      async (_teamId, _data, idempotencyKey) => {
+        createProjectCallCount++;
+        projectKeysUsed.push(idempotencyKey!);
+        if (createProjectCallCount === 1) {
+          throw new Error("Network transient failure");
+        }
+        return {
+          id: "proj_stable_1",
+          team_id: "team_stable_1",
+          name: "Project 1",
+          created_by: userId,
+          created_at: new Date().toISOString(),
+          version: 1,
+        };
+      },
+    );
+
+    const testUser: User = {
+      id: userId,
+      email: "stable@example.com",
+      display_name: "Stable User",
+      created_at: new Date().toISOString(),
+    };
+
+    await ensureDefaultTeamAndProject(testUser);
+    expect(projectKeysUsed[0]).toBe("proj-default-user_stable_key_777");
+
+    await ensureDefaultTeamAndProject(testUser);
+    expect(projectKeysUsed[1]).toBe("proj-default-user_stable_key_777");
+    expect(projectKeysUsed[0]).toBe(projectKeysUsed[1]);
+  });
+
   it("does not mark setup complete if project creation fails", async () => {
-    const { ensureDefaultTeamAndProject } = await import("@/features/auth/ensure-default-workspace");
+    const { ensureDefaultTeamAndProject } = await import(
+      "@/features/auth/ensure-default-workspace"
+    );
 
     vi.spyOn(apiClient, "getTeams").mockResolvedValue({
       items: [
@@ -287,11 +356,15 @@ describe("Default Team & Project Creation on Route /", () => {
 
     const result = await ensureDefaultTeamAndProject(testUser);
     expect(result.project).toBeNull();
-    expect(localStorage.getItem("default_setup_done_user_fail_proj_1")).toBeNull();
+    expect(
+      localStorage.getItem("default_setup_done_user_fail_proj_1"),
+    ).toBeNull();
   });
 
   it("marks setup complete only after both team and project are confirmed", async () => {
-    const { ensureDefaultTeamAndProject } = await import("@/features/auth/ensure-default-workspace");
+    const { ensureDefaultTeamAndProject } = await import(
+      "@/features/auth/ensure-default-workspace"
+    );
 
     vi.spyOn(apiClient, "getTeams").mockResolvedValue({
       items: [
