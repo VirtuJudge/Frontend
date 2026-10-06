@@ -80,7 +80,7 @@ export function useQAQueries(sessionId: string) {
 
     if (qaRound.current_question_id) {
       const found = allQuestions.find((q) => q.id === qaRound.current_question_id);
-      if (found) return found;
+      return found || null;
     }
 
     const explicitActive = allQuestions.find((q) => q.state === "active");
@@ -88,6 +88,18 @@ export function useQAQueries(sessionId: string) {
 
     const firstPending = allQuestions.find((q) => q.state === "pending");
     return firstPending || null;
+  }, [qaRound, allQuestions]);
+
+  const contractViolation = useMemo<string | null>(() => {
+    if (
+      qaRound &&
+      qaRound.state !== "completed" &&
+      qaRound.current_question_id &&
+      !allQuestions.some((q) => q.id === qaRound.current_question_id)
+    ) {
+      return `Active question '${qaRound.current_question_id}' is omitted by question truncation (contract violation).`;
+    }
+    return null;
   }, [qaRound, allQuestions]);
 
   const submittedAnswers = useMemo(() => qaRound?.answers || [], [qaRound?.answers]);
@@ -154,6 +166,7 @@ export function useQAQueries(sessionId: string) {
     followUpQuestions,
     allQuestions,
     activeQuestion,
+    contractViolation,
     submittedAnswers,
     currentQuestionNumber,
     isRoundCompleted,

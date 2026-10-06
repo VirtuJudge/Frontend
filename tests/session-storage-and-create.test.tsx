@@ -217,6 +217,29 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       expect(retrieved?.presentationVideo?.link).toBeUndefined();
       expect(retrieved?.presentationVideo?.assetId).toBe("asset-video-put-1");
     });
+
+    it("clears session-by-id cache and prevents fallback discovery when project session is cleared", () => {
+      saveSessionConfig(mockProjectId, {
+        projectId: mockProjectId,
+        sessionId: mockSessionId,
+        presentationVideo: {
+          assetId: "asset-old",
+          fileName: "old-presentation.webm",
+        },
+      });
+
+      // Verify stored and discoverable by sessionId
+      expect(window.localStorage.getItem(`session_by_id_${mockSessionId}`)).not.toBeNull();
+      expect(getSessionConfigBySessionId(mockSessionId)).not.toBeNull();
+
+      // Clear by projectId
+      clearSessionConfig(mockProjectId);
+
+      // Verify all keys removed
+      expect(getSessionConfig(mockProjectId)).toBeNull();
+      expect(window.localStorage.getItem(`session_by_id_${mockSessionId}`)).toBeNull();
+      expect(getSessionConfigBySessionId(mockSessionId)).toBeNull();
+    });
   });
 
   describe("PrepareSessionPage saving to localStorage", () => {

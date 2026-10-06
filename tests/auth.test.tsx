@@ -67,11 +67,12 @@ describe("Client Cookie Management", () => {
     removeClientAuthToken();
   });
 
-  it("sets, gets, and removes auth cookies", () => {
+  it("sets, gets, and removes auth cookies without persisting to localStorage", () => {
     expect(getClientAuthToken()).toBeNull();
 
     setClientAuthToken("jwt_test_cookie_123");
     expect(getClientAuthToken()).toBe("jwt_test_cookie_123");
+    expect(localStorage.getItem("auth_token")).toBeNull();
 
     removeClientAuthToken();
     expect(getClientAuthToken()).toBeNull();
@@ -82,6 +83,7 @@ describe("Client Cookie Management", () => {
 
     syncSessionToCookies("valid_sync_token_456");
     expect(getClientAuthToken()).toBe("valid_sync_token_456");
+    expect(localStorage.getItem("auth_token")).toBeNull();
 
     syncSessionToCookies(null);
     expect(getClientAuthToken()).toBeNull();

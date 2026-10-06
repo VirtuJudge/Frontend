@@ -87,13 +87,12 @@ export function useSessionSubmit({
         : "video/webm";
       const fileName = fileToUpload.name;
 
-      // 3. Compute SHA256 checksum
+      // 3. Compute SHA256 checksum (required precondition)
       setUploadProgress({
         stage: "Calculating video checksum...",
         percent: 15,
       });
-      let checksum =
-        "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+      let checksum: string;
       try {
         checksum = await computeFileChecksum(fileToUpload, (pct) => {
           setUploadProgress({
@@ -102,7 +101,9 @@ export function useSessionSubmit({
           });
         });
       } catch (checksumErr) {
-        console.warn("Checksum calculation notice:", checksumErr);
+        throw new Error(
+          `Failed to calculate video checksum: ${checksumErr instanceof Error ? checksumErr.message : "Checksum calculation failed"}. Upload aborted.`,
+        );
       }
 
       // 4. Create upload intent

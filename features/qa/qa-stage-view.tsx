@@ -131,6 +131,7 @@ export function QAStageView({
 
   // Handle start answering / record
   const handleStartAnswering = () => {
+    if (!activeQuestion) return;
     setLiveTranscript("");
     onClearActionError?.();
     startRecording();
@@ -184,7 +185,9 @@ export function QAStageView({
 
   const defaultQuestionText =
     activeQuestion?.text ||
-    "What was your main focus on your business model in your product?";
+    (actionError
+      ? `Contract violation: ${actionError}`
+      : "What was your main focus on your business model in your product?");
 
   // Formatted countdown or elapsed timer
   const formattedTimer = isListeningState
@@ -333,8 +336,13 @@ export function QAStageView({
               as="button"
               variant="glass-dark"
               borderGradient="default"
-              onClick={handleStartAnswering}
-              className="h-12 px-6 py-0 rounded-full flex items-center gap-2.5 text-white shadow-xl cursor-pointer hover:brightness-125 transition-all active:scale-95"
+              onClick={activeQuestion ? handleStartAnswering : undefined}
+              disabled={!activeQuestion}
+              className={`h-12 px-6 py-0 rounded-full flex items-center gap-2.5 text-white shadow-xl transition-all ${
+                activeQuestion
+                  ? "cursor-pointer hover:brightness-125 active:scale-95"
+                  : "opacity-40 cursor-not-allowed"
+              }`}
               aria-label="Start recording answer"
             >
               <Icon icon="tabler:microphone" className="text-xl text-accent" />

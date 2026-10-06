@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { isJwtExpired } from "./jwt";
+import { isJwtExpired, validateJwt } from "./jwt";
 
 export const AUTH_COOKIE_NAME = "auth_token";
 export const FALLBACK_SESSION_COOKIE_NAME = "session";
+
+export function isTokenAuthenticated(token: string | undefined | null): boolean {
+  if (!token || token.trim().length === 0) return false;
+  // If structured as a JWT, validate structure, required claims (sub, exp) and non-expiry
+  if (token.includes(".")) {
+    const { valid } = validateJwt(token);
+    return valid;
+  }
+  return token.trim().length > 0;
+}
 
 export const PROTECTED_ROUTES = [
   '/',
@@ -49,10 +59,7 @@ export function handleRouteProtection(request: NextRequest): NextResponse {
   const authToken =
     request.cookies.get(AUTH_COOKIE_NAME)?.value ||
     request.cookies.get(FALLBACK_SESSION_COOKIE_NAME)?.value;
-  const isExpired = authToken ? isJwtExpired(authToken) : false;
-  const isAuthenticated = Boolean(
-    authToken && authToken.trim().length > 0 && !isExpired,
-  );
+  const isAuthenticated = isTokenAuthenticated(authToken);
 
   const isProtected =
     isRouteMatched(pathname, PROTECTED_ROUTES) ||
