@@ -131,6 +131,12 @@ export class SessionsClient extends BaseClient {
     };
   }
 
+  public async getSpeakerMappings(sessionId: string): Promise<SpeakerMapping[]> {
+    return this.request<SpeakerMapping[]>(
+      API_ENDPOINTS.speakerMappings(sessionId),
+    );
+  }
+
   public async saveSpeakerMappings(
     sessionId: string,
     mappings: SpeakerMappingRequestItem[],
