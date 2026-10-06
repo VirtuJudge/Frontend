@@ -99,13 +99,12 @@ export function useSessionSubmit({
         : "video/webm";
       const fileName = fileToUpload.name;
 
-      // 3. Compute SHA256 checksum
+      // 3. Compute SHA256 checksum (required precondition)
       setUploadProgress({
         stage: "Calculating video checksum...",
         percent: 15,
       });
-      let checksum =
-        "sha256:0000000000000000000000000000000000000000000000000000000000000000";
+      let checksum: string;
       try {
         checksum = await computeFileChecksum(fileToUpload, (pct) => {
           setUploadProgress({
@@ -114,7 +113,9 @@ export function useSessionSubmit({
           });
         });
       } catch (checksumErr) {
-        console.warn("Checksum calculation notice:", checksumErr);
+        throw new Error(
+          `Failed to calculate video checksum: ${checksumErr instanceof Error ? checksumErr.message : "Checksum calculation failed"}. Upload aborted.`,
+        );
       }
 
       // 4. Create upload intent
@@ -133,7 +134,6 @@ export function useSessionSubmit({
 
       const presentationAssetId = intent.asset_id;
       const presentationVersionId = intent.version_id || intent.asset_id;
-      let videoPlaybackLink = videoUrl;
 
       // 5. Upload video file to storage destination
       if (intent.upload_url) {
@@ -152,7 +152,6 @@ export function useSessionSubmit({
             });
           },
         });
-        videoPlaybackLink = intent.upload_url;
       }
 
       // 6. Complete upload verification on backend
@@ -172,12 +171,13 @@ export function useSessionSubmit({
       );
 
       // 7. Save presentation video details to localStorage under projectId
+      // Persist asset & version identifiers; do not store presigned PUT upload URLs as playback links
       savePresentationVideo(projectId, {
         videoUrl,
-        link: videoPlaybackLink,
         assetId: presentationAssetId,
         versionId: presentationVersionId,
         fileName,
+        fileSize: fileToUpload.size,
         uploadedAt: new Date().toISOString(),
       });
 

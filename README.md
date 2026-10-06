@@ -134,7 +134,7 @@ flowchart TD
 
 | State Domain | Owner | Client Resilience & Recovery Strategy |
 | :--- | :--- | :--- |
-| **Authentication & Session** | Supabase OIDC / Auth | Secure HttpOnly cookies with PKCE verification and token refresh |
+| **Authentication & Session** | Supabase OIDC / Auth | Secure cookies with PKCE verification and token refresh (no bearer tokens in localStorage) |
 | **Teams, Projects & Assets** | Backend REST API | TanStack Query cache with optimistic local reconciliation |
 | **Upload Task & Progress** | Browser Task State | Determinate XHR progress with Web Worker SHA-256 validation |
 | **Recording Drafts** | Browser Feature State | Kept in browser memory; never committed until user confirmation |

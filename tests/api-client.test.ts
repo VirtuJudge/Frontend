@@ -11,6 +11,7 @@ describe('API Client Boundary', () => {
   afterEach(() => {
     fetchSpy.mockRestore();
     localStorage.clear();
+    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
   });
 
   it('keeps all API endpoint strings centralized in API_ENDPOINTS', () => {
@@ -175,8 +176,8 @@ describe('API Client Boundary', () => {
     expect(report.report_id).toBe('rep-1');
   });
 
-  it('retrieves token from localStorage and attaches Bearer authorization header to request', async () => {
-    localStorage.setItem('auth_token', 'test_local_token_xyz');
+  it('retrieves token from auth cookie and attaches Bearer authorization header to request', async () => {
+    document.cookie = 'auth_token=test_local_token_xyz; path=/';
     const client = new ApiClient({ baseUrl: '/api/v1' });
 
     let capturedHeaders: Record<string, string> = {};

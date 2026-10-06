@@ -157,11 +157,26 @@ export function SpeakerMappingView({
 
         {/* Speaker Cards List */}
         {speakers.length === 0 && (
-          <Wrapper variant="glass" className="rounded-3xl p-6 text-center">
-            <Text size="sm" className="text-white/70">
-              Detected speaker labels are not available from the backend yet.
-              You can continue to Q&amp;A without mapping presenters.
+          <Wrapper
+            variant="glass"
+            className="rounded-3xl p-6 text-center flex flex-col items-center gap-3"
+          >
+            <Icon icon="tabler:clock" className="text-3xl text-warning/80" />
+            <Text as="h4" size="md" className="font-semibold text-white">
+              Speaker Detection in Progress
             </Text>
+            <Text size="sm" className="text-white/70 max-w-md">
+              Diarization results are not available yet. Detected speaker labels must be loaded before you can map presenters and proceed to Q&amp;A.
+            </Text>
+            <Button
+              variant="glass"
+              size="sm"
+              onClick={() => loadData()}
+              className="mt-2"
+            >
+              <Icon icon="tabler:refresh" className="text-base" />
+              <span>Refresh Diarization Results</span>
+            </Button>
           </Wrapper>
         )}
         <div
@@ -291,7 +306,7 @@ export function SpeakerMappingView({
             variant="glass"
             size="sm"
             onClick={handleSkip}
-            disabled={isSaving}
+            disabled={isSaving || speakers.length === 0}
           >
             Skip for Now
           </Button>

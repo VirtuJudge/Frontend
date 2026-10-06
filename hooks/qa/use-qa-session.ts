@@ -22,6 +22,7 @@ export interface UseQASessionReturn {
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
+  contractViolation?: string | null;
 
   // Question structure & constraints
   activeQuestion: Question | null;
@@ -66,6 +67,7 @@ export function useQASession(sessionId: string): UseQASessionReturn {
     followUpQuestions,
     allQuestions,
     activeQuestion,
+    contractViolation,
     submittedAnswers,
     currentQuestionNumber,
     isRoundCompleted,
@@ -86,7 +88,8 @@ export function useQASession(sessionId: string): UseQASessionReturn {
     sessionId,
     activeQuestion,
     setAnalyzingQuestionId,
-    queryClient
+    queryClient,
+    contractViolation
   );
 
   const refetchRound = useCallback(async () => {
@@ -97,8 +100,9 @@ export function useQASession(sessionId: string): UseQASessionReturn {
     qaRound,
     practiceSession,
     isLoading: isQALoading || isSessionLoading,
-    isError: isSessionError || (qaReady && isQAError),
-    error: ((sessionError || qaError) as Error) || null,
+    isError: isSessionError || (qaReady && isQAError) || Boolean(contractViolation),
+    error: (contractViolation ? new Error(contractViolation) : ((sessionError || qaError) as Error)) || null,
+    contractViolation,
 
     activeQuestion,
     primaryQuestions,

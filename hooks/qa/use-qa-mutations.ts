@@ -16,7 +16,8 @@ export function useQAMutations(
   sessionId: string,
   activeQuestion: Question | null,
   setAnalyzingQuestionId: (id: string | null) => void,
-  queryClient: ReturnType<typeof useQueryClient>
+  queryClient: ReturnType<typeof useQueryClient>,
+  contractViolation?: string | null
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
@@ -29,6 +30,11 @@ export function useQAMutations(
 
   const submitAnswer = useCallback(
     async (draft: AudioRecordingDraft): Promise<boolean> => {
+      if (contractViolation) {
+        setActionError(contractViolation);
+        return false;
+      }
+
       if (!activeQuestion) {
         setActionError("No active question found to submit an answer for.");
         return false;
@@ -142,6 +148,11 @@ export function useQAMutations(
 
   const skipQuestion = useCallback(
     async (reason?: string): Promise<boolean> => {
+      if (contractViolation) {
+        setActionError(contractViolation);
+        return false;
+      }
+
       if (!activeQuestion) {
         setActionError("No active question found to skip.");
         return false;
@@ -170,14 +181,14 @@ export function useQAMutations(
         setIsSkipping(false);
       }
     },
-    [activeQuestion, isSkipping, sessionId, queryClient, setAnalyzingQuestionId]
+    [activeQuestion, isSkipping, sessionId, queryClient, setAnalyzingQuestionId, contractViolation]
   );
 
   return {
     isSubmitting,
     isSkipping,
     submitProgress,
-    actionError,
+    actionError: actionError || contractViolation || null,
     submitAnswer,
     skipQuestion,
     clearActionError,

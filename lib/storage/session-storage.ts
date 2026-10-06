@@ -188,9 +188,20 @@ export function savePresentationVideo(
   video: StoredSessionPresentationVideo,
 ): StoredSessionConfig {
   const existing = getSessionConfig(projectId);
+
+  // Guard against persisting presigned PUT upload URLs or URLs with upload credentials
+  const incomingLink = video.link;
+  const isUploadUrl =
+    incomingLink &&
+    (incomingLink.includes("upload") ||
+      incomingLink.includes("X-Amz-Signature") ||
+      incomingLink.includes("sig="));
+  const safeLink = isUploadUrl ? undefined : incomingLink;
+
   const updatedVideo: StoredSessionPresentationVideo = {
     ...existing?.presentationVideo,
     ...video,
+    link: safeLink ?? existing?.presentationVideo?.link,
     uploadedAt: video.uploadedAt || new Date().toISOString(),
   };
 
@@ -200,13 +211,83 @@ export function savePresentationVideo(
 }
 
 /**
+ * Clear session configuration from localStorage by sessionId
+ */
+export function clearSessionConfigBySessionId(sessionId: string): void {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return;
+  }
+
+  try {
+    const keysToRemove = new Set<string>([`session_by_id_${sessionId}`]);
+
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (!key) continue;
+      if (key === `session_by_id_${sessionId}`) {
+        keysToRemove.add(key);
+        continue;
+      }
+      const raw = window.localStorage.getItem(key);
+      if (!raw || !raw.startsWith("{")) continue;
+      try {
+        const parsed = JSON.parse(raw) as StoredSessionConfig;
+        if (parsed && parsed.sessionId === sessionId) {
+          keysToRemove.add(key);
+        }
+      } catch {
+        // Not a JSON object, ignore
+      }
+    }
+
+    for (const key of keysToRemove) {
+      window.localStorage.removeItem(key);
+    }
+  } catch (err) {
+    console.warn("Failed to clear session config by sessionId:", err);
+  }
+}
+
+/**
  * Clear session configuration from localStorage
  */
 export function clearSessionConfig(projectId: string): void {
   if (typeof window !== "undefined" && window.localStorage) {
     try {
-      window.localStorage.removeItem(getSessionStorageKey(projectId));
-      window.localStorage.removeItem(getPrefixedStorageKey(projectId));
+      const existing = getSessionConfig(projectId);
+      const sessionId = existing?.sessionId;
+
+      const keysToRemove = new Set<string>([
+        getSessionStorageKey(projectId),
+        getPrefixedStorageKey(projectId),
+      ]);
+
+      if (sessionId) {
+        keysToRemove.add(`session_by_id_${sessionId}`);
+      }
+
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i);
+        if (!key) continue;
+        const raw = window.localStorage.getItem(key);
+        if (!raw || !raw.startsWith("{")) continue;
+        try {
+          const parsed = JSON.parse(raw) as StoredSessionConfig;
+          if (
+            parsed &&
+            ((sessionId && parsed.sessionId === sessionId) ||
+              parsed.projectId === projectId)
+          ) {
+            keysToRemove.add(key);
+          }
+        } catch {
+          // Not a JSON object, ignore
+        }
+      }
+
+      for (const key of keysToRemove) {
+        window.localStorage.removeItem(key);
+      }
     } catch (err) {
       console.warn("Failed to clear session config from localStorage:", err);
     }
