@@ -246,4 +246,82 @@ describe("useDirectUpload Hook (Phase 3)", () => {
 
     expect(result.current.items).toHaveLength(0);
   });
+
+  it("transitions out of verifying into error on exhausted polling and allows retryVerification", async () => {
+    const onError = vi.fn();
+
+    vi.spyOn(uploadLib, "computeFileChecksum").mockResolvedValue(
+      "sha256:0000111122223333444455556666777788889999aaaabbbbccccddddeeeeffff",
+    );
+
+    vi.spyOn(apiClient, "createUploadIntent").mockResolvedValue({
+      asset_id: "asset_timeout_123",
+      version_id: "version_timeout_123",
+      upload_url: "https://storage.virtujudge.local/mock/doc.pdf",
+      expires_at: new Date().toISOString(),
+    });
+
+    vi.spyOn(uploadLib, "uploadFileDirectly").mockResolvedValue(undefined);
+
+    const pendingAsset: Asset = {
+      id: "asset_timeout_123",
+      project_id: mockProjectId,
+      kind: "supporting_document",
+      file_name: "timeout.pdf",
+      media_type: "application/pdf",
+      size_bytes: 500,
+      state: "uploaded",
+      checksum: "sha256:0000111122223333444455556666777788889999aaaabbbbccccddddeeeeffff",
+      created_at: new Date().toISOString(),
+    };
+
+    vi.spyOn(apiClient, "completeUpload").mockResolvedValue(pendingAsset);
+    // Keep returning uploaded state so verification polls exhaust
+    let getAssetCalls = 0;
+    vi.spyOn(apiClient, "getAsset").mockImplementation(async () => {
+      getAssetCalls++;
+      if (getAssetCalls > 3) {
+        return {
+          ...pendingAsset,
+          state: "verified",
+        };
+      }
+      return pendingAsset;
+    });
+
+    const { result } = renderHook(() =>
+      useDirectUpload({
+        projectId: mockProjectId,
+        maxPollAttempts: 2,
+        pollIntervalMs: 5,
+        onUploadError: onError,
+      }),
+    );
+
+    const testDoc = new File(["timeout test"], "timeout.pdf", {
+      type: "application/pdf",
+    });
+
+    await act(async () => {
+      await result.current.uploadFile(testDoc, "supporting_document");
+    });
+
+    // Should not be stuck in verifying; should transition to error, retain assetId, and notify onError
+    expect(result.current.items[0].stage).toBe("error");
+    expect(result.current.items[0].assetId).toBe("asset_timeout_123");
+    expect(result.current.items[0].error).toContain("Verification timed out");
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining("Verification timed out") }),
+      expect.objectContaining({ assetId: "asset_timeout_123", stage: "error" }),
+    );
+
+    // Now test retryVerification succeeds when backend is ready
+    let retriedAsset: Asset | null = null;
+    await act(async () => {
+      retriedAsset = await result.current.retryVerification(result.current.items[0].id);
+    });
+
+    expect(retriedAsset).not.toBeNull();
+    expect(result.current.items[0].stage).toBe("verified");
+  });
 });

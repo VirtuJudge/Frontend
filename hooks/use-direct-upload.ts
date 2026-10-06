@@ -54,6 +54,8 @@ export function useDirectUpload({
   pollIntervalMs = 1500,
 }: UseDirectUploadOptions) {
   const [items, setItems] = useState<UploadItem[]>([]);
+  const itemsRef = useRef<UploadItem[]>([]);
+  itemsRef.current = items;
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
 
   useEffect(() => {
@@ -76,6 +78,7 @@ export function useDirectUpload({
   const pollAssetVerification = useCallback(
     async (assetId: string, itemId: string): Promise<Asset | null> => {
       let attempts = 0;
+      let lastError: Error | null = null;
       while (attempts < maxPollAttempts) {
         await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
         try {
@@ -85,6 +88,7 @@ export function useDirectUpload({
               stage: "verified",
               progress: 100,
               rejectionReason: undefined,
+              error: undefined,
             });
             onUploadSuccess?.(asset);
             return asset;
@@ -97,15 +101,56 @@ export function useDirectUpload({
               rejectionReason: reason,
               error: reason,
             });
+            const rejectedErr = new Error(reason);
+            setItems((prev) => {
+              const currentItem = prev.find((i) => i.id === itemId);
+              if (currentItem) {
+                onUploadError?.(rejectedErr, {
+                  ...currentItem,
+                  stage: "rejected",
+                  rejectionReason: reason,
+                  error: reason,
+                  assetId,
+                });
+              }
+              return prev;
+            });
             return null;
           }
-        } catch {
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error(String(err));
         }
         attempts += 1;
       }
+
+      // Transition out of "verifying" into error/timeout state so UI is never stuck
+      const timeoutMessage =
+        lastError?.message
+          ? `Verification timed out: ${lastError.message}`
+          : "Verification timed out waiting for server confirmation";
+      const timeoutErr = new Error(timeoutMessage);
+      updateItem(itemId, {
+        stage: "error",
+        error: timeoutMessage,
+        assetId,
+      });
+
+      setItems((prev) => {
+        const currentItem = prev.find((i) => i.id === itemId);
+        if (currentItem) {
+          onUploadError?.(timeoutErr, {
+            ...currentItem,
+            stage: "error",
+            error: timeoutMessage,
+            assetId,
+          });
+        }
+        return prev;
+      });
+
       return null;
     },
-    [maxPollAttempts, pollIntervalMs, updateItem, onUploadSuccess],
+    [maxPollAttempts, pollIntervalMs, updateItem, onUploadSuccess, onUploadError],
   );
 
   const startUploadForItem = useCallback(
@@ -323,6 +368,20 @@ export function useDirectUpload({
     [items, startUploadForItem],
   );
 
+  const retryVerification = useCallback(
+    async (itemId: string): Promise<Asset | null> => {
+      const item = itemsRef.current.find((i) => i.id === itemId);
+      if (!item || !item.assetId) return null;
+      updateItem(itemId, {
+        stage: "verifying",
+        error: undefined,
+        rejectionReason: undefined,
+      });
+      return await pollAssetVerification(item.assetId, itemId);
+    },
+    [pollAssetVerification, updateItem],
+  );
+
   const cancelUpload = useCallback(
     (id: string) => {
       const controller = abortControllersRef.current.get(id);
@@ -368,6 +427,7 @@ export function useDirectUpload({
     uploadFile,
     uploadFiles,
     retryUpload,
+    retryVerification,
     cancelUpload,
     removeUploadItem,
     clearCompleted,
