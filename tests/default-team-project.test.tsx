@@ -8,7 +8,7 @@ import { AuthProvider } from "@/features/auth";
 import { apiClient } from "@/lib/api/client";
 import { getSupabaseClient } from "@/lib/auth/supabase";
 import { createSyntheticJwt } from "@/lib/auth/jwt";
-import type { Team, Project } from "@/lib/api/types";
+import type { Team, Project, User } from "@/lib/api/types";
 
 vi.mock("@/lib/auth/supabase", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/supabase")>(
@@ -250,5 +250,75 @@ describe("Default Team & Project Creation on Route /", () => {
         expect.stringContaining("proj-default-user_new_123"),
       );
     });
+  });
+
+  it("derives stable operation idempotency keys without timestamp and reuses them on retries", async () => {
+    const { ensureDefaultTeamAndProject, getDefaultWorkspaceIdempotencyKeys } =
+      await import("@/features/auth/ensure-default-workspace");
+
+    const userId = "user_stable_key_777";
+    const keys = getDefaultWorkspaceIdempotencyKeys(userId);
+
+    // Verify key formats are deterministic and do not contain dynamic timestamps
+    expect(keys.teamKey).toBe("team-default-user_stable_key_777");
+    expect(keys.projectKey).toBe("proj-default-user_stable_key_777");
+    expect(keys.teamKey).not.toMatch(/\d{13}/);
+    expect(keys.projectKey).not.toMatch(/\d{13}/);
+
+    let createProjectCallCount = 0;
+    const projectKeysUsed: string[] = [];
+
+    vi.spyOn(apiClient, "getTeams").mockResolvedValue({
+      items: [
+        {
+          id: "team_stable_1",
+          name: "Stable Team",
+          role: "owner",
+          member_count: 1,
+          created_at: new Date().toISOString(),
+          version: 1,
+        },
+      ],
+      has_more: false,
+    });
+
+    vi.spyOn(apiClient, "getProjects").mockResolvedValue({
+      items: [],
+      has_more: false,
+    });
+
+    vi.spyOn(apiClient, "createProject").mockImplementation(
+      async (_teamId, _data, idempotencyKey) => {
+        createProjectCallCount++;
+        projectKeysUsed.push(idempotencyKey!);
+        if (createProjectCallCount === 1) {
+          throw new Error("Network transient failure");
+        }
+        return {
+          id: "proj_stable_1",
+          team_id: "team_stable_1",
+          name: "Project 1",
+          created_by: userId,
+          created_at: new Date().toISOString(),
+          version: 1,
+        };
+      },
+    );
+
+    const testUser: User = {
+      id: userId,
+      email: "stable@example.com",
+      display_name: "Stable User",
+      created_at: new Date().toISOString(),
+    };
+
+    // First attempt fails
+    await ensureDefaultTeamAndProject(testUser);
+    expect(projectKeysUsed[0]).toBe("proj-default-user_stable_key_777");
+
+    // Second retry attempt succeeds and uses the exact same stable key
+    await ensureDefaultTeamAndProject(testUser);
+    expect(projectKeysUsed[1]).toBe("proj-default-user_stable_key_777");
+    expect(projectKeysUsed[0]).toBe(projectKeysUsed[1]);
   });
 });
