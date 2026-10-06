@@ -60,17 +60,29 @@ export function useSessionSubmit({
       } else {
         try {
           const res = await fetch(videoUrl);
+          if (!res.ok) {
+            throw new Error(`HTTP error ${res.status}`);
+          }
           const blob = await res.blob();
+          if (!blob || blob.size === 0) {
+            throw new Error("Empty blob");
+          }
           const mime = blob.type || "video/webm";
           const ext = mime.includes("mp4") ? ".mp4" : ".webm";
           fileToUpload = new File([blob], `presentation-${Date.now()}${ext}`, {
             type: mime,
           });
         } catch {
-          fileToUpload = new File([], `presentation-${Date.now()}.webm`, {
-            type: "video/webm",
-          });
+          throw new Error(
+            "Failed to recover presentation recording. Please re-record your presentation before submitting.",
+          );
         }
+      }
+
+      if (!fileToUpload || fileToUpload.size === 0) {
+        throw new Error(
+          "Recording blob is empty. Please re-record your presentation before submitting.",
+        );
       }
 
       // Validate video file size and format (max 500 MB, .mp4 or .webm)
@@ -113,7 +125,7 @@ export function useSessionSubmit({
         projectId,
         {
           file_name: fileName,
-          declared_size_bytes: fileToUpload.size || 1024 * 1024,
+          declared_size_bytes: fileToUpload.size,
           declared_media_type: mediaType,
           kind: "presentation_video",
         },
