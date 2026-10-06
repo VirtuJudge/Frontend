@@ -198,6 +198,25 @@ describe("Session Configuration in LocalStorage and Session Flow", () => {
       const retrieved = getSessionConfig(mockProjectId);
       expect(retrieved?.presentationVideo?.fileName).toBe("pitch-recording.webm");
     });
+
+    it("does not persist presigned PUT upload URLs into localStorage as playback links", () => {
+      saveSessionConfig(mockProjectId, {
+        projectId: mockProjectId,
+      });
+
+      const updated = savePresentationVideo(mockProjectId, {
+        assetId: "asset-video-put-1",
+        versionId: "version-video-put-1",
+        link: "https://r2.storage.com/bucket/video.mp4?X-Amz-Signature=secret123&upload=true",
+        fileName: "pitch.mp4",
+      });
+
+      expect(updated.presentationVideo?.link).toBeUndefined();
+
+      const retrieved = getSessionConfig(mockProjectId);
+      expect(retrieved?.presentationVideo?.link).toBeUndefined();
+      expect(retrieved?.presentationVideo?.assetId).toBe("asset-video-put-1");
+    });
   });
 
   describe("PrepareSessionPage saving to localStorage", () => {

@@ -188,9 +188,20 @@ export function savePresentationVideo(
   video: StoredSessionPresentationVideo,
 ): StoredSessionConfig {
   const existing = getSessionConfig(projectId);
+
+  // Guard against persisting presigned PUT upload URLs or URLs with upload credentials
+  const incomingLink = video.link;
+  const isUploadUrl =
+    incomingLink &&
+    (incomingLink.includes("upload") ||
+      incomingLink.includes("X-Amz-Signature") ||
+      incomingLink.includes("sig="));
+  const safeLink = isUploadUrl ? undefined : incomingLink;
+
   const updatedVideo: StoredSessionPresentationVideo = {
     ...existing?.presentationVideo,
     ...video,
+    link: safeLink ?? existing?.presentationVideo?.link,
     uploadedAt: video.uploadedAt || new Date().toISOString(),
   };
 
