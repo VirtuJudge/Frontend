@@ -12,7 +12,7 @@ export function SessionHeader({ onNavigate }: SessionHeaderProps) {
     <Button
       variant="glass-dark"
       borderGradient="default"
-      href="/home"
+      href="/"
       onClick={onNavigate}
       className="fixed top-6 left-1/2 -translate-x-1/2 z-40 px-6 py-1 rounded-full shadow-xl flex items-center justify-center gap-2 cursor-pointer"
     >

@@ -11,7 +11,7 @@ export default function MeNavBar() {
   return (
     <header className="w-full">
       <div className={NAV_CONTAINER_CLASS}>
-        <NavBrand href="/home" />
+        <NavBrand href="/" />
 
         <div className="flex items-center gap-3">
           <Button

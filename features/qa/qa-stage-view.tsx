@@ -302,9 +302,9 @@ export function QAStageView({
       </div>
 
       {/* BOTTOM BAR CONTROLS (Identical to Screenshots) */}
-      <div className="fixed bottom-8 inset-x-0 px-6 sm:px-12 flex items-center justify-between z-40">
+      <div className="fixed bottom-8 inset-x-0 px-6 sm:px-12 flex flex-wrap gap-3 items-center justify-between z-40">
         {/* Bottom Left: Rotate Button + Judges Questions Pill */}
-        <div className="flex items-center gap-3 pointer-events-auto">
+      <div className="flex-1 flex items-center justify-start gap-2">
           <Wrapper
             as="button"
             variant="glass-dark"
@@ -330,7 +330,7 @@ export function QAStageView({
         </div>
 
         {/* Bottom Center: Control Pill */}
-        <div className="flex items-center justify-center pointer-events-auto">
+      <div className="flex items-center justify-center pointer-events-auto shrink-0">
           {!isListeningState ? (
             <Wrapper
               as="button"
@@ -359,7 +359,7 @@ export function QAStageView({
         </div>
 
         {/* Bottom Right: Timer Badge */}
-        <div className="pointer-events-auto">
+      <div className="flex-1 flex items-center justify-end">
           <SessionTimerBadge
             showTimer={true}
             formattedTime={formattedTimer}

@@ -143,7 +143,6 @@ export default function SessionQAPage({
       >
         <QACompletedCard
           sessionId={sessionId}
-          projectId={practiceSession?.project_id}
           questions={allQuestions}
           answers={submittedAnswers}
         />

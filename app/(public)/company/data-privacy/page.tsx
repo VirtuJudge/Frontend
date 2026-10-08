@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import { Text } from "@/components";
+
+export const metadata: Metadata = {
+  title: "Data Privacy Policy",
+  description:
+    "Learn how VirtuJudge safeguards your presentation recordings, pitch decks, transcripts, and personal data with enterprise-grade security.",
+  alternates: {
+    canonical: "/company/data-privacy",
+  },
+};
 
 const DATA_PRIVACY = [
   {

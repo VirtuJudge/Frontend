@@ -6,7 +6,6 @@ import { Question, Answer } from "@/lib/api/types";
 
 export interface QACompletedCardProps {
   sessionId: string;
-  projectId?: string;
   questions: Question[];
   answers?: Answer[];
   className?: string;
@@ -14,7 +13,6 @@ export interface QACompletedCardProps {
 
 export function QACompletedCard({
   sessionId,
-  projectId,
   questions,
   className = "",
 }: QACompletedCardProps) {
@@ -30,7 +28,10 @@ export function QACompletedCard({
       aria-label="Q&A Round Completed"
     >
       <div className="flex justify-center items-center gap-4 max-w-md">
-        <Icon icon="tabler:circle-check" className="text-4xl text-emerald-400" />
+        <Icon
+          icon="tabler:circle-check"
+          className="text-4xl text-emerald-400"
+        />
         <Text className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
           Q&A Round Completed!
         </Text>
@@ -43,28 +44,24 @@ export function QACompletedCard({
       </div>
 
       {/* Actions */}
-      <div className="flex flex-wrap items-center justify-center gap-4 w-full max-w-sm pt-2">
+      <div className="flex flex-wrap items-center justify-center gap-4 w-full max-w-md pt-2">
+        <Button
+          href={`/sessions/${sessionId}/speaker-mapping`}
+          variant="primary"
+          className="flex-1 rounded-full"
+        >
+          <Icon icon="tabler:users" className="text-2xl" />
+          <span>Map Presenters</span>
+        </Button>
+
         <Button
           href={`/sessions/${sessionId}/report`}
-          variant="primary"
+          variant="glass"
           className="flex-1 rounded-full"
         >
           <Icon icon="tabler:file-analytics" className="text-2xl" />
           <span>View Report</span>
         </Button>
-
-        {projectId && (
-          <Button
-            href={`/projects/${projectId}`}
-            className="rounded-full flex-1"
-          >
-            <Icon
-              icon="solar:arrow-right-up-linear"
-              className="text-2xl font-bold"
-            />
-            <span>Back to the project</span>
-          </Button>
-        )}
       </div>
     </Wrapper>
   );

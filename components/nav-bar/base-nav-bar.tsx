@@ -9,7 +9,7 @@ export function BaseNavBar() {
   return (
     <header className="w-full">
       <div className={cn(NAV_CONTAINER_CLASS)}>
-        <NavBrand href="/home" />
+        <NavBrand href="/" />
 
         <div className="flex items-center gap-3">
           <Button

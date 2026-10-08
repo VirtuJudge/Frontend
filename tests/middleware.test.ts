@@ -189,7 +189,7 @@ describe("Route Protection Middleware", () => {
 
       expect(response.status).toBe(307);
       const location = response.headers.get("location");
-      expect(location).toBe("http://localhost:3000/");
+      expect(location).toBe("http://localhost:3000/start");
     });
   });
 

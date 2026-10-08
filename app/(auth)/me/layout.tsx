@@ -1,15 +1,14 @@
-import React from "react";
-import MeNavBar from "@/components/nav-bar/me-nav-bar";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Account",
+  description: "Manage your VirtuJudge profile and workspace settings.",
+};
 
 export default function MeLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="flex flex-col">
-      <MeNavBar />
-      {children}
-    </div>
-  );
+  return <>{children}</>;
 }

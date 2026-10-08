@@ -252,6 +252,7 @@ export interface SpeakerPreviewInterval {
   start_ms: number;
   end_ms: number;
   quote_text: string;
+  audio_url?: string;
 }
 
 export interface SpeakerMapping {
@@ -327,6 +328,7 @@ export interface PracticeSession {
   stages?: StageProgress[];
   speaker_mappings?: SpeakerMapping[];
   detected_speakers?: DetectedSpeaker[];
+  speaker_labels?: string[];
   consent?: ConsentRecord;
   current_attempt?: number;
   current_question_id?: ResourceId;

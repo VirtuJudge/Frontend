@@ -20,7 +20,7 @@ export function Footer() {
           <Text as="b" size="body" className="opacity-60">
             Quick access
           </Text>
-          <Text as="a" size="body" href="/home">
+          <Text as="a" size="body" href="/">
             Home
           </Text>
           <Text as="a" size="body" href="/pricing">

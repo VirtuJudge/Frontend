@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import { Text } from "@/components";
+
+export const metadata: Metadata = {
+  title: "Terms and Conditions",
+  description:
+    "Review the terms and conditions governing the use of the VirtuJudge AI presentation rehearsal platform and related services.",
+  alternates: {
+    canonical: "/company/terms-and-conditions",
+  },
+};
 
 const TERMS_AND_CONDITIONS = [
   {
