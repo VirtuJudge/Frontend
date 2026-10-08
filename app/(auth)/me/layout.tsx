@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import MeNavBar from "@/components/nav-bar/me-nav-bar";
 
 export const metadata: Metadata = {
   title: "Account",
@@ -10,5 +11,10 @@ export default function MeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <div className="flex flex-col min-h-screen pt-24">
+      <MeNavBar />
+      {children}
+    </div>
+  );
 }
