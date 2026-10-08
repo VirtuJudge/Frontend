@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "Contact Us | VirtuJudge",
     description:
       "Get in touch with the VirtuJudge team for inquiries, product support, partnerships, or enterprise pitch coaching demos.",
-    url: "https://virtujudge.dev/company/contact-us",
+    url: "https://www.virtujudge.dev/company/contact-us",
   },
 };
 

@@ -12,7 +12,7 @@ const inconsolata = localFont({
 });
 
 const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://virtujudge.dev";
+  process.env.NEXT_PUBLIC_SITE_URL || "https://www.virtujudge.dev";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
