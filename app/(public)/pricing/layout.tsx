@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "Pricing | VirtuJudge",
     description:
       "Explore transparent pricing plans for VirtuJudge. Choose from Personal, Professional, or Enterprise tiers for AI-assisted pitch coaching and rehearsal.",
-    url: "https://virtujudge.dev/pricing",
+    url: "https://www.virtujudge.dev/pricing",
   },
 };
 
