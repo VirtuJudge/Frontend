@@ -122,6 +122,16 @@ export class SessionsClient extends BaseClient {
     );
   }
 
+  public async getAnalysisAttempts(
+    sessionId: string,
+    cursor?: string,
+  ): Promise<Page<AnalysisAttempt>> {
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+    return this.request<Page<AnalysisAttempt>>(
+      `${API_ENDPOINTS.analysisAttempts(sessionId)}${query}`,
+    );
+  }
+
   private normalizePracticeSession(
     session: PracticeSession & { status?: PracticeSession["state"] },
   ): PracticeSession {

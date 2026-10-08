@@ -13,7 +13,7 @@ export default function LoginPage() {
   const { signInWithPassword, isAuthenticated } = useAuth();
 
   const isVerified = searchParams.get("verified") === "true";
-  const defaultRedirect = "/";
+  const defaultRedirect = "/start";
   const redirectUrl = searchParams.get("redirect") || defaultRedirect;
   const initialError = searchParams.get("error");
   const initialMessage =

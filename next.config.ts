@@ -7,6 +7,15 @@ const backendUrl = (
 ).replace(/\/+$/, "");
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/home",
+        destination: "/",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

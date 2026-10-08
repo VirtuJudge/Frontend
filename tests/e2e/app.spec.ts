@@ -260,11 +260,11 @@ async function authenticateContext(page: Page) {
 }
 
 test.describe('Application Shell & Layouts', () => {
-  test('public landing shell renders locally and protected root redirects to login', async ({
+  test('public landing shell renders locally and protected start redirects to login', async ({
     page,
   }) => {
     // Public landing page
-    await page.goto('/home');
+    await page.goto('/');
     await expect(page).toHaveTitle(/VirtuJudge/);
     await expect(
       page.getByRole('heading', { name: 'Be the next one on stage!' }),
@@ -275,8 +275,8 @@ test.describe('Application Shell & Layouts', () => {
     await expect(page.getByRole('banner').getByRole('link', { name: 'Pricing' })).toBeVisible();
     await expect(page.getByRole('banner').getByRole('link', { name: /Try Now/i })).toBeVisible();
 
-    // Verify root route is protected and redirects to login
-    await page.goto('/');
+    // Verify /start route is protected and redirects to login
+    await page.goto('/start');
     await expect(page).toHaveURL(/.*auth\/login/);
   });
 

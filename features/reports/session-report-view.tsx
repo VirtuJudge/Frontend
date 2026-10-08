@@ -75,10 +75,21 @@ export function SessionReportView({
       />
 
       <section className="flex flex-col gap-5 text-left">
-        <Text as="h2" size="md" className="flex items-center gap-2 font-bold">
-          <Icon icon="tabler:user" className="text-primary" />
-          Individual Presenter Feedback
-        </Text>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <Text as="h2" size="md" className="flex items-center gap-2 font-bold">
+            <Icon icon="tabler:user" className="text-primary" />
+            Individual Presenter Feedback
+          </Text>
+          <Button
+            href={`/sessions/${session?.id || report.practice_session_id}/speaker-mapping`}
+            variant="glass"
+            size="sm"
+            className="rounded-full text-xs"
+          >
+            <Icon icon="tabler:users" className="text-base" />
+            <span>Map Presenters</span>
+          </Button>
+        </div>
         {report.member_feedback.length > 0 ? (
           <div className="grid grid-cols-1 justify-center items-center gap-5 md:grid-cols-2 w-full">
             {report.member_feedback.map((member) => (

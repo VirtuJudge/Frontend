@@ -11,7 +11,7 @@ import {
 import NavBar from "@/components/nav-bar/nav-bar";
 import ProjectLayout from "@/app/(auth)/projects/layout";
 import { ProjectDetailsContent } from "@/features/projects/project-details-content";
-import RootPage from "@/app/(auth)/(index)/page";
+import RootPage from "@/app/(auth)/start/page";
 import { AuthProvider } from "@/features/auth";
 import { apiClient } from "@/lib/api/client";
 

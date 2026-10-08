@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Button } from "../button";
 
-export function NavBrand({ href = "/home" }: { href?: string }) {
+export function NavBrand({ href = "/" }: { href?: string }) {
   return (
     <Button borderGradient="nav" href={href}>
       <Image

@@ -164,7 +164,6 @@ describe("FE-05 QA Feature Components", () => {
     render(
       <QACompletedCard
         sessionId="sess-100"
-        projectId="proj-100"
         questions={questions}
         answers={[]}
       />
@@ -172,7 +171,7 @@ describe("FE-05 QA Feature Components", () => {
 
     expect(screen.getByText("Q&A Round Completed!")).toBeDefined();
     expect(screen.getByText("View Report")).toBeDefined();
-    expect(screen.getByText("Back to the project")).toBeDefined();
+    expect(screen.getByText("Map Presenters")).toBeDefined();
   });
 });
 

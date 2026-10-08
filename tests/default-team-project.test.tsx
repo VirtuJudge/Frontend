@@ -2,7 +2,7 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, waitFor, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import RootPage from "@/app/(auth)/(index)/page";
+import RootPage from "@/app/(auth)/start/page";
 import AuthenticatedLayout from "@/app/(auth)/layout";
 import { AuthProvider } from "@/features/auth";
 import { apiClient } from "@/lib/api/client";

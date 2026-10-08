@@ -16,8 +16,8 @@ export function isTokenAuthenticated(token: string | undefined | null): boolean 
 }
 
 export const PROTECTED_ROUTES = [
-  '/',
-  'profile',
+  "/start",
+  "profile",
   "/me",
   "/projects",
   "/sessions",
@@ -30,6 +30,7 @@ export const AUTH_ROUTES = ["/auth/login", "/auth/register"];
 export const EXEMPT_ROUTES = ["/auth/callback"];
 
 export const PUBLIC_ROUTES = [
+  "/",
   "/home",
   "/about",
   "/pricing",
@@ -80,7 +81,7 @@ export function handleRouteProtection(request: NextRequest): NextResponse {
       redirectParam.startsWith("/") &&
       !redirectParam.startsWith("//")
         ? redirectParam
-        : "/";
+        : "/start";
 
     const targetUrl = new URL(safeRedirect, request.url);
     return NextResponse.redirect(targetUrl);
