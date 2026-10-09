@@ -5,7 +5,7 @@ import PricingPage from "./pricing/page";
 import ContactsPage from "./company/contact-us/page";
 
 export const metadata: Metadata = {
-  title: "VirtuJudge",
+  title: "Home",
   description:
     "AI-assisted pitch analysis, rehearsal, and evaluation platform.",
 };
