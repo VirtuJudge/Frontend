@@ -312,7 +312,7 @@ test.describe('Application Shell & Layouts', () => {
   }) => {
     await authenticateContext(page);
 
-    await page.goto('/home');
+    await page.goto('/');
     await expect(
       page.getByRole('heading', { name: 'Be the next one on stage!' }),
     ).toBeVisible();

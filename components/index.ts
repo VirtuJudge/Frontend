@@ -20,3 +20,4 @@ export * from "./action-button";
 export * from "./breadcrumb-nav";
 export * from "./list-row-card";
 export * from "./count-badge";
+export * from "./home";
