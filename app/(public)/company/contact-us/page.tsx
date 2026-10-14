@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { Button, Input, Text } from "@/components";
+import ScrollReveal from "@/components/scroll-reveal";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/auth/supabase";
 import { useAuth } from "@/features/auth";
 import type { CreateContactSubmissionInput } from "@/lib/api/types";
@@ -127,7 +128,7 @@ export default function ContactsPage() {
         className="absolute right-0 w-1/3 hidden lg:block"
       />
 
-      <div className="flex flex-col gap-20">
+      <ScrollReveal className="flex flex-col gap-20">
         <span>
           <Text as="h1" size="subheadline">
             <b>Contact Us</b>
@@ -208,7 +209,7 @@ export default function ContactsPage() {
             Send Message
           </Button>
         </form>
-      </div>
+      </ScrollReveal>
     </div>
   );
 }

@@ -40,6 +40,7 @@ export function PricingCard({ isAnnual, type }: PricingCardProps) {
   return (
     <Wrapper
       as="div"
+      data-speed="clamp(1.03)"
       className={`
 		w-88 h-100 flex flex-col justify-between hocus:-translate-y-2 transition-transform duration-500
 		${type === "professional" && "border border-primary"}`}

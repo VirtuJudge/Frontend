@@ -1,6 +1,7 @@
 "use client";
 
 import { Text, ToggleSwitch, PricingCard, FaqCard } from "@/components";
+import ScrollReveal from "@/components/scroll-reveal";
 import { useState } from "react";
 
 const faqs = [
@@ -40,7 +41,7 @@ export default function PricingPage() {
 
   return (
     <div className="flex flex-col gap-20 text-left">
-      <div className="flex flex-row justify-between items-center gap-10 flex-wrap">
+      <ScrollReveal className="flex flex-row justify-between items-center gap-10 flex-wrap">
         <span className="">
           <Text as="h1" size="headline" className="text-left">
             <b>Pick the plan that fits you!</b>
@@ -58,28 +59,34 @@ export default function PricingPage() {
             Annually <small className="opacity-60">20% off!</small>
           </Text>
         </span>
-      </div>
+      </ScrollReveal>
 
       <div className="flex flex-row gap-5 flex-wrap justify-center text-left">
-        <PricingCard isAnnual={isAnnual} type="personal" />
-        <PricingCard isAnnual={isAnnual} type="professional" />
-        <PricingCard isAnnual={isAnnual} type="enterprise" />
+        <ScrollReveal className="shrink-0">
+          <PricingCard isAnnual={isAnnual} type="personal" />
+        </ScrollReveal>
+        <ScrollReveal className="shrink-0" delay={0.1}>
+          <PricingCard isAnnual={isAnnual} type="professional" />
+        </ScrollReveal>
+        <ScrollReveal className="shrink-0" delay={0.2}>
+          <PricingCard isAnnual={isAnnual} type="enterprise" />
+        </ScrollReveal>
       </div>
 
       <div className="flex flex-col lg:flex-row justify-between items-center lg:items-start gap-10 flex-wrap">
-        <span className="flex flex-col gap-1 flex-1">
+        <ScrollReveal className="flex flex-col gap-1 flex-1">
           <Text as="b" size="headline" className="text-left">
             Frequently Asked Questions
           </Text>
           <Text as="p" size="body" className="text-left">
             Here are some answers for the questions that may be in your mind.
           </Text>
-        </span>
-        <div className="flex flex-col gap-4 flex-2">
+        </ScrollReveal>
+        <ScrollReveal className="flex flex-col gap-4 flex-2">
           {faqs.map((faq, index) => (
             <FaqCard key={index} question={faq.question} answer={faq.answer} />
           ))}
-        </div>
+        </ScrollReveal>
       </div>
     </div>
   );

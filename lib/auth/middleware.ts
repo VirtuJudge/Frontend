@@ -31,7 +31,6 @@ export const EXEMPT_ROUTES = ["/auth/callback"];
 
 export const PUBLIC_ROUTES = [
   "/",
-  "/home",
   "/about",
   "/pricing",
   "/company/data-privacy",
