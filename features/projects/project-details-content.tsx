@@ -98,8 +98,8 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
     );
 
   const { data: assetsPage, isLoading: isAssetsLoading } = useQuery({
-    queryKey: ["projectAssets", projectId],
-    queryFn: () => apiClient.getAssets(projectId),
+    queryKey: ["projectAssets", projectId, "documents"],
+    queryFn: () => apiClient.getProjectDocuments(projectId),
     enabled: !!projectId,
   });
 
@@ -122,17 +122,7 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
     return <NotFoundPage />;
   }
 
-  const rawAssets = assetsPage?.items || [];
-  // Filter supporting document assets (only PDF and PPTX)
-  const assets = rawAssets.filter((a) => {
-    if (a.state !== "verified") return false;
-    const name = (a.file_name || "").toLowerCase();
-    const isSupported =
-      name.endsWith(".pdf") ||
-      name.endsWith(".pptx") ||
-      a.kind === "supporting_document";
-    return isSupported;
-  });
+  const assets = assetsPage?.items || [];
 
   const sessions = sessionsPage?.items || [];
 

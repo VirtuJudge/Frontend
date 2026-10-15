@@ -50,12 +50,11 @@ export function ProjectAssetsCountBadge({
   className,
 }: ProjectAssetsCountBadgeProps) {
   const { data: assetsPage } = useQuery({
-    queryKey: ["projectAssets", projectId],
-    queryFn: () => apiClient.getAssets(projectId!),
+    queryKey: ["projectAssets", projectId, "documents"],
+    queryFn: () => apiClient.getProjectDocuments(projectId!),
     enabled: propCount === undefined && !!projectId,
   });
-  const filteredAssets = assetsPage?.items?.filter((asset) => asset.state === "verified") || [];  
-  const count = propCount ?? filteredAssets.length ?? 0;
+  const count = propCount ?? assetsPage?.items.length ?? 0;
 
   return (
     <CountBadge

@@ -132,6 +132,8 @@ flowchart TD
 
 ## State Ownership & Resilience
 
+The team page's Assets badge and each project's Assets list share the complete list of verified supporting documents, following every API cursor. Presentation videos, Q&A audio, generated reports, and unfinished or deleted uploads do not contribute to this document count. Each asset counts once regardless of its number of versions.
+
 | State Domain | Owner | Client Resilience & Recovery Strategy |
 | :--- | :--- | :--- |
 | **Authentication & Session** | Supabase OIDC / Auth | Secure cookies with PKCE verification and token refresh (no bearer tokens in localStorage) |

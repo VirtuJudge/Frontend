@@ -14,6 +14,7 @@ import { ProjectDetailsContent } from "@/features/projects/project-details-conte
 import RootPage from "@/app/(auth)/start/page";
 import { AuthProvider } from "@/features/auth";
 import { apiClient } from "@/lib/api/client";
+import { ProjectAssetsCountBadge } from "@/components/count-badge";
 
 function renderWithProviders(ui: React.ReactElement) {
   const queryClient = new QueryClient({
@@ -472,6 +473,37 @@ describe("Project Page Navigation & Custom Layout", () => {
   });
 
   describe("ProjectDetailsPage Component", () => {
+    it("shares all document pages with the badge and excludes session assets", async () => {
+      const projectId = "01J6GZ3C000000000000000003";
+      const page = await apiClient.getAssets(projectId);
+      const getAssets = vi.mocked(apiClient.getAssets);
+      getAssets.mockClear();
+      getAssets.mockResolvedValueOnce({
+        ...page,
+        items: [
+          ...page.items,
+          { ...page.items[0], id: "audio", kind: "answer_audio", file_name: "answer.webm" },
+          { ...page.items[0], id: "report", kind: "report_pdf", file_name: "report.pdf" },
+        ],
+        next_cursor: "more-documents",
+        has_more: true,
+      }).mockResolvedValueOnce({
+        items: [{ ...page.items[0], id: "third-document", file_name: "more.pdf" }],
+        has_more: false,
+      });
+
+      renderWithProviders(<>
+        <ProjectAssetsCountBadge projectId={projectId} />
+        <ProjectDetailsContent projectId={projectId} />
+      </>);
+
+      expect(await screen.findByText("3 Assets")).toBeDefined();
+      expect(await screen.findByText("more.pdf")).toBeDefined();
+      expect(screen.queryByText("answer.webm")).toBeNull();
+      expect(screen.queryByText("report.pdf")).toBeNull();
+      expect(getAssets).toHaveBeenCalledTimes(2);
+    });
+
     it("renders assets and sessions sections with action controls", async () => {
       renderWithProviders(
         <ProjectDetailsContent projectId="01J6GZ3C000000000000000003" />,
