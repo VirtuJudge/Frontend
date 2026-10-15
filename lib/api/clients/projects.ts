@@ -82,6 +82,24 @@ export class ProjectsClient extends BaseClient {
     };
   }
 
+  public async getProjectDocuments(projectId: string): Promise<Page<Asset>> {
+    const items: Asset[] = [];
+    let cursor: string | undefined;
+    do {
+      const page = await this.getAssets(projectId, {
+        kind: "supporting_document",
+        state: "verified",
+        limit: 100,
+        cursor,
+      });
+      items.push(...page.items.filter(
+        (asset) => asset.kind === "supporting_document" && asset.state === "verified",
+      ));
+      cursor = page.next_cursor;
+    } while (cursor);
+    return { items, has_more: false };
+  }
+
   public async getAssetVersions(
     assetId: string,
   ): Promise<Page<AssetVersion>> {
