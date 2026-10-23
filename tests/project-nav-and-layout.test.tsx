@@ -504,6 +504,13 @@ describe("Project Page Navigation & Custom Layout", () => {
       expect(getAssets).toHaveBeenCalledTimes(2);
     });
 
+    it("shows download failures instead of silently ignoring them", async () => {
+      vi.spyOn(apiClient, "createDownloadIntent").mockRejectedValueOnce(new Error("Document unavailable"));
+      renderWithProviders(<ProjectDetailsContent projectId="01J6GZ3C000000000000000003" />);
+      fireEvent.click(await screen.findByRole("button", { name: "Download investor_deck.pdf" }));
+      expect((await screen.findByRole("alert")).textContent).toContain("Document unavailable");
+    });
+
     it("renders assets and sessions sections with action controls", async () => {
       renderWithProviders(
         <ProjectDetailsContent projectId="01J6GZ3C000000000000000003" />,

@@ -157,7 +157,12 @@ export function ProjectAssetList({
 
   const handleDownload = async (asset: Asset) => {
     const activeVersionId = getActiveVersionId(asset);
-    await downloadAsset(asset.id, activeVersionId);
+    setFileError(null);
+    try {
+      await downloadAsset(asset.id, activeVersionId);
+    } catch (error) {
+      setFileError(error instanceof Error ? error.message : "The document could not be downloaded. Please try again.");
+    }
   };
 
   return (

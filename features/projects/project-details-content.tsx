@@ -24,6 +24,7 @@ import {
 import { apiClient } from "@/lib/api/client";
 import { useAuth } from "@/features/auth";
 import { Asset, PracticeSession } from "@/lib/api/types";
+import { downloadDocument } from "@/lib/download-document";
 import LoadingPage from "@/app/loading";
 import NotFoundPage from "@/app/not-found";
 
@@ -65,6 +66,7 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
   const [sessionToDelete, setSessionToDelete] = useState<PracticeSession | null>(
@@ -127,20 +129,12 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
   const sessions = sessionsPage?.items || [];
 
   const handleDownloadAsset = async (asset: Asset) => {
+    setDownloadError(null);
     try {
       const intent = await apiClient.createDownloadIntent(asset.id);
-      if (intent?.download_url && typeof window !== "undefined") {
-        const link = document.createElement("a");
-        link.href = intent.download_url;
-        link.download = intent.file_name || asset.file_name;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-    } catch {
-      // Fallback
+      await downloadDocument(intent);
+    } catch (error) {
+      setDownloadError(error instanceof Error ? error.message : "The document could not be downloaded. Please try again.");
     }
   };
 
@@ -168,6 +162,7 @@ export function ProjectDetailsContent({ projectId }: { projectId: string }) {
         {/* ================= Assets Section ================= */}
         <div className="flex flex-col items-center w-full gap-8">
           <Text className="text-3xl font-bold text-fg-light">Assets</Text>
+          {downloadError && <p role="alert" className="text-red-400">{downloadError}</p>}
 
           <div className="w-full flex flex-col gap-4">
             {assets.length === 0 ? (
