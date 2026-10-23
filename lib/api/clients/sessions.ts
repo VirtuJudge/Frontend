@@ -7,6 +7,7 @@ import type {
   Page,
 } from "../types";
 import { BaseClient, API_ENDPOINTS } from "./base";
+import { generateIdempotencyKey } from "@/lib/upload/idempotency";
 
 export class SessionsClient extends BaseClient {
   public async createPracticeSession(
@@ -88,6 +89,7 @@ export class SessionsClient extends BaseClient {
   public async deletePracticeSession(sessionId: string): Promise<void> {
     return this.request<void>(API_ENDPOINTS.practiceSession(sessionId), {
       method: "DELETE",
+      idempotencyKey: generateIdempotencyKey("delete-session"),
     });
   }
 

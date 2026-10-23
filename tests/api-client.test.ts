@@ -322,9 +322,14 @@ describe('API Client Boundary', () => {
     );
   });
 
-  it('deletes a practice session', async () => {
+  it('requests practice session erasure with an idempotency key', async () => {
     const client = new ApiClient({ baseUrl: '/api/v1', getToken: () => 'token' });
-    fetchSpy.mockResolvedValue(new Response(null, { status: 204 }));
+    fetchSpy.mockResolvedValue(new Response(JSON.stringify({
+      id: 'erasure-123',
+      scope: 'practice_session',
+      scope_id: 'sess-456',
+      status: 'pending',
+    }), { status: 202, headers: { 'Content-Type': 'application/json' } }));
 
     await client.deletePracticeSession('sess-456');
 
@@ -332,6 +337,9 @@ describe('API Client Boundary', () => {
       '/api/v1/practice-sessions/sess-456',
       expect.objectContaining({
         method: 'DELETE',
+        headers: expect.objectContaining({
+          'Idempotency-Key': expect.stringMatching(/^\S{1,255}$/),
+        }),
       }),
     );
   });
