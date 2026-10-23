@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Asset, AssetFilterParams } from "@/lib/api/types";
 import { apiClient } from "@/lib/api/client";
 
+import { downloadDocument } from "@/lib/download-document";
+
 export interface UseProjectAssetsOptions {
   projectId: string;
   filters?: AssetFilterParams;
@@ -109,16 +111,7 @@ export function useProjectAssets({
   const downloadAsset = useCallback(
     async (assetId: string, versionId?: string) => {
       const intent = await apiClient.createDownloadIntent(assetId, versionId);
-      if (typeof window !== "undefined" && intent.download_url) {
-        const a = document.createElement("a");
-        a.href = intent.download_url;
-        a.download = intent.file_name;
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
+      await downloadDocument(intent);
     },
     [],
   );
