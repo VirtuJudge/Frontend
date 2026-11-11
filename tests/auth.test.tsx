@@ -334,6 +334,57 @@ describe("AuthProvider and useAuth", () => {
     expect(queryClient.getQueryData(["practice-session", "sess-private-123"])).toBeUndefined();
   });
 
+  it("ensures Account B cannot access Account A cached queries during invitation account switch", async () => {
+    // 1. Account A is logged in and loads private reports/projects
+    queryClient.setQueryData(["report", "session-secret-A"], {
+      title: "User A Confidential Evaluation",
+    });
+    queryClient.setQueryData(["teamProjects", "team-secret-A"], {
+      items: [{ id: "proj-A", name: "User A Secret Project" }],
+    });
+
+    let authInstance!: ReturnType<typeof useAuth>;
+    function AccountSwitchConsumer() {
+      authInstance = useAuth();
+      return (
+        <div>
+          <button
+            type="button"
+            onClick={async () => {
+              // Sign out during switch flow without full redirect
+              await authInstance.signOut({ redirectTo: false });
+            }}
+          >
+            Switch Account
+          </button>
+        </div>
+      );
+    }
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AccountSwitchConsumer />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+
+    // 2. Perform account switch sign out
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /switch account/i }));
+    });
+
+    // 3. User B signs in
+    const tokenB = createSyntheticJwt({ sub: "user-b-id", email: "user-b@example.com" });
+    await act(async () => {
+      await authInstance.signInWithJwt(tokenB);
+    });
+
+    // 4. Verify Account A's queries were purged and cannot be read by Account B
+    expect(queryClient.getQueryData(["report", "session-secret-A"])).toBeUndefined();
+    expect(queryClient.getQueryData(["teamProjects", "team-secret-A"])).toBeUndefined();
+  });
+
   it("handles signInWithPassword and signUpWithPassword", async () => {
     function PasswordAuthConsumer() {
       const { user, isAuthenticated, signInWithPassword, signUpWithPassword } = useAuth();
