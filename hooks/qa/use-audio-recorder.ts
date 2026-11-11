@@ -42,6 +42,7 @@ export interface UseAudioRecorderReturn {
   pauseRecording: () => void;
   resumeRecording: () => void;
   stopRecording: () => Promise<AudioRecordingDraft | null>;
+  restartRecording: () => Promise<void>;
   discardDraft: () => void;
   clearError: () => void;
 }
@@ -93,13 +94,34 @@ export function useAudioRecorder(
     }
   }, []);
 
+  const teardownActiveRecording = useCallback(() => {
+    stopTimer();
+    const recorder = mediaRecorderRef.current;
+    if (recorder) {
+      recorder.ondataavailable = null;
+      recorder.onerror = null;
+      recorder.onstop = null;
+      if (recorder.state !== "inactive") {
+        try {
+          recorder.stop();
+        } catch {
+          // ignore
+        }
+      }
+      mediaRecorderRef.current = null;
+    }
+    stopMediaStream();
+    audioChunksRef.current = [];
+  }, [stopTimer, stopMediaStream, mediaRecorderRef]);
+
   const discardDraft = useCallback(() => {
+    teardownActiveRecording();
     cleanupDraftUrl();
     setDraft(null);
     setDurationMs(0);
     accumulatedDurationRef.current = 0;
     setState("idle");
-  }, [cleanupDraftUrl]);
+  }, [cleanupDraftUrl, teardownActiveRecording]);
 
   const clearError = useCallback(() => {
     setMediaError(null);
@@ -162,6 +184,7 @@ export function useAudioRecorder(
   }, [cleanupDraftUrl, draft, maxDurationMs, onRecordingComplete, stopMediaStream, stopTimer, mediaRecorderRef, canonicalMimeTypeRef]);
 
   const startRecording = useCallback(async () => {
+    teardownActiveRecording();
     cleanupDraftUrl();
     setDraft(null);
     setMediaError(null);
@@ -229,6 +252,7 @@ export function useAudioRecorder(
     }
   }, [
     cleanupDraftUrl,
+    teardownActiveRecording,
     maxDurationMs,
     onMaxDurationReached,
     stopMediaStream,
@@ -288,6 +312,11 @@ export function useAudioRecorder(
     return stopRecordingInternal();
   }, [state, stopRecordingInternal]);
 
+  const restartRecording = useCallback(async () => {
+    teardownActiveRecording();
+    return startRecording();
+  }, [teardownActiveRecording, startRecording]);
+
   useEffect(() => {
     return () => {
       stopTimer();
@@ -315,6 +344,7 @@ export function useAudioRecorder(
     pauseRecording,
     resumeRecording,
     stopRecording,
+    restartRecording,
     discardDraft,
     clearError,
   };
