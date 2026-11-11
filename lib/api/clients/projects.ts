@@ -33,9 +33,11 @@ export class ProjectsClient extends BaseClient {
   public async deleteProject(
     projectId: string,
     confirmation?: string,
+    idempotencyKey?: string,
   ): Promise<void> {
     return this.request<void>(API_ENDPOINTS.project(projectId), {
       method: "DELETE",
+      idempotencyKey: idempotencyKey || generateIdempotencyKey("delete-project"),
       ...(confirmation
         ? {
             headers: {
