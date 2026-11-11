@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { ConfirmActionModal } from "@/components";
 import { Project } from "@/lib/api/types";
 import { apiClient } from "@/lib/api/client";
+import { generateIdempotencyKey } from "@/lib/upload/idempotency";
 
 export interface DeleteProjectModalProps {
   project: Project | null;
@@ -18,6 +19,18 @@ export function DeleteProjectModal({
   onClose,
   onProjectDeleted,
 }: DeleteProjectModalProps) {
+  const idempotencyKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (!idempotencyKeyRef.current) {
+        idempotencyKeyRef.current = generateIdempotencyKey("delete-project");
+      }
+    } else {
+      idempotencyKeyRef.current = null;
+    }
+  }, [isOpen]);
+
   if (!project) return null;
 
   return (
@@ -35,7 +48,15 @@ export function DeleteProjectModal({
         ariaLabel: "Confirm project name",
       }}
       onConfirm={async (confirmation) => {
-        await apiClient.deleteProject(project.id, confirmation);
+        if (!idempotencyKeyRef.current) {
+          idempotencyKeyRef.current = generateIdempotencyKey("delete-project");
+        }
+        await apiClient.deleteProject(
+          project.id,
+          confirmation,
+          idempotencyKeyRef.current,
+        );
+        idempotencyKeyRef.current = null;
         onProjectDeleted?.();
       }}
     />
