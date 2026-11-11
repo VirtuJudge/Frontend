@@ -42,6 +42,7 @@ export interface UseAudioRecorderReturn {
   pauseRecording: () => void;
   resumeRecording: () => void;
   stopRecording: () => Promise<AudioRecordingDraft | null>;
+  restartRecording: () => Promise<void>;
   discardDraft: () => void;
   clearError: () => void;
 }
