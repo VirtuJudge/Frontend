@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { ConfirmActionModal } from "@/components";
 import { PracticeSession } from "@/lib/api/types";
 import { apiClient } from "@/lib/api/client";
+import { generateIdempotencyKey } from "@/lib/upload/idempotency";
 
 export interface DeleteSessionModalProps {
   session: PracticeSession | null;
@@ -22,6 +23,18 @@ export function DeleteSessionModal({
   onSessionDeleted,
   onSessionCancelled,
 }: DeleteSessionModalProps) {
+  const idempotencyKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (!idempotencyKeyRef.current) {
+        idempotencyKeyRef.current = generateIdempotencyKey("delete-session");
+      }
+    } else {
+      idempotencyKeyRef.current = null;
+    }
+  }, [isOpen]);
+
   if (!session) return null;
 
   return (
@@ -34,7 +47,14 @@ export function DeleteSessionModal({
       errorMessage="Failed to delete session."
       description={<>You are going to permanently delete <span className="font-semibold text-primary">Session {sessionIndex}</span> from this project. All associated attempts, questions, answers, and evaluations will be removed. Are you sure?</>}
       onConfirm={async () => {
-        await apiClient.deletePracticeSession(session.id);
+        if (!idempotencyKeyRef.current) {
+          idempotencyKeyRef.current = generateIdempotencyKey("delete-session");
+        }
+        await apiClient.deletePracticeSession(
+          session.id,
+          idempotencyKeyRef.current,
+        );
+        idempotencyKeyRef.current = null;
         (onSessionDeleted ?? onSessionCancelled)?.();
       }}
     />
