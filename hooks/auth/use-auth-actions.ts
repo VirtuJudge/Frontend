@@ -233,8 +233,8 @@ export function useAuthActions(
       syncSessionToCookies(null);
       removeClientAuthToken();
       setToken(null);
-      queryClient.removeQueries({ queryKey: ["me"] });
-      queryClient.removeQueries({ queryKey: ["teams"] });
+      await queryClient.cancelQueries();
+      queryClient.clear();
 
       if (options?.redirectTo === false) {
         return;
