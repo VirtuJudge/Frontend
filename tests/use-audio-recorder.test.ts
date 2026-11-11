@@ -301,4 +301,69 @@ describe("useAudioRecorder hook", () => {
     // The FIRST stream's tracks MUST have been stopped when restarting
     expect(stream1.tracks[0].stop).toHaveBeenCalled();
   });
+
+  it("restarts cleanly when paused without leaving abandoned streams", async () => {
+    const stream1 = new MockMediaStream();
+    const stream2 = new MockMediaStream();
+
+    const getUserMediaMock = vi.fn()
+      .mockResolvedValueOnce(stream1)
+      .mockResolvedValueOnce(stream2);
+
+    Object.defineProperty(global.navigator, "mediaDevices", {
+      value: { getUserMedia: getUserMediaMock },
+      configurable: true,
+      writable: true,
+    });
+
+    const { result } = renderHook(() => useAudioRecorder());
+
+    await act(async () => {
+      await result.current.startRecording();
+    });
+
+    act(() => {
+      result.current.pauseRecording();
+    });
+    expect(result.current.isPaused).toBe(true);
+
+    await act(async () => {
+      await result.current.restartRecording();
+    });
+
+    expect(stream1.tracks[0].stop).toHaveBeenCalled();
+    expect(result.current.isRecording).toBe(true);
+  });
+
+  it("handles rapid restart calls safely without duplicate intervals or leaked streams", async () => {
+    const stream1 = new MockMediaStream();
+    const stream2 = new MockMediaStream();
+    const stream3 = new MockMediaStream();
+
+    const getUserMediaMock = vi.fn()
+      .mockResolvedValueOnce(stream1)
+      .mockResolvedValueOnce(stream2)
+      .mockResolvedValueOnce(stream3);
+
+    Object.defineProperty(global.navigator, "mediaDevices", {
+      value: { getUserMedia: getUserMediaMock },
+      configurable: true,
+      writable: true,
+    });
+
+    const { result } = renderHook(() => useAudioRecorder());
+
+    await act(async () => {
+      await result.current.startRecording();
+    });
+
+    await act(async () => {
+      await result.current.restartRecording();
+      await result.current.restartRecording();
+    });
+
+    expect(stream1.tracks[0].stop).toHaveBeenCalled();
+    expect(stream2.tracks[0].stop).toHaveBeenCalled();
+    expect(result.current.isRecording).toBe(true);
+  });
 });
