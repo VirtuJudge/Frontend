@@ -293,6 +293,47 @@ describe("AuthProvider and useAuth", () => {
     );
   });
 
+  it("reproduces retained private report and session cache across signOut", async () => {
+    queryClient.setQueryData(["report", "sess-private-123"], {
+      id: "rep-1",
+      privateNotes: "Confidential Feedback",
+    });
+    queryClient.setQueryData(["practice-session", "sess-private-123"], {
+      id: "sess-private-123",
+      owner: "user-a",
+    });
+
+    function SignOutCacheConsumer() {
+      const { signOut } = useAuth();
+      return (
+        <button
+          type="button"
+          onClick={async () => {
+            await signOut({ redirectTo: false });
+          }}
+        >
+          Sign Out Now
+        </button>
+      );
+    }
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <SignOutCacheConsumer />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /sign out now/i }));
+    });
+
+    // Query cache must NOT retain private session or report data after signOut
+    expect(queryClient.getQueryData(["report", "sess-private-123"])).toBeUndefined();
+    expect(queryClient.getQueryData(["practice-session", "sess-private-123"])).toBeUndefined();
+  });
+
   it("handles signInWithPassword and signUpWithPassword", async () => {
     function PasswordAuthConsumer() {
       const { user, isAuthenticated, signInWithPassword, signUpWithPassword } = useAuth();
