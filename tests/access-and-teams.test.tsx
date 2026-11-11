@@ -50,7 +50,7 @@ describe("TeamDashboard - Null Display Name Handling", () => {
 
     vi.spyOn(apiClient, "getProjects").mockResolvedValue({
       items: [],
-      next_cursor: null,
+      has_more: false,
     });
 
     vi.spyOn(apiClient, "getTeamMembers").mockResolvedValue({
@@ -72,12 +72,12 @@ describe("TeamDashboard - Null Display Name Handling", () => {
           version: 1,
         },
       ],
-      next_cursor: null,
+      has_more: false,
     });
 
     vi.spyOn(apiClient, "getTeamInvitations").mockResolvedValue({
       items: [],
-      next_cursor: null,
+      has_more: false,
     });
 
     renderTeamDashboard(<TeamDashboard teamId="team-1" />);
@@ -104,7 +104,7 @@ describe("TeamDashboard - Null Display Name Handling", () => {
 
     vi.spyOn(apiClient, "getProjects").mockResolvedValue({
       items: [],
-      next_cursor: null,
+      has_more: false,
     });
 
     vi.spyOn(apiClient, "getTeamMembers").mockResolvedValue({
@@ -118,7 +118,7 @@ describe("TeamDashboard - Null Display Name Handling", () => {
           version: 1,
         },
       ],
-      next_cursor: null,
+      has_more: false,
     });
 
     renderTeamDashboard(<TeamDashboard teamId="team-1" />);
