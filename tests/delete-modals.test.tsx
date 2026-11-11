@@ -86,10 +86,51 @@ describe("Deletion Modals", () => {
       fireEvent.click(deleteBtn);
 
       await waitFor(() => {
-        expect(deleteSpy).toHaveBeenCalledWith("sess-1");
+        expect(deleteSpy).toHaveBeenCalledWith("sess-1", expect.any(String));
         expect(onDeleted).toHaveBeenCalledTimes(1);
         expect(onClose).toHaveBeenCalledTimes(1);
       });
+    });
+
+    it("retains the same idempotency key when retrying after a failed deletion", async () => {
+      const deleteSpy = vi
+        .spyOn(apiClient, "deletePracticeSession")
+        .mockRejectedValueOnce(new Error("Network timeout"))
+        .mockResolvedValueOnce();
+      const onDeleted = vi.fn();
+      const onClose = vi.fn();
+
+      render(
+        <DeleteSessionModal
+          session={mockSession}
+          sessionIndex={2}
+          isOpen={true}
+          onClose={onClose}
+          onSessionDeleted={onDeleted}
+        />,
+      );
+
+      const deleteBtn = screen.getByRole("button", { name: /Delete Session/i });
+      fireEvent.click(deleteBtn);
+
+      await waitFor(() => {
+        expect(deleteSpy).toHaveBeenCalledTimes(1);
+      });
+
+      expect(screen.getByText("Network timeout")).toBeDefined();
+
+      fireEvent.click(deleteBtn);
+
+      await waitFor(() => {
+        expect(deleteSpy).toHaveBeenCalledTimes(2);
+        expect(onDeleted).toHaveBeenCalledTimes(1);
+        expect(onClose).toHaveBeenCalledTimes(1);
+      });
+
+      const firstKey = deleteSpy.mock.calls[0][1];
+      const secondKey = deleteSpy.mock.calls[1][1];
+      expect(firstKey).toBeDefined();
+      expect(firstKey).toBe(secondKey);
     });
   });
 
@@ -132,10 +173,53 @@ describe("Deletion Modals", () => {
 
       fireEvent.click(deleteBtn);
       await waitFor(() => {
-        expect(deleteSpy).toHaveBeenCalledWith("proj-1", "Acme Pitch");
+        expect(deleteSpy).toHaveBeenCalledWith("proj-1", "Acme Pitch", expect.any(String));
         expect(onDeleted).toHaveBeenCalledTimes(1);
         expect(onClose).toHaveBeenCalledTimes(1);
       });
+    });
+
+    it("retains the same idempotency key when retrying after a failed project deletion", async () => {
+      const deleteSpy = vi
+        .spyOn(apiClient, "deleteProject")
+        .mockRejectedValueOnce(new Error("Server unavailable"))
+        .mockResolvedValueOnce();
+      const onDeleted = vi.fn();
+      const onClose = vi.fn();
+
+      render(
+        <DeleteProjectModal
+          project={mockProject}
+          isOpen={true}
+          onClose={onClose}
+          onProjectDeleted={onDeleted}
+        />,
+      );
+
+      const input = screen.getByLabelText("Confirm project name");
+      fireEvent.change(input, { target: { value: "Acme Pitch" } });
+
+      const deleteBtn = screen.getByRole("button", { name: /Delete Project/i });
+      fireEvent.click(deleteBtn);
+
+      await waitFor(() => {
+        expect(deleteSpy).toHaveBeenCalledTimes(1);
+      });
+
+      expect(screen.getByText("Server unavailable")).toBeDefined();
+
+      fireEvent.click(deleteBtn);
+
+      await waitFor(() => {
+        expect(deleteSpy).toHaveBeenCalledTimes(2);
+        expect(onDeleted).toHaveBeenCalledTimes(1);
+        expect(onClose).toHaveBeenCalledTimes(1);
+      });
+
+      const firstKey = deleteSpy.mock.calls[0][2];
+      const secondKey = deleteSpy.mock.calls[1][2];
+      expect(firstKey).toBeDefined();
+      expect(firstKey).toBe(secondKey);
     });
   });
 });
