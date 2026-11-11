@@ -174,12 +174,7 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
               const isCurrentUser = member.user_id === user?.id;
               const memberDisplayName =
                 member.display_name?.trim() || "Team Member";
-              const memberEmail =
-                isCurrentUser && user?.email
-                  ? user.email
-                  : member.display_name
-                  ? `${member.display_name.toLowerCase().replace(/\s+/g, "")}@mail.com`
-                  : null;
+              const memberEmail = isCurrentUser && user?.email ? user.email : null;
 
               return (
                 <ListRowCard key={member.user_id}>
@@ -193,9 +188,11 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-foreground/60  truncate">
-                      {memberEmail}
-                    </span>
+                    {memberEmail && (
+                      <span className="text-xs text-foreground/60 truncate">
+                        {memberEmail}
+                      </span>
+                    )}
                   </div>
 
                   {/* Right: Owner badge or Crown / Trash */}
