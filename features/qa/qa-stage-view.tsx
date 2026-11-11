@@ -65,6 +65,7 @@ export function QAStageView({
     pauseRecording,
     resumeRecording,
     stopRecording,
+    restartRecording,
     discardDraft,
     clearError,
   } = useAudioRecorder({
@@ -153,10 +154,9 @@ export function QAStageView({
 
   // Restart / Re-record
   const handleRestart = () => {
-    discardDraft();
     setLiveTranscript("");
     onClearActionError?.();
-    startRecording();
+    restartRecording();
   };
 
   // Submit from review modal
