@@ -260,4 +260,45 @@ describe("useAudioRecorder hook", () => {
 
     expect(maxReachedMock).toHaveBeenCalled();
   });
+
+  it("reproduces abandoned recorder and leaked tracks when restarting an active recording", async () => {
+    const stream1 = new MockMediaStream();
+    const stream2 = new MockMediaStream();
+
+    const getUserMediaMock = vi.fn()
+      .mockResolvedValueOnce(stream1)
+      .mockResolvedValueOnce(stream2);
+
+    Object.defineProperty(global.navigator, "mediaDevices", {
+      value: { getUserMedia: getUserMediaMock },
+      configurable: true,
+      writable: true,
+    });
+
+    const { result, unmount } = renderHook(() => useAudioRecorder());
+
+    // Start 1st recording
+    await act(async () => {
+      await result.current.startRecording();
+    });
+
+    expect(result.current.isRecording).toBe(true);
+
+    // Mid-recording restart sequence used by QAStageView
+    act(() => {
+      result.current.discardDraft();
+    });
+    await act(async () => {
+      await result.current.startRecording();
+    });
+
+    // Stop 2nd recording and unmount
+    await act(async () => {
+      await result.current.stopRecording();
+    });
+    unmount();
+
+    // The FIRST stream's tracks MUST have been stopped when restarting
+    expect(stream1.tracks[0].stop).toHaveBeenCalled();
+  });
 });
