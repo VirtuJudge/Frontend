@@ -183,6 +183,7 @@ export function useAudioRecorder(
   }, [cleanupDraftUrl, draft, maxDurationMs, onRecordingComplete, stopMediaStream, stopTimer, mediaRecorderRef, canonicalMimeTypeRef]);
 
   const startRecording = useCallback(async () => {
+    teardownActiveRecording();
     cleanupDraftUrl();
     setDraft(null);
     setMediaError(null);
@@ -250,6 +251,7 @@ export function useAudioRecorder(
     }
   }, [
     cleanupDraftUrl,
+    teardownActiveRecording,
     maxDurationMs,
     onMaxDurationReached,
     stopMediaStream,
