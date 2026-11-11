@@ -8,8 +8,10 @@ export function useMediaStream() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const canonicalMimeTypeRef = useRef<string>("audio/webm");
   const isMountedRef = useRef(true);
+  const activeRequestIdRef = useRef(0);
 
   const stopMediaStream = useCallback(() => {
+    activeRequestIdRef.current += 1;
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => {
         try {
@@ -23,6 +25,8 @@ export function useMediaStream() {
   }, []);
 
   const requestMediaStream = useCallback(async () => {
+    const requestId = ++activeRequestIdRef.current;
+
     // Check browser capability
     if (
       typeof window === "undefined" ||
@@ -34,7 +38,7 @@ export function useMediaStream() {
         message:
           "Your web browser does not support audio recording. Please switch to a modern browser like Chrome, Edge, or Firefox.",
       };
-      if (isMountedRef.current) {
+      if (isMountedRef.current && requestId === activeRequestIdRef.current) {
         setError(err);
       }
       return null;
@@ -49,7 +53,7 @@ export function useMediaStream() {
         },
       });
 
-      if (!isMountedRef.current) {
+      if (!isMountedRef.current || requestId !== activeRequestIdRef.current) {
         stream.getTracks().forEach((track) => {
           try {
             track.stop();
@@ -74,7 +78,7 @@ export function useMediaStream() {
       mediaStreamRef.current = stream;
       return stream;
     } catch (err: unknown) {
-      if (!isMountedRef.current) {
+      if (!isMountedRef.current || requestId !== activeRequestIdRef.current) {
         return null;
       }
       setError(parseMediaError(err));
