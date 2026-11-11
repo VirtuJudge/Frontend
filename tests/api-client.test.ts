@@ -306,9 +306,14 @@ describe('API Client Boundary', () => {
     }));
   });
 
-  it('deletes a project with confirmation', async () => {
+  it('requests project erasure with an idempotency key and confirmation', async () => {
     const client = new ApiClient({ baseUrl: '/api/v1', getToken: () => 'token' });
-    fetchSpy.mockResolvedValue(new Response(null, { status: 204 }));
+    fetchSpy.mockResolvedValue(new Response(JSON.stringify({
+      id: 'erasure-123',
+      scope: 'project',
+      scope_id: 'project-123',
+      status: 'pending',
+    }), { status: 202, headers: { 'Content-Type': 'application/json' } }));
 
     await client.deleteProject('project-123', 'My Pitch Project');
 
@@ -316,7 +321,10 @@ describe('API Client Boundary', () => {
       '/api/v1/projects/project-123',
       expect.objectContaining({
         method: 'DELETE',
-        headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+          'Idempotency-Key': expect.stringMatching(/^\S{1,255}$/),
+        }),
         body: JSON.stringify({ confirmation: 'My Pitch Project' }),
       }),
     );
