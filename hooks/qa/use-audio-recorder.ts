@@ -311,6 +311,11 @@ export function useAudioRecorder(
     return stopRecordingInternal();
   }, [state, stopRecordingInternal]);
 
+  const restartRecording = useCallback(async () => {
+    teardownActiveRecording();
+    return startRecording();
+  }, [teardownActiveRecording, startRecording]);
+
   useEffect(() => {
     return () => {
       stopTimer();
@@ -338,6 +343,7 @@ export function useAudioRecorder(
     pauseRecording,
     resumeRecording,
     stopRecording,
+    restartRecording,
     discardDraft,
     clearError,
   };
