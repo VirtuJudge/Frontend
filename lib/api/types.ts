@@ -54,7 +54,7 @@ export interface TeamMembership {
   team_id: ResourceId;
   user_id: ResourceId;
   role: TeamRole;
-  display_name: string;
+  display_name: string | null;
   joined_at: UtcTimestamp;
   version: number;
 }

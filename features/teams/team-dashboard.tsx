@@ -172,26 +172,27 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
           <div className="w-full flex flex-col gap-4">
             {members.map((member: TeamMembership) => {
               const isCurrentUser = member.user_id === user?.id;
-              const memberEmail =
-                isCurrentUser && user?.email
-                  ? user.email
-                  : `${member.display_name.toLowerCase().replace(/\s+/g, "")}@mail.com`;
+              const memberDisplayName =
+                member.display_name?.trim() || "Team Member";
+              const memberEmail = isCurrentUser && user?.email ? user.email : null;
 
               return (
                 <ListRowCard key={member.user_id}>
                   {/* Left: Name and Email */}
                   <div className="flex flex-col text-left pl-3 min-w-0">
                     <div className="flex items-center gap-2">
-                      <Text className="font-bold">{member.display_name}</Text>
+                      <Text className="font-bold">{memberDisplayName}</Text>
                       {isCurrentUser && (
                         <span className="text-foreground/70 text-base font-normal ">
                           (you)
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-foreground/60  truncate">
-                      {memberEmail}
-                    </span>
+                    {memberEmail && (
+                      <span className="text-xs text-foreground/60 truncate">
+                        {memberEmail}
+                      </span>
+                    )}
                   </div>
 
                   {/* Right: Owner badge or Crown / Trash */}
@@ -209,7 +210,7 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
                             setManageMember(member);
                             setMemberManageView("transfer");
                           }}
-                          ariaLabel={`Transfer ownership to ${member.display_name}`}
+                          ariaLabel={`Transfer ownership to ${memberDisplayName}`}
                           title="Transfer ownership"
                         />
 
@@ -220,7 +221,7 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
                             setManageMember(member);
                             setMemberManageView("remove");
                           }}
-                          ariaLabel={`Remove ${member.display_name}`}
+                          ariaLabel={`Remove ${memberDisplayName}`}
                           title="Remove member"
                         />
                       </>
