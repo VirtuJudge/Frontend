@@ -343,19 +343,27 @@ describe("AuthProvider and useAuth", () => {
       items: [{ id: "proj-A", name: "User A Secret Project" }],
     });
 
-    let authInstance!: ReturnType<typeof useAuth>;
     function AccountSwitchConsumer() {
-      authInstance = useAuth();
+      const { signOut, signInWithJwt } = useAuth();
       return (
         <div>
           <button
             type="button"
             onClick={async () => {
               // Sign out during switch flow without full redirect
-              await authInstance.signOut({ redirectTo: false });
+              await signOut({ redirectTo: false });
             }}
           >
             Switch Account
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              const tokenB = createSyntheticJwt({ sub: "user-b-id", email: "user-b@example.com" });
+              await signInWithJwt(tokenB);
+            }}
+          >
+            Sign In User B
           </button>
         </div>
       );
@@ -375,9 +383,8 @@ describe("AuthProvider and useAuth", () => {
     });
 
     // 3. User B signs in
-    const tokenB = createSyntheticJwt({ sub: "user-b-id", email: "user-b@example.com" });
     await act(async () => {
-      await authInstance.signInWithJwt(tokenB);
+      fireEvent.click(screen.getByRole("button", { name: /sign in user b/i }));
     });
 
     // 4. Verify Account A's queries were purged and cannot be read by Account B
