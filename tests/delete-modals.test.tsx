@@ -221,5 +221,34 @@ describe("Deletion Modals", () => {
       expect(firstKey).toBeDefined();
       expect(firstKey).toBe(secondKey);
     });
+
+    it("surfaces server validation failures accurately and allows closure", async () => {
+      vi.spyOn(apiClient, "deleteProject").mockRejectedValueOnce(
+        new Error("Missing required Idempotency-Key header"),
+      );
+      const onClose = vi.fn();
+
+      render(
+        <DeleteProjectModal
+          project={mockProject}
+          isOpen={true}
+          onClose={onClose}
+        />,
+      );
+
+      const input = screen.getByLabelText("Confirm project name");
+      fireEvent.change(input, { target: { value: "Acme Pitch" } });
+
+      const deleteBtn = screen.getByRole("button", { name: /Delete Project/i });
+      fireEvent.click(deleteBtn);
+
+      expect(
+        await screen.findByText("Missing required Idempotency-Key header"),
+      ).toBeDefined();
+
+      const cancelBtn = screen.getByRole("button", { name: "Cancel" });
+      fireEvent.click(cancelBtn);
+      expect(onClose).toHaveBeenCalled();
+    });
   });
 });
