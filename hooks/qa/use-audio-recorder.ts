@@ -93,13 +93,34 @@ export function useAudioRecorder(
     }
   }, []);
 
+  const teardownActiveRecording = useCallback(() => {
+    stopTimer();
+    const recorder = mediaRecorderRef.current;
+    if (recorder) {
+      recorder.ondataavailable = null;
+      recorder.onerror = null;
+      recorder.onstop = null;
+      if (recorder.state !== "inactive") {
+        try {
+          recorder.stop();
+        } catch {
+          // ignore
+        }
+      }
+      mediaRecorderRef.current = null;
+    }
+    stopMediaStream();
+    audioChunksRef.current = [];
+  }, [stopTimer, stopMediaStream, mediaRecorderRef]);
+
   const discardDraft = useCallback(() => {
+    teardownActiveRecording();
     cleanupDraftUrl();
     setDraft(null);
     setDurationMs(0);
     accumulatedDurationRef.current = 0;
     setState("idle");
-  }, [cleanupDraftUrl]);
+  }, [cleanupDraftUrl, teardownActiveRecording]);
 
   const clearError = useCallback(() => {
     setMediaError(null);
