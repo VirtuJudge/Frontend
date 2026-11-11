@@ -339,14 +339,14 @@ describe('API Client Boundary', () => {
       status: 'pending',
     }), { status: 202, headers: { 'Content-Type': 'application/json' } }));
 
-    await client.deletePracticeSession('sess-456');
+    await client.deletePracticeSession('sess-456', 'custom-sess-key');
 
     expect(fetchSpy).toHaveBeenCalledWith(
       '/api/v1/practice-sessions/sess-456',
       expect.objectContaining({
         method: 'DELETE',
         headers: expect.objectContaining({
-          'Idempotency-Key': expect.stringMatching(/^\S{1,255}$/),
+          'Idempotency-Key': 'custom-sess-key',
         }),
       }),
     );

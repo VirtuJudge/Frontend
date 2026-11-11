@@ -86,10 +86,13 @@ export class SessionsClient extends BaseClient {
     return this.normalizePracticeSession(session);
   }
 
-  public async deletePracticeSession(sessionId: string): Promise<void> {
+  public async deletePracticeSession(
+    sessionId: string,
+    idempotencyKey?: string,
+  ): Promise<void> {
     return this.request<void>(API_ENDPOINTS.practiceSession(sessionId), {
       method: "DELETE",
-      idempotencyKey: generateIdempotencyKey("delete-session"),
+      idempotencyKey: idempotencyKey || generateIdempotencyKey("delete-session"),
     });
   }
 
