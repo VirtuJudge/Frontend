@@ -293,6 +293,105 @@ describe("AuthProvider and useAuth", () => {
     );
   });
 
+  it("reproduces retained private report and session cache across signOut", async () => {
+    queryClient.setQueryData(["report", "sess-private-123"], {
+      id: "rep-1",
+      privateNotes: "Confidential Feedback",
+    });
+    queryClient.setQueryData(["practice-session", "sess-private-123"], {
+      id: "sess-private-123",
+      owner: "user-a",
+    });
+
+    function SignOutCacheConsumer() {
+      const { signOut } = useAuth();
+      return (
+        <button
+          type="button"
+          onClick={async () => {
+            await signOut({ redirectTo: false });
+          }}
+        >
+          Sign Out Now
+        </button>
+      );
+    }
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <SignOutCacheConsumer />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /sign out now/i }));
+    });
+
+    // Query cache must NOT retain private session or report data after signOut
+    expect(queryClient.getQueryData(["report", "sess-private-123"])).toBeUndefined();
+    expect(queryClient.getQueryData(["practice-session", "sess-private-123"])).toBeUndefined();
+  });
+
+  it("ensures Account B cannot access Account A cached queries during invitation account switch", async () => {
+    // 1. Account A is logged in and loads private reports/projects
+    queryClient.setQueryData(["report", "session-secret-A"], {
+      title: "User A Confidential Evaluation",
+    });
+    queryClient.setQueryData(["teamProjects", "team-secret-A"], {
+      items: [{ id: "proj-A", name: "User A Secret Project" }],
+    });
+
+    function AccountSwitchConsumer() {
+      const { signOut, signInWithJwt } = useAuth();
+      return (
+        <div>
+          <button
+            type="button"
+            onClick={async () => {
+              // Sign out during switch flow without full redirect
+              await signOut({ redirectTo: false });
+            }}
+          >
+            Switch Account
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              const tokenB = createSyntheticJwt({ sub: "user-b-id", email: "user-b@example.com" });
+              await signInWithJwt(tokenB);
+            }}
+          >
+            Sign In User B
+          </button>
+        </div>
+      );
+    }
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AccountSwitchConsumer />
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+
+    // 2. Perform account switch sign out
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /switch account/i }));
+    });
+
+    // 3. User B signs in
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /sign in user b/i }));
+    });
+
+    // 4. Verify Account A's queries were purged and cannot be read by Account B
+    expect(queryClient.getQueryData(["report", "session-secret-A"])).toBeUndefined();
+    expect(queryClient.getQueryData(["teamProjects", "team-secret-A"])).toBeUndefined();
+  });
+
   it("handles signInWithPassword and signUpWithPassword", async () => {
     function PasswordAuthConsumer() {
       const { user, isAuthenticated, signInWithPassword, signUpWithPassword } = useAuth();
