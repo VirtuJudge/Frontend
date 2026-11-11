@@ -132,8 +132,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (event === "SIGNED_OUT") {
         syncSessionToCookies(null);
         setToken(null);
-        queryClient.removeQueries({ queryKey: ["me"] });
-        queryClient.removeQueries({ queryKey: ["teams"] });
+        await queryClient.cancelQueries();
+        queryClient.clear();
       }
     });
 
