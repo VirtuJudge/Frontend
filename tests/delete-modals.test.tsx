@@ -113,11 +113,8 @@ describe("Deletion Modals", () => {
       const deleteBtn = screen.getByRole("button", { name: /Delete Session/i });
       fireEvent.click(deleteBtn);
 
-      await waitFor(() => {
-        expect(deleteSpy).toHaveBeenCalledTimes(1);
-      });
-
-      expect(screen.getByText("Network timeout")).toBeDefined();
+      expect(await screen.findByText("Network timeout")).toBeDefined();
+      expect(deleteSpy).toHaveBeenCalledTimes(1);
 
       fireEvent.click(deleteBtn);
 
@@ -202,11 +199,8 @@ describe("Deletion Modals", () => {
       const deleteBtn = screen.getByRole("button", { name: /Delete Project/i });
       fireEvent.click(deleteBtn);
 
-      await waitFor(() => {
-        expect(deleteSpy).toHaveBeenCalledTimes(1);
-      });
-
-      expect(screen.getByText("Server unavailable")).toBeDefined();
+      expect(await screen.findByText("Server unavailable")).toBeDefined();
+      expect(deleteSpy).toHaveBeenCalledTimes(1);
 
       fireEvent.click(deleteBtn);
 
