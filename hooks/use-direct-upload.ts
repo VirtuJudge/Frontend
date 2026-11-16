@@ -56,21 +56,34 @@ export function useDirectUpload({
   const [items, setItems] = useState<UploadItem[]>([]);
   const itemsRef = useRef<UploadItem[]>([]);
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
+  const isMountedRef = useRef(true);
+  const cancelledItemIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     const controllers = abortControllersRef.current;
     return () => {
+      isMountedRef.current = false;
       controllers.forEach((ctrl) => ctrl.abort());
       controllers.clear();
     };
   }, []);
 
+  const isOperationCancelled = useCallback((itemId: string): boolean => {
+    if (!isMountedRef.current) return true;
+    if (cancelledItemIdsRef.current.has(itemId)) return true;
+    const controller = abortControllersRef.current.get(itemId);
+    if (controller?.signal.aborted) return true;
+    return false;
+  }, []);
+
   const updateItem = useCallback(
     (id: string, updates: Partial<UploadItem>) => {
+      if (!isMountedRef.current) return;
       setItems((prev) =>
         prev.map((item) => (item.id === id ? { ...item, ...updates } : item)),
       );
@@ -79,13 +92,22 @@ export function useDirectUpload({
   );
 
   const pollAssetVerification = useCallback(
-    async (assetId: string, itemId: string): Promise<Asset | null> => {
+    async (
+      assetId: string,
+      itemId: string,
+      signal?: AbortSignal,
+    ): Promise<Asset | null> => {
       let attempts = 0;
       let lastError: Error | null = null;
       while (attempts < maxPollAttempts) {
+        if (isOperationCancelled(itemId) || signal?.aborted) return null;
         await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+        if (isOperationCancelled(itemId) || signal?.aborted) return null;
+
         try {
           const asset = await apiClient.getAsset(assetId);
+          if (isOperationCancelled(itemId) || signal?.aborted) return null;
+
           if (asset.state === "verified") {
             updateItem(itemId, {
               stage: "verified",
@@ -106,6 +128,7 @@ export function useDirectUpload({
             });
             const rejectedErr = new Error(reason);
             setItems((prev) => {
+              if (isOperationCancelled(itemId)) return prev;
               const currentItem = prev.find((i) => i.id === itemId);
               if (currentItem) {
                 onUploadError?.(rejectedErr, {
@@ -121,10 +144,13 @@ export function useDirectUpload({
             return null;
           }
         } catch (err) {
+          if (isOperationCancelled(itemId) || signal?.aborted) return null;
           lastError = err instanceof Error ? err : new Error(String(err));
         }
         attempts += 1;
       }
+
+      if (isOperationCancelled(itemId) || signal?.aborted) return null;
 
       // Transition out of "verifying" into error/timeout state so UI is never stuck
       const timeoutMessage =
@@ -139,6 +165,7 @@ export function useDirectUpload({
       });
 
       setItems((prev) => {
+        if (isOperationCancelled(itemId)) return prev;
         const currentItem = prev.find((i) => i.id === itemId);
         if (currentItem) {
           onUploadError?.(timeoutErr, {
@@ -153,7 +180,14 @@ export function useDirectUpload({
 
       return null;
     },
-    [maxPollAttempts, pollIntervalMs, updateItem, onUploadSuccess, onUploadError],
+    [
+      maxPollAttempts,
+      pollIntervalMs,
+      updateItem,
+      onUploadSuccess,
+      onUploadError,
+      isOperationCancelled,
+    ],
   );
 
   const startUploadForItem = useCallback(
@@ -166,6 +200,7 @@ export function useDirectUpload({
     ): Promise<Asset | null> => {
       const abortController = new AbortController();
       abortControllersRef.current.set(itemId, abortController);
+      cancelledItemIdsRef.current.delete(itemId);
 
       updateItem(itemId, {
         stage: "validating",
@@ -285,7 +320,7 @@ export function useDirectUpload({
         return null;
       }
 
-      if (abortController.signal.aborted) return null;
+      if (abortController.signal.aborted || isOperationCancelled(itemId)) return null;
 
       updateItem(itemId, { stage: "completing" });
       try {
@@ -295,6 +330,9 @@ export function useDirectUpload({
           { checksum, size_bytes: file.size },
         );
       } catch (err) {
+        if (isOperationCancelled(itemId) || abortController.signal.aborted) {
+          return null;
+        }
         const errorMsg =
           err instanceof Error
             ? err.message
@@ -303,14 +341,23 @@ export function useDirectUpload({
         return null;
       }
 
+      if (isOperationCancelled(itemId) || abortController.signal.aborted) {
+        return null;
+      }
+
       updateItem(itemId, { stage: "verifying" });
-      return await pollAssetVerification(uploadIntent.asset_id, itemId);
+      return await pollAssetVerification(
+        uploadIntent.asset_id,
+        itemId,
+        abortController.signal,
+      );
     },
     [
       projectId,
       updateItem,
       onUploadError,
       pollAssetVerification,
+      isOperationCancelled,
     ],
   );
 
@@ -375,22 +422,32 @@ export function useDirectUpload({
     async (itemId: string): Promise<Asset | null> => {
       const item = itemsRef.current.find((i) => i.id === itemId);
       if (!item || !item.assetId) return null;
+      cancelledItemIdsRef.current.delete(itemId);
+      let controller = abortControllersRef.current.get(itemId);
+      if (!controller || controller.signal.aborted) {
+        controller = new AbortController();
+        abortControllersRef.current.set(itemId, controller);
+      }
       updateItem(itemId, {
         stage: "verifying",
         error: undefined,
         rejectionReason: undefined,
       });
-      return await pollAssetVerification(item.assetId, itemId);
+      return await pollAssetVerification(
+        item.assetId,
+        itemId,
+        controller.signal,
+      );
     },
     [pollAssetVerification, updateItem],
   );
 
   const cancelUpload = useCallback(
     (id: string) => {
+      cancelledItemIdsRef.current.add(id);
       const controller = abortControllersRef.current.get(id);
       if (controller) {
         controller.abort();
-        abortControllersRef.current.delete(id);
       }
       updateItem(id, { stage: "error", error: "Upload cancelled by user" });
     },
@@ -398,10 +455,10 @@ export function useDirectUpload({
   );
 
   const removeUploadItem = useCallback((id: string) => {
+    cancelledItemIdsRef.current.add(id);
     const controller = abortControllersRef.current.get(id);
     if (controller) {
       controller.abort();
-      abortControllersRef.current.delete(id);
     }
     setItems((prev) => prev.filter((i) => i.id !== id));
   }, []);
