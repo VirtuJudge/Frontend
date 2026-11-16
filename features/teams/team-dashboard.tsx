@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Icon } from "@iconify/react";
 import {
   Wrapper,
   Text,
+  Button,
   BreadcrumbNav,
   ListRowCard,
   PillBadge,
@@ -46,9 +47,19 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
     queryFn: () => apiClient.getTeam(teamId),
   });
 
-  const { data: membersPage, isLoading: isMembersLoading } = useQuery({
+  const {
+    data: membersData,
+    isLoading: isMembersLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ["teamMembers", teamId],
-    queryFn: () => apiClient.getTeamMembers(teamId),
+    queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+      apiClient.getTeamMembers(teamId, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage.next_cursor || undefined,
   });
 
   const { data: projectsPage, isLoading: isProjectsLoading } = useQuery({
@@ -56,10 +67,45 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
     queryFn: () => apiClient.getProjects(teamId),
   });
 
+  const members = useMemo(() => {
+    if (!membersData) return [];
+    const seen = new Set<string>();
+    const list: TeamMembership[] = [];
+    for (const page of membersData.pages) {
+      for (const item of page.items) {
+        if (!seen.has(item.user_id)) {
+          seen.add(item.user_id);
+          list.push(item);
+        }
+      }
+    }
+    return list;
+  }, [membersData]);
+
+  // Determine user's role independently of whichever page is visible
+  const currentMembershipInView = members.find((m) => m.user_id === user?.id);
+
+  const { data: resolvedUserRole } = useQuery({
+    queryKey: ["teamUserRole", teamId, user?.id],
+    queryFn: async (): Promise<"owner" | "member"> => {
+      if (!user?.id) return "member";
+      if (team?.role) return team.role;
+      let cursor: string | undefined = undefined;
+      while (true) {
+        const page = await apiClient.getTeamMembers(teamId, cursor);
+        const match = page.items.find((m) => m.user_id === user.id);
+        if (match) return match.role;
+        if (!page.next_cursor || !page.has_more) break;
+        cursor = page.next_cursor;
+      }
+      return "member";
+    },
+    enabled: !!teamId && !!user?.id && !currentMembershipInView,
+  });
+
   const projects = projectsPage?.items || [];
-  const members = membersPage?.items || [];
-  const currentMembership = members.find((m) => m.user_id === user?.id);
-  const userRole = currentMembership?.role || team?.role || "member";
+  const userRole =
+    currentMembershipInView?.role || resolvedUserRole || team?.role || "member";
   const isOwner = userRole === "owner";
 
   const { data: invitationsPage } = useQuery({
@@ -72,6 +118,7 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
 
   const handleMemberRemoved = () => {
     queryClient.invalidateQueries({ queryKey: ["teamMembers", teamId] });
+    queryClient.invalidateQueries({ queryKey: ["teamUserRole", teamId, user?.id] });
     queryClient.invalidateQueries({ queryKey: ["team", teamId] });
     queryClient.invalidateQueries({ queryKey: ["teams"] });
   };
@@ -79,6 +126,7 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
   const handleOwnershipTransferred = () => {
     queryClient.invalidateQueries({ queryKey: ["team", teamId] });
     queryClient.invalidateQueries({ queryKey: ["teamMembers", teamId] });
+    queryClient.invalidateQueries({ queryKey: ["teamUserRole", teamId, user?.id] });
     queryClient.invalidateQueries({ queryKey: ["teams"] });
     queryClient.invalidateQueries({ queryKey: ["teamInvitations", teamId] });
   };
@@ -231,6 +279,20 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
               );
             })}
           </div>
+
+          {hasNextPage && (
+            <div className="flex justify-center mt-2">
+              <Button
+                variant="glass"
+                size="sm"
+                onClick={() => fetchNextPage()}
+                loading={isFetchingNextPage}
+                className="rounded-full px-6 py-2 text-sm"
+              >
+                Load more members
+              </Button>
+            </div>
+          )}
 
           {/* Plus button to invite member */}
           {isOwner && (
