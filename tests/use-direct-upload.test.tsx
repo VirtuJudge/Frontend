@@ -324,4 +324,156 @@ describe("useDirectUpload Hook (Phase 3)", () => {
     expect(retriedAsset).not.toBeNull();
     expect(result.current.items[0].stage).toBe("verified");
   });
+
+  it("cancelling during verification does not mark item as verified and suppresses onUploadSuccess (#111)", async () => {
+    const onSuccess = vi.fn();
+    const onError = vi.fn();
+
+    vi.spyOn(uploadLib, "computeFileChecksum").mockResolvedValue(
+      "sha256:0000111122223333444455556666777788889999aaaabbbbccccddddeeeeffff",
+    );
+
+    vi.spyOn(apiClient, "createUploadIntent").mockResolvedValue({
+      asset_id: "asset_cancel_111",
+      version_id: "version_cancel_111",
+      upload_url: "https://storage.virtujudge.local/mock/doc.pdf",
+      expires_at: new Date().toISOString(),
+    });
+
+    vi.spyOn(uploadLib, "uploadFileDirectly").mockResolvedValue(undefined);
+
+    const pendingAsset: Asset = {
+      id: "asset_cancel_111",
+      project_id: mockProjectId,
+      kind: "supporting_document",
+      file_name: "test.pdf",
+      media_type: "application/pdf",
+      size_bytes: 500,
+      state: "uploaded",
+      checksum: "sha256:0000111122223333444455556666777788889999aaaabbbbccccddddeeeeffff",
+      created_at: new Date().toISOString(),
+    };
+
+    const verifiedAsset: Asset = {
+      ...pendingAsset,
+      state: "verified",
+    };
+
+    vi.spyOn(apiClient, "completeUpload").mockResolvedValue(pendingAsset);
+
+    let resolveGetAsset: (asset: Asset) => void = () => {};
+    vi.spyOn(apiClient, "getAsset").mockImplementation(() => {
+      return new Promise<Asset>((resolve) => {
+        resolveGetAsset = resolve;
+      });
+    });
+
+    const { result } = renderHook(() =>
+      useDirectUpload({
+        projectId: mockProjectId,
+        pollIntervalMs: 5,
+        onUploadSuccess: onSuccess,
+        onUploadError: onError,
+      }),
+    );
+
+    const testDoc = new File(["content"], "test.pdf", { type: "application/pdf" });
+
+    let uploadPromise: Promise<Asset | null>;
+    act(() => {
+      uploadPromise = result.current.uploadFile(testDoc, "supporting_document");
+    });
+
+    // Wait a tick for upload to reach verifying
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+    });
+
+    const itemId = result.current.items[0].id;
+    // User cancels the upload while verification is pending
+    act(() => {
+      result.current.cancelUpload(itemId);
+    });
+
+    expect(result.current.items[0].error).toBe("Upload cancelled by user");
+
+    // The backend now returns verified
+    await act(async () => {
+      resolveGetAsset(verifiedAsset);
+      await uploadPromise;
+    });
+
+    // The cancelled item must NOT be resurrected to verified, and callback must not run
+    expect(result.current.items[0].stage).not.toBe("verified");
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it("cancelling during completeUpload aborts pipeline and does not transition to verifying (#111)", async () => {
+    const onSuccess = vi.fn();
+
+    vi.spyOn(uploadLib, "computeFileChecksum").mockResolvedValue(
+      "sha256:0000111122223333444455556666777788889999aaaabbbbccccddddeeeeffff",
+    );
+
+    vi.spyOn(apiClient, "createUploadIntent").mockResolvedValue({
+      asset_id: "asset_complete_cancel",
+      version_id: "version_complete_cancel",
+      upload_url: "https://storage.virtujudge.local/mock/doc.pdf",
+      expires_at: new Date().toISOString(),
+    });
+
+    vi.spyOn(uploadLib, "uploadFileDirectly").mockResolvedValue(undefined);
+
+    let resolveComplete: (asset: Asset) => void = () => {};
+    vi.spyOn(apiClient, "completeUpload").mockImplementation(() => {
+      return new Promise<Asset>((resolve) => {
+        resolveComplete = resolve;
+      });
+    });
+
+    const getAssetSpy = vi.spyOn(apiClient, "getAsset");
+
+    const { result } = renderHook(() =>
+      useDirectUpload({
+        projectId: mockProjectId,
+        pollIntervalMs: 5,
+        onUploadSuccess: onSuccess,
+      }),
+    );
+
+    const testDoc = new File(["content"], "doc.pdf", { type: "application/pdf" });
+
+    let uploadPromise: Promise<Asset | null>;
+    act(() => {
+      uploadPromise = result.current.uploadFile(testDoc, "supporting_document");
+    });
+
+    // Wait for upload to reach completing
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 20));
+    });
+
+    const itemId = result.current.items[0].id;
+    act(() => {
+      result.current.cancelUpload(itemId);
+    });
+
+    await act(async () => {
+      resolveComplete({
+        id: "asset_complete_cancel",
+        project_id: mockProjectId,
+        kind: "supporting_document",
+        file_name: "doc.pdf",
+        media_type: "application/pdf",
+        size_bytes: 500,
+        state: "uploaded",
+        created_at: new Date().toISOString(),
+      });
+      await uploadPromise;
+    });
+
+    expect(result.current.items[0].stage).not.toBe("verifying");
+    expect(getAssetSpy).not.toHaveBeenCalled();
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
 });
