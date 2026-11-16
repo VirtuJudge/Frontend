@@ -40,6 +40,13 @@ export function useQAMutations(
         return false;
       }
 
+      if (draft.questionId && draft.questionId !== activeQuestion.id) {
+        setActionError(
+          "The recorded answer belongs to a different question and cannot be submitted."
+        );
+        return false;
+      }
+
       if (isSubmitting) {
         return false;
       }
