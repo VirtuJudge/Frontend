@@ -4,6 +4,8 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as nextNavigation from "next/navigation";
 import { apiClient } from "@/lib/api/client";
+import * as uploadLib from "@/lib/upload";
+import { Asset } from "@/lib/api/types";
 import PrepareSessionPage from "@/app/(auth)/projects/[projectId]/session/prepare/page";
 
 const mockParams = Promise.resolve({ projectId: "proj-123" });
@@ -294,5 +296,125 @@ describe("Prepare Session Page (/projects/[projectId]/session/prepare)", () => {
     expect(stored).not.toBeNull();
     const parsed = JSON.parse(stored!);
     expect(parsed.documentAssetIds).toContain("01J6GZ6F000000000000000006");
+  });
+
+  it("disables Start button while document upload or verification is in progress (#110)", async () => {
+    let resolveChecksum: (val: string) => void = () => {};
+    vi.spyOn(uploadLib, "computeFileChecksum").mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveChecksum = resolve;
+        }),
+    );
+
+    await renderPage();
+
+    const startButton = screen.getByRole("button", { name: /^start$/i }) as HTMLButtonElement;
+    expect(startButton.disabled).toBe(false);
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput).not.toBeNull();
+
+    const newDoc = new File(["pitch deck content"], "deck.pdf", {
+      type: "application/pdf",
+    });
+
+    // Select document to trigger upload
+    await React.act(async () => {
+      fireEvent.change(fileInput, { target: { files: [newDoc] } });
+    });
+
+    // Start button must be gated (disabled) while upload / verification is in progress
+    expect(startButton.disabled).toBe(true);
+    expect(
+      screen.getByText(/uploading and verifying documents/i),
+    ).toBeDefined();
+
+    // Now complete checksum, intent, upload, and verification
+    const verifiedAsset: Asset = {
+      id: "asset_deck_verified",
+      project_id: "proj-123",
+      kind: "supporting_document",
+      file_name: "deck.pdf",
+      media_type: "application/pdf",
+      size_bytes: newDoc.size,
+      state: "verified",
+      checksum: "sha256:0000111122223333444455556666777788889999aaaabbbbccccddddeeeeffff",
+      version_id: "ver_deck_1",
+      created_at: new Date().toISOString(),
+    };
+
+    vi.spyOn(apiClient, "createUploadIntent").mockResolvedValue({
+      asset_id: "asset_deck_verified",
+      version_id: "ver_deck_1",
+      upload_url: "https://storage.virtujudge.local/mock/deck.pdf",
+      expires_at: new Date().toISOString(),
+    });
+    vi.spyOn(uploadLib, "uploadFileDirectly").mockResolvedValue(undefined);
+    vi.spyOn(apiClient, "completeUpload").mockResolvedValue(verifiedAsset);
+    vi.spyOn(apiClient, "getAsset").mockResolvedValue(verifiedAsset);
+    vi.spyOn(apiClient, "getAssets").mockResolvedValue({
+      items: [verifiedAsset],
+      has_more: false,
+    });
+
+    await React.act(async () => {
+      resolveChecksum(
+        "sha256:0000111122223333444455556666777788889999aaaabbbbccccddddeeeeffff",
+      );
+      // Allow async upload pipeline to complete
+      await new Promise((r) => setTimeout(r, 50));
+    });
+
+    // Once verified, Start button must be re-enabled
+    await waitFor(() => {
+      expect(startButton.disabled).toBe(false);
+    });
+  });
+
+  it("disables Start button when an upload fails and re-enables when file is removed (#110)", async () => {
+    vi.spyOn(uploadLib, "computeFileChecksum").mockRejectedValue(
+      new Error("Failed to compute hash"),
+    );
+
+    await renderPage();
+
+    const startButton = screen.getByRole("button", { name: /^start$/i }) as HTMLButtonElement;
+    expect(startButton.disabled).toBe(false);
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const badDoc = new File(["bad content"], "broken.pdf", {
+      type: "application/pdf",
+    });
+
+    await React.act(async () => {
+      fireEvent.change(fileInput, { target: { files: [badDoc] } });
+      await new Promise((r) => setTimeout(r, 50));
+    });
+
+    // Upload failed -> Start button is disabled
+    expect(startButton.disabled).toBe(true);
+    expect(
+      screen.getByText(/one or more document uploads failed/i),
+    ).toBeDefined();
+
+    // Open dropdown to see attached file and click remove
+    const dropdownBtn = screen.getByRole("button", {
+      name: /(slides & documents|uploaded files) dropdown/i,
+    });
+    fireEvent.click(dropdownBtn);
+
+    const removeBtn = await screen.findByRole("button", {
+      name: /remove broken\.pdf/i,
+    });
+    await React.act(async () => {
+      fireEvent.click(removeBtn);
+    });
+
+    // With the failed document removed, Start button is re-enabled
+    expect(startButton.disabled).toBe(false);
+    expect(
+      screen.queryByText(/one or more document uploads failed/i),
+    ).toBeNull();
   });
 });
