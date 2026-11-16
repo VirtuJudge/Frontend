@@ -368,3 +368,106 @@ describe("QAStageView & useQAMutations - Question Binding and Transitions (#107)
     );
   });
 });
+
+describe("useQAMutations - Skip Idempotency Key Retention (#108)", () => {
+  const activeQ: Question = {
+    ...mockPrimaryQuestion,
+    id: "q-1",
+  };
+
+  const nextQ: Question = {
+    ...mockPrimaryQuestion,
+    id: "q-2",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("retains the identical idempotency key across retries after an ambiguous response", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+    const setAnalyzingQuestionId = vi.fn();
+
+    const mockAnswer = {
+      id: "ans-1",
+      question_id: "q-1",
+      answered_by: "user-1",
+      status: "skipped" as const,
+    };
+
+    const capturedKeys: string[] = [];
+    vi.spyOn(apiClient, "skipAnswer").mockImplementation(async (_qId, key) => {
+      capturedKeys.push(key);
+      if (capturedKeys.length === 1) {
+        throw new Error("Network interruption - response lost");
+      }
+      return mockAnswer;
+    });
+
+    const { result } = renderHook(() =>
+      useQAMutations("sess-1", activeQ, setAnalyzingQuestionId, queryClient)
+    );
+
+    // First attempt fails with network error
+    let res1: boolean | undefined;
+    await act(async () => {
+      res1 = await result.current.skipQuestion("Time limit reached");
+    });
+
+    expect(res1).toBe(false);
+    expect(capturedKeys).toHaveLength(1);
+    // Invalidation was triggered on ambiguous failure to reconcile server state
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["qa-round", "sess-1"] });
+
+    // Retry with the same question and reason
+    let res2: boolean | undefined;
+    await act(async () => {
+      res2 = await result.current.skipQuestion("Time limit reached");
+    });
+
+    expect(res2).toBe(true);
+    expect(capturedKeys).toHaveLength(2);
+    // Crucial: The second call reuses the EXACT SAME idempotency key
+    expect(capturedKeys[1]).toBe(capturedKeys[0]);
+  });
+
+  it("allocates a new idempotency key for a genuinely new skip command", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const setAnalyzingQuestionId = vi.fn();
+
+    const mockAnswer = {
+      id: "ans-1",
+      question_id: "q-1",
+      answered_by: "user-1",
+      status: "skipped" as const,
+    };
+
+    const capturedKeys: string[] = [];
+    vi.spyOn(apiClient, "skipAnswer").mockImplementation(async (_qId, key) => {
+      capturedKeys.push(key);
+      return mockAnswer;
+    });
+
+    const { result, rerender } = renderHook(
+      ({ q }) => useQAMutations("sess-1", q, setAnalyzingQuestionId, queryClient),
+      { initialProps: { q: activeQ } }
+    );
+
+    // Skip question 1
+    await act(async () => {
+      await result.current.skipQuestion();
+    });
+
+    // Advance to question 2
+    rerender({ q: nextQ });
+
+    // Skip question 2
+    await act(async () => {
+      await result.current.skipQuestion();
+    });
+
+    expect(capturedKeys).toHaveLength(2);
+    expect(capturedKeys[0]).not.toBe(capturedKeys[1]);
+  });
+});
