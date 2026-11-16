@@ -72,12 +72,14 @@ export function SessionPrepareContent({ projectId }: { projectId: string }) {
 
   const {
     items: uploadItems,
+    isUploading,
     uploadFiles,
     retryUpload,
     cancelUpload,
     removeUploadItem,
   } = useDirectUpload({
     projectId,
+    pollIntervalMs: process.env.NODE_ENV === "test" ? 10 : 1500,
     onUploadSuccess: (asset) => {
       refetchAssets();
       setSelectedAssetIds((prev) =>
@@ -149,6 +151,17 @@ export function SessionPrepareContent({ projectId }: { projectId: string }) {
     return files.slice(0, 5);
   }, [selectedProjectFiles, attachedFiles]);
 
+  const hasPendingUploads = isUploading;
+  const hasFailedUploads = uploadItems.some(
+    (i) => i.stage === "error" || i.stage === "rejected",
+  );
+  const hasUnverifiedSelectedFiles = useMemo(() => {
+    return combinedFiles.some((f) => !f.assetId || !f.versionId);
+  }, [combinedFiles]);
+
+  const isReadyToStart =
+    !hasPendingUploads && !hasFailedUploads && !hasUnverifiedSelectedFiles;
+
   // Automatically sync configurations to localStorage whenever any setting changes
   useEffect(() => {
     const totalPresentationSec =
@@ -216,6 +229,13 @@ export function SessionPrepareContent({ projectId }: { projectId: string }) {
     );
     if (attachedIdx !== -1) {
       handleRemoveFile(attachedIdx);
+    }
+    const uploadItemToRemove = uploadItems.find(
+      (u) =>
+        u.file.name === itemToRemove.name && u.file.size === itemToRemove.size,
+    );
+    if (uploadItemToRemove) {
+      removeUploadItem(uploadItemToRemove.id);
     }
     if (selectedFileIndex >= combinedFiles.length - 1) {
       setSelectedFileIndex(Math.max(0, combinedFiles.length - 2));
@@ -316,6 +336,8 @@ export function SessionPrepareContent({ projectId }: { projectId: string }) {
   };
 
   const handleStart = () => {
+    if (!isReadyToStart) return;
+
     setIsStarting(true);
     setTimeout(() => {
       setIsStarting(false);
@@ -324,24 +346,24 @@ export function SessionPrepareContent({ projectId }: { projectId: string }) {
       const totalQuestionsSec =
         questionsTime.minutes * 60 + questionsTime.seconds;
 
-      const selectedAssets = combinedFiles.map((f) => ({
-        id: f.id,
-        assetId: f.assetId,
-        versionId: f.versionId,
-        name: f.name,
-        size: f.size,
-        type: f.name.endsWith(".pdf")
-          ? "application/pdf"
-          : "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      }));
+      const selectedAssets = combinedFiles
+        .filter(
+          (f): f is typeof f & { assetId: string; versionId: string } =>
+            !!f.assetId && !!f.versionId,
+        )
+        .map((f) => ({
+          id: f.id,
+          assetId: f.assetId,
+          versionId: f.versionId,
+          name: f.name,
+          size: f.size,
+          type: f.name.endsWith(".pdf")
+            ? "application/pdf"
+            : "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        }));
 
-      const documentAssetIds = combinedFiles
-        .map((f) => f.assetId)
-        .filter((id): id is string => !!id);
-
-      const documentVersionIds = combinedFiles
-        .map((f) => f.versionId)
-        .filter((id): id is string => !!id);
+      const documentAssetIds = selectedAssets.map((f) => f.assetId);
+      const documentVersionIds = selectedAssets.map((f) => f.versionId);
 
       // Save complete session configuration to localStorage under projectId
       saveSessionConfig(projectId, {
@@ -473,15 +495,28 @@ export function SessionPrepareContent({ projectId }: { projectId: string }) {
           />
         </div>
       </div>
-      <Button
-        variant="primary"
-        size="default"
-        loading={isStarting}
-        onClick={handleStart}
-        className="rounded-full px-20 sm:px-28 h-14 text-xl sm:text-2xl font-bold shadow-lg shadow-primary/20"
-      >
-        Start
-      </Button>
+      <div className="flex flex-col items-center gap-3">
+        {hasPendingUploads && (
+          <Text className="text-sm text-foreground/70 animate-pulse">
+            Uploading and verifying documents... Please wait before starting.
+          </Text>
+        )}
+        {hasFailedUploads && (
+          <Text className="text-sm text-red-400">
+            One or more document uploads failed. Please remove or retry them to proceed.
+          </Text>
+        )}
+        <Button
+          variant="primary"
+          size="default"
+          loading={isStarting}
+          disabled={!isReadyToStart || isStarting}
+          onClick={handleStart}
+          className="rounded-full px-20 sm:px-28 h-14 text-xl sm:text-2xl font-bold shadow-lg shadow-primary/20"
+        >
+          Start
+        </Button>
+      </div>
     </div>
   );
 }
