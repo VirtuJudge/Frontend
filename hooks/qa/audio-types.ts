@@ -24,4 +24,5 @@ export interface AudioRecordingDraft {
   durationMs: number;
   mimeType: string;
   sizeBytes: number;
+  questionId?: string;
 }
