@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
 import { Question } from "@/lib/api/types";
@@ -23,6 +23,7 @@ export function useQAMutations(
   const [isSkipping, setIsSkipping] = useState(false);
   const [submitProgress, setSubmitProgress] = useState<SubmitAnswerProgress | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const skipKeysRef = useRef<Map<string, string>>(new Map());
 
   const clearActionError = useCallback(() => {
     setActionError(null);
@@ -150,7 +151,14 @@ export function useQAMutations(
         setSubmitProgress(null);
       }
     },
-    [activeQuestion, isSubmitting, sessionId, queryClient, setAnalyzingQuestionId]
+    [
+      activeQuestion,
+      isSubmitting,
+      sessionId,
+      queryClient,
+      setAnalyzingQuestionId,
+      contractViolation,
+    ]
   );
 
   const skipQuestion = useCallback(
@@ -170,14 +178,24 @@ export function useQAMutations(
       setIsSkipping(true);
       setActionError(null);
 
+      const commandId = `${activeQuestion.id}:${reason ?? ""}`;
+      let skipKey = skipKeysRef.current.get(commandId);
+      if (!skipKey) {
+        skipKey = generateIdempotencyKey("answer-skip");
+        skipKeysRef.current.set(commandId, skipKey);
+      }
+
       try {
-        const skipKey = generateIdempotencyKey("answer-skip");
         await apiClient.skipAnswer(activeQuestion.id, skipKey, reason);
+        skipKeysRef.current.delete(commandId);
 
         await queryClient.invalidateQueries({ queryKey: ["qa-round", sessionId] });
         setAnalyzingQuestionId(activeQuestion.id);
         return true;
       } catch (err: unknown) {
+        // Reconcile canonical Q&A state after ambiguous failure without allocating a new key
+        await queryClient.invalidateQueries({ queryKey: ["qa-round", sessionId] });
+
         const msg =
           err instanceof Error
             ? err.message
@@ -188,7 +206,14 @@ export function useQAMutations(
         setIsSkipping(false);
       }
     },
-    [activeQuestion, isSkipping, sessionId, queryClient, setAnalyzingQuestionId, contractViolation]
+    [
+      activeQuestion,
+      isSkipping,
+      sessionId,
+      queryClient,
+      setAnalyzingQuestionId,
+      contractViolation,
+    ]
   );
 
   return {
