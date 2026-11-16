@@ -10,7 +10,10 @@ import {
   SkipQuestionModal,
   QAAnalyzingCard,
   QACompletedCard,
+  QAStageView,
 } from "@/features/qa";
+import { useQAMutations } from "@/hooks/qa/use-qa-mutations";
+import { renderHook, act } from "@testing-library/react";
 import SessionQAPage from "@/app/(auth)/sessions/[sessionId]/qa/page";
 import { Question, QARound, PracticeSession } from "@/lib/api/types";
 
@@ -256,5 +259,112 @@ describe("SessionQAPage integration", () => {
 
     expect(await screen.findByText("Analyzing Your Answer")).toBeDefined();
     expect(screen.queryByText("Q&A Round Completed!")).toBeNull();
+  });
+});
+
+describe("QAStageView & useQAMutations - Question Binding and Transitions (#107)", () => {
+  const q1: Question = {
+    ...mockPrimaryQuestion,
+    id: "q-1",
+    position: 1,
+    text: "Question 1 text",
+    state: "active",
+  };
+
+  const q2: Question = {
+    ...mockPrimaryQuestion,
+    id: "q-2",
+    position: 2,
+    text: "Question 2 text",
+    state: "active",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Object.defineProperty(global.navigator, "mediaDevices", {
+      value: {
+        getUserMedia: vi.fn().mockResolvedValue({
+          getTracks: () => [{ stop: vi.fn(), readyState: "live", enabled: true }],
+        }),
+      },
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  it("stops active recording and clears draft when active question changes remotely", async () => {
+    const onSubmitDraft = vi.fn().mockResolvedValue(true);
+    const onSkipQuestion = vi.fn().mockResolvedValue(true);
+    const onNavigateBack = vi.fn();
+
+    const { rerender } = render(
+      <QAStageView
+        questions={[q1, q2]}
+        activeQuestion={q1}
+        currentQuestionNumber={1}
+        onSubmitDraft={onSubmitDraft}
+        onSkipQuestion={onSkipQuestion}
+        onNavigateBack={onNavigateBack}
+      />
+    );
+
+    expect(screen.getByText("Question 1 text")).toBeDefined();
+
+    // Start recording for q1
+    const recordBtn = screen.getByRole("button", { name: /start recording answer/i });
+    await React.act(async () => {
+      fireEvent.click(recordBtn);
+    });
+
+    // Verify recording state: "Judges are listening"
+    expect(screen.getByText("Judges are listening")).toBeDefined();
+
+    // Canonical activeQuestion remotely advances to q2
+    await React.act(async () => {
+      rerender(
+        <QAStageView
+          questions={[q1, q2]}
+          activeQuestion={q2}
+          currentQuestionNumber={2}
+          onSubmitDraft={onSubmitDraft}
+          onSkipQuestion={onSkipQuestion}
+          onNavigateBack={onNavigateBack}
+        />
+      );
+    });
+
+    // Recording is stopped, draft discarded, and screen returns to initial asking state for q2
+    expect(screen.getByText("Question 2 text")).toBeDefined();
+    expect(screen.getByText("A judge is asking...")).toBeDefined();
+    expect(screen.queryByText("Judges are listening")).toBeNull();
+    expect(screen.queryByText("Review Your Answer")).toBeNull();
+  });
+
+  it("useQAMutations rejects submitting a draft bound to a different question", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const setAnalyzingQuestionId = vi.fn();
+
+    const { result } = renderHook(() =>
+      useQAMutations("sess-1", q2, setAnalyzingQuestionId, queryClient)
+    );
+
+    const draftForQ1 = {
+      blob: new Blob(["dummy audio"], { type: "audio/webm" }),
+      url: "blob:http://localhost/test",
+      durationMs: 5000,
+      mimeType: "audio/webm",
+      sizeBytes: 1000,
+      questionId: "q-1", // Recorded for q1, but activeQuestion is q2
+    };
+
+    let submitted = false;
+    await act(async () => {
+      submitted = await result.current.submitAnswer(draftForQ1);
+    });
+
+    expect(submitted).toBe(false);
+    expect(result.current.actionError).toContain(
+      "The recorded answer belongs to a different question"
+    );
   });
 });
