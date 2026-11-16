@@ -52,6 +52,7 @@ export function QAStageView({
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isSkipModalOpen, setIsSkipModalOpen] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState("");
+  const recordingQuestionIdRef = useRef<string | null>(null);
 
   const {
     isRecording,
@@ -75,6 +76,23 @@ export function QAStageView({
       setIsReviewModalOpen(true);
     },
   });
+
+  // Track canonical question changes: discard stale drafts and abort active capture
+  const activeQuestionId = activeQuestion?.id;
+  const prevActiveQuestionIdRef = useRef(activeQuestionId);
+
+  useEffect(() => {
+    if (prevActiveQuestionIdRef.current && prevActiveQuestionIdRef.current !== activeQuestionId) {
+      if (isRecording || isPaused) {
+        stopRecording();
+      }
+      discardDraft();
+      setIsReviewModalOpen(false);
+      setLiveTranscript("");
+      recordingQuestionIdRef.current = null;
+    }
+    prevActiveQuestionIdRef.current = activeQuestionId;
+  }, [activeQuestionId, isRecording, isPaused, stopRecording, discardDraft]);
 
   // Real-time speech transcription via Web Speech API when available
   const recognitionRef = useRef<{ stop: () => void } | null>(null);
@@ -135,6 +153,7 @@ export function QAStageView({
     if (!activeQuestion) return;
     setLiveTranscript("");
     onClearActionError?.();
+    recordingQuestionIdRef.current = activeQuestion.id;
     startRecording();
   };
 
@@ -156,17 +175,34 @@ export function QAStageView({
   const handleRestart = () => {
     setLiveTranscript("");
     onClearActionError?.();
+    recordingQuestionIdRef.current = activeQuestion?.id ?? null;
     restartRecording();
   };
 
   // Submit from review modal
   const handleConfirmSubmit = async () => {
-    if (!draft) return;
-    const ok = await onSubmitDraft(draft);
+    if (!draft || !activeQuestion) return;
+    const boundQuestionId =
+      draft.questionId || recordingQuestionIdRef.current;
+    if (boundQuestionId && boundQuestionId !== activeQuestion.id) {
+      setIsReviewModalOpen(false);
+      discardDraft();
+      setLiveTranscript("");
+      recordingQuestionIdRef.current = null;
+      return;
+    }
+
+    const draftWithQuestion = {
+      ...draft,
+      questionId: boundQuestionId || activeQuestion.id,
+    };
+
+    const ok = await onSubmitDraft(draftWithQuestion);
     if (ok) {
       setIsReviewModalOpen(false);
       discardDraft();
       setLiveTranscript("");
+      recordingQuestionIdRef.current = null;
     }
   };
 
