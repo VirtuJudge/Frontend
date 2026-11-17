@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>VirtuJudge promo</title>
+<style>
+  @font-face { font-family: "Instrument Serif"; src: url("fonts/instrument-serif-latin-400-normal.woff2") format("woff2"); font-style: normal; }
+  @font-face { font-family: "Instrument Serif"; src: url("fonts/instrument-serif-latin-400-italic.woff2") format("woff2"); font-style: italic; }
+  @font-face { font-family: "Bricolage"; src: url("fonts/bricolage-grotesque-latin-wght-normal.woff2") format("woff2"); font-weight: 200 800; }
+  :root {
+    --ink: #04110f;
+    --ink-2: #0a1d1a;
+    --paper: #f3efe6;
+    --paper-2: #e9e3d6;
+    --paper-ink: #1b1a17;
+    --teal: #0cf2dc;
+    --teal-deep: #08a99a;
+    --pen: #e5533d;
+    --muted: rgba(243, 239, 230, 0.62);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--ink); }
+  body { font-family: "Bricolage", sans-serif; color: var(--paper); -webkit-font-smoothing: antialiased; font-optical-sizing: auto; }
+  .serif { font-family: "Instrument Serif", serif; font-weight: 400; letter-spacing: -0.01em; }
+  .serif i, i.serif { font-style: italic; }
+
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--ink); }
+  #spot { position: absolute; left: 50%; top: -420px; width: 1500px; height: 1500px; margin-left: -750px; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(243, 239, 230, 0.10), rgba(243, 239, 230, 0.03) 55%, transparent 100%); }
+  #grain { position: absolute; inset: 0; pointer-events: none; opacity: .07; mix-blend-mode: overlay; z-index: 50;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  #curtain { position: absolute; inset: 0; background: var(--teal); z-index: 40; transform: translateX(-101%); }
+
+  .scene { position: absolute; inset: 0; visibility: hidden; }
+  .mask { display: block; overflow: hidden; padding-bottom: .08em; }
+  .mask > span { display: inline-block; }
+
+  /* 1 */
+  #s1 .lines { position: absolute; left: 160px; top: 300px; }
+  #s1 .l1 { font-size: 168px; line-height: 1; }
+  #s1 .l2 { font-size: 150px; line-height: 1.05; font-weight: 700; letter-spacing: -0.035em; color: var(--paper); }
+  #s1 .l2 em { font-style: normal; color: var(--teal); }
+  #s1 .logo { position: absolute; left: 160px; bottom: 120px; height: 72px; opacity: .9; }
+  #s1 .credit { position: absolute; right: 160px; bottom: 136px; font-size: 26px; color: var(--muted); }
+
+  /* shared copy block */
+  .copy { position: absolute; left: 140px; top: 210px; width: 640px; }
+  .copy .step { font-size: 26px; color: var(--teal); font-weight: 600; margin-bottom: 26px; display: flex; gap: 14px; align-items: center; }
+  .copy .step::before { content: ""; width: 44px; height: 2px; background: var(--teal); display: block; }
+  .copy h2 { font-size: 118px; line-height: .98; }
+  .copy p { margin-top: 34px; font-size: 32px; line-height: 1.35; color: var(--muted); font-weight: 400; max-width: 560px; }
+
+  /* slide */
+  .slide { position: absolute; background: var(--paper); color: var(--paper-ink); border-radius: 6px; box-shadow: 0 40px 90px rgba(0,0,0,.55), 0 2px 0 rgba(255,255,255,.4) inset; overflow: hidden; }
+  .slide .top { position: absolute; left: 6%; top: 8%; font-size: .028em; }
+  .slide .eyebrow { font-size: 22px; color: #6f6a60; font-weight: 500; }
+  .slide .big { font-size: 64px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.02; margin-top: 14px; max-width: 560px; }
+  .slide .big b { background: linear-gradient(transparent 62%, rgba(12,242,220,.55) 62%); font-weight: 700; }
+  .slide .chart { position: absolute; right: 6%; bottom: 14%; width: 38%; height: 52%; display: flex; align-items: flex-end; gap: 6%; border-bottom: 2px solid #2b2925; }
+  .slide .chart i { flex: 1; background: #2b2925; display: block; height: 0; }
+  .slide .chart i.hi { background: var(--teal-deep); }
+  .slide .foot { position: absolute; left: 6%; bottom: 8%; font-size: 20px; color: #8a8478; }
+  .slide .pg { position: absolute; right: 4%; top: 7%; font-size: 20px; color: #8a8478; }
+  #slideA { left: 900px; top: 150px; width: 880px; height: 495px; transform: rotate(-2.2deg); }
+
+  /* timeline */
+  #tl { position: absolute; left: 900px; top: 720px; width: 880px; }
+  #tl .tc { display: flex; justify-content: space-between; font-size: 22px; color: var(--muted); margin-bottom: 14px; font-variant-numeric: tabular-nums; }
+  #tl .tc b { color: var(--paper); font-weight: 600; }
+  .lane { display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 18px; margin-bottom: 14px; }
+  .lane span { font-size: 22px; color: var(--muted); }
+  .lane .track { position: relative; height: 34px; background: rgba(243,239,230,.05); border-radius: 4px; overflow: hidden; }
+  .lane .seg { position: absolute; top: 0; bottom: 0; border-radius: 3px; transform-origin: left; }
+  .lane.a .seg { background: var(--teal); }
+  .lane.b .seg { background: var(--paper-2); }
+  #playhead { position: absolute; top: 40px; bottom: -6px; width: 2px; background: var(--pen); left: 168px; }
+  #playhead::before { content: ""; position: absolute; top: -8px; left: -6px; width: 14px; height: 14px; background: var(--pen); border-radius: 2px; transform: rotate(45deg); }
+
+  /* 3 */
+  #slideB { left: 140px; top: 330px; width: 720px; height: 405px; transform: rotate(-3deg); }
+  #slideB .big { font-size: 52px; max-width: 460px; }
+  #circle { position: absolute; left: 134px; top: 398px; width: 280px; height: 118px; overflow: visible; z-index: 3; transform: rotate(-3deg); }
+  #circle path { fill: none; stroke: var(--pen); stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
+  #s3 .note { position: absolute; left: 330px; top: 352px; font-size: 26px; color: var(--pen); font-weight: 600; transform: rotate(-4deg); }
+  #s3 .q { position: absolute; left: 960px; top: 260px; width: 820px; }
+  #s3 .q .kick { font-size: 26px; color: var(--teal); font-weight: 600; display: flex; gap: 14px; align-items: center; margin-bottom: 30px; }
+  #s3 .q .kick::before { content: ""; width: 44px; height: 2px; background: var(--teal); display: block; }
+  #s3 .q h2 { font-size: 92px; line-height: 1.02; }
+  #s3 .q h2 .w { display: inline-block; }
+  #s3 .q .src { margin-top: 30px; font-size: 26px; color: var(--muted); }
+  #s3 .next { position: absolute; left: 960px; top: 790px; width: 820px; border-top: 1px solid rgba(243,239,230,.18); padding-top: 26px; display: flex; flex-direction: column; gap: 16px; }
+  #s3 .next div { font-size: 28px; color: var(--muted); display: grid; grid-template-columns: 44px 1fr; }
+  #s3 .next div b { color: var(--paper); font-weight: 600; }
+
+  /* 4 */
+  #report { position: absolute; left: 900px; top: 110px; width: 880px; height: 860px; background: var(--paper); color: var(--paper-ink); border-radius: 6px;
+    box-shadow: 0 40px 90px rgba(0,0,0,.55); padding: 64px 70px; transform: rotate(1.6deg); }
+  #report .hd { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid var(--paper-ink); padding-bottom: 22px; }
+  #report .hd h3 { font-size: 46px; }
+  #report .hd span { font-size: 22px; color: #6f6a60; }
+  #report .score { display: flex; align-items: baseline; gap: 18px; margin-top: 30px; }
+  #report .score b { font-family: "Instrument Serif", serif; font-weight: 400; font-size: 170px; line-height: .9; }
+  #report .score span { font-size: 30px; color: #6f6a60; }
+  #report .score em { font-style: normal; font-size: 28px; font-weight: 600; color: var(--teal-deep); margin-left: 10px; }
+  #report .rows { margin-top: 26px; display: flex; flex-direction: column; gap: 12px; }
+  #report .row { display: flex; align-items: baseline; gap: 12px; font-size: 25px; }
+  #report .row .dots { flex: 1; border-bottom: 2px dotted #b5ae9f; transform: translateY(-6px); }
+  #report .row b { font-variant-numeric: tabular-nums; font-weight: 600; width: 44px; text-align: right; }
+  #report .fb { margin-top: 30px; border-top: 1px solid #cfc8b9; padding-top: 22px; display: flex; flex-direction: column; gap: 16px; }
+  #report .fb div { font-size: 26px; line-height: 1.35; display: grid; grid-template-columns: 140px 1fr; }
+  #report .fb .lab { font-weight: 700; }
+  #report .fb .lab.keep { color: var(--teal-deep); } #report .fb .lab.fix { color: var(--pen); }
+  #report .hl { background-image: linear-gradient(rgba(12,242,220,.5), rgba(12,242,220,.5)); background-repeat: no-repeat; background-size: 0% 46%; background-position: 0 88%; }
+  #stamp { position: absolute; right: 60px; top: 150px; border: 3px solid var(--pen); color: var(--pen); font-weight: 700; font-size: 26px; padding: 6px 16px; border-radius: 6px; transform: rotate(-9deg); opacity: .85; }
+
+  /* 5 */
+  #s5 .logo { position: absolute; left: 50%; top: 250px; height: 200px; transform: translateX(-50%); }
+  #s5 h2 { position: absolute; top: 540px; width: 100%; text-align: center; font-size: 130px; line-height: 1; }
+  #s5 .url { position: absolute; top: 760px; left: 50%; transform: translateX(-50%); font-size: 40px; font-weight: 600; }
+  #underline { position: absolute; left: 50%; top: 812px; width: 360px; height: 40px; margin-left: -180px; overflow: visible; }
+  #underline path { fill: none; stroke: var(--teal); stroke-width: 6; stroke-linecap: round; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="spot"></div>
+
+  <!-- 1 -->
+  <section class="scene" id="s1">
+    <div class="lines">
+      <span class="mask l1 serif"><span><i>Before the real room,</i></span></span>
+      <span class="mask l2"><span>rehearse it <em>here.</em></span></span>
+    </div>
+    <img class="logo" src="../../public/logos/logo-light.webp" alt="" />
+    <span class="credit">Pitch practice for founders and student teams</span>
+  </section>
+
+  <!-- 2 -->
+  <section class="scene" id="s2">
+    <div class="copy">
+      <div class="step">Step one</div>
+      <h2 class="serif"><span class="mask"><span>Bring your</span></span><span class="mask"><span><i>pitch.</i></span></span></h2>
+      <p>Record the run-through and add your deck. Every presenter gets their own lane.</p>
+    </div>
+    <div class="slide" id="slideA">
+      <span class="pg">4 / 12</span>
+      <div class="top"><div class="eyebrow">Traction</div><div class="big"><b>18%</b> of pilot users moved to a paid plan</div></div>
+      <div class="chart"><i data-h="22"></i><i data-h="34"></i><i data-h="41"></i><i data-h="58"></i><i class="hi" data-h="86"></i></div>
+      <div class="foot">Pilot cohort, March to August</div>
+    </div>
+    <div id="tl">
+      <div class="tc"><span>presentation.mp4</span><span><b id="tcNow">00:00</b> / 04:12</span></div>
+      <div style="position: relative">
+        <div class="lane a"><span>Presenter A</span><div class="track">
+          <div class="seg" style="left: 0%; width: 22%"></div><div class="seg" style="left: 41%; width: 18%"></div><div class="seg" style="left: 78%; width: 22%"></div></div></div>
+        <div class="lane b"><span>Presenter B</span><div class="track">
+          <div class="seg" style="left: 23%; width: 17%"></div><div class="seg" style="left: 60%; width: 17%"></div></div></div>
+        <div id="playhead"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="scene" id="s3">
+    <div class="slide" id="slideB">
+      <span class="pg">4 / 12</span>
+      <div class="top"><div class="eyebrow">Traction</div><div class="big"><b>18%</b> of pilot users moved to a paid plan</div></div>
+      <div class="chart"><i style="height:22%"></i><i style="height:34%"></i><i style="height:41%"></i><i style="height:58%"></i><i class="hi" style="height:86%"></i></div>
+      <div class="foot">Pilot cohort, March to August</div>
+    </div>
+    <svg id="circle" viewBox="0 0 520 220"><path d="M232 52 C 170 40, 92 58, 86 104 C 80 150, 160 172, 236 166 C 312 160, 352 128, 340 92 C 330 60, 270 42, 214 50 C 190 54, 172 60, 160 66"/></svg>
+    <span class="note">source?</span>
+    <div class="q">
+      <div class="kick">Step two · Question 1 of 3</div>
+      <h2 class="serif" id="qText"></h2>
+      <div class="src">Asked because slide 4 states a rate without a source.</div>
+    </div>
+    <div class="next">
+      <div><b>2</b><span>Which dependency could delay your first release?</span></div>
+      <div><b>3</b><span>How did you validate the target customer?</span></div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="scene" id="s4">
+    <div class="copy">
+      <div class="step">Step three</div>
+      <h2 class="serif"><span class="mask"><span>Know what to</span></span><span class="mask"><span><i>fix next.</i></span></span></h2>
+      <p>One report for the team, plus notes for each presenter on pace, pauses and answers.</p>
+    </div>
+    <div id="report">
+      <div class="hd"><h3 class="serif">Practice report</h3><span>Demo Day rehearsal</span></div>
+      <div id="stamp">Sample</div>
+      <div class="score"><b id="scoreNum">0</b><span>/ 100</span><em>Good</em></div>
+      <div class="rows">
+        <div class="row"><span>Pitch content &amp; evidence</span><i class="dots"></i><b>78</b></div>
+        <div class="row"><span>Business reasoning</span><i class="dots"></i><b>71</b></div>
+        <div class="row"><span>Technical feasibility</span><i class="dots"></i><b>69</b></div>
+        <div class="row"><span>Delivery</span><i class="dots"></i><b>76</b></div>
+        <div class="row"><span>Q&amp;A</span><i class="dots"></i><b>68</b></div>
+      </div>
+      <div class="fb">
+        <div><span class="lab keep">Keep</span><span>Problem framing is backed by the customer interviews on slide 2.</span></div>
+        <div><span class="lab fix">Fix next</span><span><span class="hl" id="hl">Cite the source behind 18%</span> before a judge asks.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="scene" id="s5">
+    <img class="logo" src="../../public/logos/logo-light.webp" alt="" />
+    <h2 class="serif"><span class="mask"><span>Be the next one <i>on stage.</i></span></span></h2>
+    <div class="url">virtujudge.dev</div>
+    <svg id="underline" viewBox="0 0 360 40"><path d="M6 24 C 70 12, 150 30, 220 18 S 330 14, 354 22"/></svg>
+  </section>
+
+  <div id="curtain"></div>
+  <div id="grain"></div>
+</div>
+
+<!-- GSAP is injected by render.mjs from node_modules. -->
+<script>
+  const FPS = 30;
+  const DURATION = 27;
+  const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+  const question = "What evidence supports the 18% conversion rate?";
+  const qEl = document.getElementById("qText");
+  const words = question.split(" ").map((w) => {
+    const s = document.createElement("span");
+    s.className = "w";
+    s.textContent = w;
+    qEl.append(s, " ");
+    return s;
+  });
+
+  const tl = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
+  // The curtain wipe is computed per frame (see curtainX) so repeated wipes stay deterministic.
+  const CURTAINS = [];
+  const curtain = (at, swapOut, swapIn) => {
+    CURTAINS.push(at);
+    if (swapOut) tl.set(swapOut, { visibility: "hidden" }, at + 0.45);
+    if (swapIn) tl.set(swapIn, { visibility: "visible" }, at + 0.45);
+  };
+  const easeIn = (x) => x * x, easeOut = (x) => 1 - (1 - x) * (1 - x);
+  function curtainX(t) {
+    for (const at of CURTAINS) {
+      if (t >= at && t < at + 0.45) return -101 + 101 * easeIn((t - at) / 0.45);
+      if (t >= at + 0.45 && t < at + 0.5) return 0;
+      if (t >= at + 0.5 && t < at + 1.0) return 101 * easeOut((t - at - 0.5) / 0.5);
+    }
+    return -101;
+  }
+
+  // 1 — title (0–4.4)
+  tl.set("#s1", { visibility: "visible" }, 0);
+  tl.from("#spot", { autoAlpha: 0, scale: 0.6, duration: 1.6, ease: "power2.out" }, 0);
+  tl.from("#s1 .l1 > span", { yPercent: 105, duration: 1.0, ease: "power4.out" }, 0.3);
+  tl.from("#s1 .l2 > span", { yPercent: 105, duration: 1.0, ease: "power4.out" }, 0.75);
+  tl.from(["#s1 .logo", "#s1 .credit"], { autoAlpha: 0, y: 16, duration: 0.8, stagger: 0.15 }, 1.6);
+
+  // 2 — bring your pitch (4.4–10.4)
+  curtain(3.9, "#s1", "#s2");
+  tl.to("#spot", { autoAlpha: 0.5, duration: 1 }, 4.4);
+  tl.from("#s2 .step", { autoAlpha: 0, x: -20, duration: 0.6 }, 4.6);
+  tl.from("#s2 h2 .mask > span", { yPercent: 105, duration: 0.9, stagger: 0.12, ease: "power4.out" }, 4.65);
+  tl.from("#s2 .copy p", { autoAlpha: 0, y: 20, duration: 0.7 }, 5.1);
+  tl.from("#slideA", { y: 120, rotate: 4, autoAlpha: 0, duration: 1.1, ease: "power3.out" }, 4.8);
+  document.querySelectorAll("#slideA .chart i").forEach((bar, i) => {
+    tl.to(bar, { height: `${bar.dataset.h}%`, duration: 0.7, ease: "power2.out" }, 5.5 + i * 0.12);
+  });
+  tl.from("#tl", { autoAlpha: 0, y: 30, duration: 0.8 }, 5.4);
+  tl.from("#tl .seg", { scaleX: 0, duration: 0.6, stagger: 0.12, ease: "power2.out" }, 5.8);
+  tl.fromTo("#playhead", { left: 168 }, { left: 168 + 712 * 0.62, duration: 4.0, ease: "none" }, 6.0);
+
+  // 3 — questions (10.4–16.6)
+  curtain(9.9, "#s2", "#s3");
+  tl.from("#slideB", { x: -80, autoAlpha: 0, duration: 0.9 }, 10.5);
+  tl.from("#s3 .kick", { autoAlpha: 0, x: -20, duration: 0.6 }, 10.6);
+  tl.from(words, { autoAlpha: 0, y: 26, duration: 0.35, stagger: 0.11, ease: "power2.out" }, 10.9);
+  tl.fromTo("#circle path", { strokeDashoffset: 760, strokeDasharray: 760 }, { strokeDashoffset: 0, duration: 0.9, ease: "power1.inOut" }, 12.0);
+  tl.from("#s3 .note", { autoAlpha: 0, scale: 0.7, duration: 0.4, ease: "back.out(2)" }, 12.8);
+  tl.from("#s3 .src", { autoAlpha: 0, y: 14, duration: 0.6 }, 12.6);
+  tl.from("#s3 .next", { autoAlpha: 0, duration: 0.6 }, 13.6);
+  tl.from("#s3 .next div", { autoAlpha: 0, x: 30, duration: 0.6, stagger: 0.25 }, 13.7);
+
+  // 4 — report (16.6–22.6)
+  curtain(16.1, "#s3", "#s4");
+  tl.from("#s4 .step", { autoAlpha: 0, x: -20, duration: 0.6 }, 16.8);
+  tl.from("#s4 h2 .mask > span", { yPercent: 105, duration: 0.9, stagger: 0.12, ease: "power4.out" }, 16.85);
+  tl.from("#s4 .copy p", { autoAlpha: 0, y: 20, duration: 0.7 }, 17.3);
+  tl.from("#report", { y: 160, rotate: -3, autoAlpha: 0, duration: 1.1 }, 16.9);
+  const sc = { v: 0 };
+  tl.to(sc, { v: 74, duration: 1.4, ease: "power2.out", onUpdate: () => { document.getElementById("scoreNum").textContent = Math.round(sc.v); } }, 17.6);
+  tl.from("#report .row", { autoAlpha: 0, x: -16, duration: 0.45, stagger: 0.12 }, 17.9);
+  tl.from("#report .fb div", { autoAlpha: 0, y: 14, duration: 0.5, stagger: 0.3 }, 18.8);
+  tl.to("#hl", { backgroundSize: "100% 46%", duration: 0.8, ease: "power2.inOut" }, 19.9);
+  tl.from("#stamp", { autoAlpha: 0, scale: 1.8, duration: 0.35, ease: "power3.in" }, 19.2);
+
+  // 5 — close (22.6–27)
+  curtain(22.1, "#s4", "#s5");
+  tl.to("#spot", { autoAlpha: 1, duration: 1 }, 22.6);
+  tl.from("#s5 .logo", { autoAlpha: 0, y: 20, duration: 0.9 }, 22.8);
+  tl.from("#s5 h2 .mask > span", { yPercent: 105, duration: 1.0, ease: "power4.out" }, 23.2);
+  tl.from("#s5 .url", { autoAlpha: 0, y: 16, duration: 0.7 }, 23.9);
+  tl.fromTo("#underline path", { strokeDasharray: 400, strokeDashoffset: 400 }, { strokeDashoffset: 0, duration: 0.8, ease: "power1.inOut" }, 24.4);
+  tl.to({}, { duration: 0.01 }, DURATION - 0.01);
+
+  function extras(t) {
+    document.getElementById("curtain").style.transform = `translateX(${curtainX(t)}%)`;
+    document.getElementById("tcNow").textContent = fmt(t < 6 ? 0 : Math.min(156, (t - 6) * 39));
+  }
+  window.renderAt = (t) => { tl.seek(t, false); extras(t); };
+  window.VIDEO = { FPS, DURATION };
+  window.renderAt(0);
+</script>
+</body>
+</html>
